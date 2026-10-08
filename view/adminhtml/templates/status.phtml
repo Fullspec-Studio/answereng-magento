@@ -20,6 +20,7 @@ $pct = static fn (?float $x): string => $x === null ? '–' : number_format($x *
                 <th><?= $escaper->escapeHtml(__('Status')) ?></th>
                 <th><?= $escaper->escapeHtml(__('Last sync (UTC)')) ?></th>
                 <th><?= $escaper->escapeHtml(__('Products')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Action')) ?></th>
             </tr></thead>
             <tbody>
             <?php foreach ($panel as $row): ?>
@@ -29,6 +30,14 @@ $pct = static fn (?float $x): string => $x === null ? '–' : number_format($x *
                     <td><?= $escaper->escapeHtml($row['state'] . ($row['reason'] ? ' (' . $row['reason'] . ')' : '')) ?></td>
                     <td><?= $escaper->escapeHtml($row['lastSyncAt'] ?? '–') ?></td>
                     <td><?= $escaper->escapeHtml((string) ($row['productCount'] ?? '–')) ?></td>
+                    <td>
+                        <?php if ($row['canSync']): ?>
+                            <button type="button" class="action-secondary"
+                                    data-answereng-action="<?= $escaper->escapeHtmlAttr($row['syncUrl']) ?>"
+                                    data-fields='<?= $escaper->escapeHtmlAttr(json_encode(['store' => $row['storeId']])) ?>'>
+                                <?= $escaper->escapeHtml(__('Sync now')) ?></button>
+                        <?php endif; ?>
+                    </td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
@@ -36,6 +45,20 @@ $pct = static fn (?float $x): string => $x === null ? '–' : number_format($x *
     <?php endif; ?>
 <?php else: ?>
     <?php $summary = $panel['summary']; ?>
+    <?php if ($panel['pendingDeletion'] !== null): ?>
+        <?php $pd = $panel['pendingDeletion']; ?>
+        <div class="message message-warning">
+            <?= $escaper->escapeHtml($pd['purgeAfter'] !== null
+                ? __('AnswerEng store "%1" is scheduled for deletion on %2 UTC.', $pd['storeKey'], $pd['purgeAfter'])
+                : __('AnswerEng store "%1" is scheduled for deletion.', $pd['storeKey'])) ?>
+            <?php if ($panel['canDelete']): ?>
+                <button type="button" class="action-secondary"
+                        data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['cancel']) ?>"
+                        data-fields='<?= $escaper->escapeHtmlAttr(json_encode(['store' => $storeId, 'identity_id' => $pd['id']])) ?>'>
+                    <?= $escaper->escapeHtml(__('Cancel deletion')) ?></button>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
     <p>
         <strong><?= $escaper->escapeHtml(__('Sync status:')) ?></strong>
         <?= $escaper->escapeHtml($panel['state'] . ($panel['reason'] ? ' (' . $panel['reason'] . ')' : '')) ?>
@@ -46,9 +69,14 @@ $pct = static fn (?float $x): string => $x === null ? '–' : number_format($x *
         <strong><?= $escaper->escapeHtml(__('AI visibility:')) ?></strong>
         <?php if (in_array($summary->state, ['fresh', 'stale'], true) && $summary->rate !== null): ?>
             <?= $escaper->escapeHtml($pct($summary->rate) . ' (' . $pct($summary->low) . '–' . $pct($summary->high) . ')') ?>
+            <?php if ($summary->runStartedAt !== null): ?>
+                <?= $escaper->escapeHtml(__('· latest run %1', $summary->runStartedAt)) ?>
+            <?php endif; ?>
             <?php if ($summary->state === 'stale'): ?>
                 <em><?= $escaper->escapeHtml(__('Stale — last fetched %1 UTC', $summary->fetchedAt?->format('Y-m-d H:i') ?? '')) ?></em>
             <?php endif; ?>
+        <?php elseif ($summary->state === 'stale'): ?>
+            <?= $escaper->escapeHtml(__('Not synced yet (last checked %1 UTC)', $summary->fetchedAt?->format('Y-m-d H:i') ?? '')) ?>
         <?php else: ?>
             <?= $escaper->escapeHtml(match ($summary->state) {
                 'not_synced' => __('Not synced yet.'),
@@ -75,7 +103,7 @@ $pct = static fn (?float $x): string => $x === null ? '–' : number_format($x *
         <?php if ($panel['canSync'] && $panel['canClear']): ?>
             <button type="button" class="action-secondary"
                     data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['clear']) ?>"
-                    data-confirm-text="<?= $escaper->escapeHtmlAttr(__('Remove this store\'s products from AnswerEng and pause weekly analysis? History and results are kept, and the store still counts toward your plan. The next sync restores the catalog.')) ?>"
+                    data-confirm-text="<?= $escaper->escapeHtmlAttr(__('Remove all products from AnswerEng store "%1" and pause weekly analysis? History and results are kept, and the store still counts toward your plan. The next sync restores the catalog.', $panel['storeKey'])) ?>"
                     data-fields='<?= $escaper->escapeHtmlAttr(json_encode(['store' => $storeId])) ?>'>
                 <?= $escaper->escapeHtml(__('Clear AnswerEng catalog')) ?></button>
         <?php endif; ?>

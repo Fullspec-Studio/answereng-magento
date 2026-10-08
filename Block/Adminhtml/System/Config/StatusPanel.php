@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Fullspec\AnswerEng\Block\Adminhtml\System\Config;
 
 use Fullspec\AnswerEng\Model\Admin\PanelViewModel;
+use Fullspec\AnswerEng\Model\Config\SettingsProvider;
 use Magento\Backend\Block\Template\Context;
 use Magento\Config\Block\System\Config\Form\Field;
 use Magento\Framework\Data\Form\Element\AbstractElement;
@@ -15,7 +16,11 @@ class StatusPanel extends Field
     /**
      * @param array<string,mixed> $data
      */
-    public function __construct(Context $context, private readonly PanelViewModel $panel, array $data = [])
+    public function __construct(
+        Context $context,
+        private readonly PanelViewModel $panel,
+        private readonly SettingsProvider $settings,
+        array $data = [])
     {
         parent::__construct($context, $data);
     }
@@ -27,7 +32,8 @@ class StatusPanel extends Field
 
     public function getStoreId(): int
     {
-        return (int) $this->getRequest()->getParam('store');
+        $id = (int) $this->getRequest()->getParam('store');
+        return in_array($id, $this->settings->allStoreIds(), true) ? $id : 0;
     }
 
     /**
@@ -36,6 +42,6 @@ class StatusPanel extends Field
     public function getPanel(): array
     {
         $storeId = $this->getStoreId();
-        return $storeId > 0 ? $this->panel->forView($storeId) : $this->panel->forDefault();
+        return $storeId > 0 ? $this->panel->forView($storeId) : $this->panel->forDefault((int) $this->getRequest()->getParam('website'));
     }
 }

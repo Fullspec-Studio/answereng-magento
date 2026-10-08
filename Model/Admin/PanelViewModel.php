@@ -35,10 +35,14 @@ class PanelViewModel
      *
      * @return list<array<string,mixed>>
      */
-    public function forDefault(): array
+    public function forDefault(?int $websiteId = null): array
     {
         $rows = [];
-        foreach ($this->settings->enabledStoreIds() as $storeId) {
+        $canSync = $this->authorization->isAllowed('Fullspec_AnswerEng::sync');
+        $ids = $websiteId !== null && $websiteId > 0
+            ? $this->settings->storeIdsForWebsites([$websiteId])
+            : $this->settings->enabledStoreIds();
+        foreach ($ids as $storeId) {
             $state = $this->state->get($storeId);
             $rows[] = [
                 'storeId' => $storeId,
@@ -48,6 +52,8 @@ class PanelViewModel
                 'reason' => $state->reason,
                 'lastSyncAt' => $state->lastSyncAt?->format('Y-m-d H:i'),
                 'productCount' => $state->productCount,
+                'canSync' => $canSync,
+                'syncUrl' => $this->url->getUrl('answereng/action/syncnow'),
             ];
         }
         return $rows;
@@ -78,7 +84,14 @@ class PanelViewModel
                 'usedBy' => array_map([$this->settings, 'storeName'], $others),
             ];
         }
+        $pending = null;
+        foreach ($identities as $i) {
+            if ($i['status'] === 'pending_deletion' && ($pending === null || $i['role'] === 'current')) {
+                $pending = ['id' => $i['id'], 'storeKey' => $i['storeKey'], 'purgeAfter' => $i['purgeAfter']];
+            }
+        }
         return [
+            'pendingDeletion' => $pending,
             'storeId' => $storeId,
             'enabled' => $s->enabled,
             'storeKey' => $s->storeKey,

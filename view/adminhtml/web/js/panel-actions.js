@@ -21,6 +21,11 @@ define([], function () {
                 && scope.querySelector('[data-confirm-ack]').checked);
         }
 
+        root.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' && event.target.hasAttribute && event.target.hasAttribute('data-confirm-key')) {
+                event.preventDefault();
+            }
+        });
         root.addEventListener('input', refresh);
         root.addEventListener('change', refresh);
         root.addEventListener('click', function (event) {

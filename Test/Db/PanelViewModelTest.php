@@ -56,5 +56,72 @@ final class PanelViewModelTest extends DbTestCase
         self::assertSame([true, false], [$data['canSync'], $data['canDelete']]);
         self::assertSame('not_synced', $data['summary']->state);
         self::assertSame('/admin/answereng/action/delete', $data['urls']['delete']);
+        self::assertTrue($data['canClear']);
+        self::assertNull($data['pendingDeletion']);
+    }
+
+    private function viewModel(FakeSettings $settings, FakeTransport $transport, bool $allowAll = true): PanelViewModel
+    {
+        $state = new SyncStateRepository($this->db);
+        $registry = new RemoteStoreRegistry($this->db);
+        $clock = new FixedClock();
+        $engine = new EngineClient($transport, new NullLogger());
+        $roles = new RoleResolver($settings, $state, $registry);
+        $log = new SyncLog($this->db);
+        $actions = new RemoteStoreActions($settings, $state, $log, $engine, new Classifier(), $registry, $roles,
+            new FakeDisabler($settings), $clock);
+        $auth = $this->createMock(AuthorizationInterface::class);
+        $auth->method('isAllowed')->willReturn($allowAll);
+        $url = $this->createMock(UrlInterface::class);
+        $url->method('getUrl')->willReturnCallback(static fn (string $route) => "/admin/$route");
+        return new PanelViewModel($settings, $state, $log,
+            new SummaryProvider($settings, $state, $engine, new ArrayCache(), $clock), $actions, $registry, $roles, $auth, $url);
+    }
+
+    public function testDisabledViewStillOffersClearForItsCurrentIdentity(): void
+    {
+        $settings = new FakeSettings();
+        $s = $settings->put(1, ['storeKey' => 'shop.example.com', 'enabled' => false]);
+        (new SyncStateRepository($this->db))->recordAccount(1, 'acct_a', $s->apiKeyHash());
+        (new RemoteStoreRegistry($this->db))->recordPush('https://engine.test', 'acct_a', 'shop.example.com', 1,
+            (new FixedClock())->now());
+        $transport = new FakeTransport();
+        $transport->enqueue(FakeTransport::json(200, [], ['X-AnswerEng-Account' => 'acct_a']));
+        $data = $this->viewModel($settings, $transport)->forView(1);
+        self::assertFalse($data['enabled']);
+        self::assertTrue($data['canClear']);
+    }
+
+    public function testPendingDeletionIdentityIsExposedWithPurgeDate(): void
+    {
+        $settings = new FakeSettings();
+        $s = $settings->put(1, ['storeKey' => 'shop.example.com']);
+        $state = new SyncStateRepository($this->db);
+        $registry = new RemoteStoreRegistry($this->db);
+        $clock = new FixedClock();
+        $state->recordAccount(1, 'acct_a', $s->apiKeyHash());
+        $id = $registry->recordPush('https://engine.test', 'acct_a', 'shop.example.com', 1, $clock->now());
+        $purge = $clock->now()->modify('+7 days');
+        $registry->setStatus($id, 'pending_deletion', $purge);
+        $transport = new FakeTransport();
+        $transport->enqueue(FakeTransport::json(200, [
+            ['store_key' => 'shop.example.com', 'status' => 'pending_deletion', 'purge_after' => $purge->format('c')],
+        ], ['X-AnswerEng-Account' => 'acct_a']))->enqueue(FakeTransport::json(409, ['code' => 'store_pending_deletion']));
+        $data = $this->viewModel($settings, $transport)->forView(1);
+        self::assertSame(['id' => $id, 'storeKey' => 'shop.example.com', 'purgeAfter' => $purge->format('Y-m-d H:i')],
+            $data['pendingDeletion']);
+    }
+
+    public function testDefaultRowsCarrySyncPermissionAndUrlAndHonourWebsite(): void
+    {
+        $settings = new FakeSettings();
+        $settings->put(1, [], 1);
+        $settings->put(2, [], 2);
+        $vm = $this->viewModel($settings, new FakeTransport());
+        $rows = $vm->forDefault();
+        self::assertSame([1, 2], array_column($rows, 'storeId'));
+        self::assertTrue($rows[0]['canSync']);
+        self::assertSame('/admin/answereng/action/syncnow', $rows[0]['syncUrl']);
+        self::assertSame([2], array_column($vm->forDefault(2), 'storeId'));
     }
 }

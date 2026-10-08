@@ -6,17 +6,19 @@ namespace Fullspec\AnswerEng\Controller\Adminhtml\Action;
 use Fullspec\AnswerEng\Model\Admin\ActionResult;
 use Fullspec\AnswerEng\Model\Admin\RemoteStoreActions;
 use Magento\Backend\App\Action\Context;
+use Magento\Framework\Controller\Result\Redirect;
+use Fullspec\AnswerEng\Model\Config\SettingsProvider;
 
 class TestConnection extends AbstractAction
 {
     public const ADMIN_RESOURCE = 'Fullspec_AnswerEng::config';
 
-    public function __construct(Context $context, private readonly RemoteStoreActions $actions)
+    public function __construct(Context $context, SettingsProvider $settings, private readonly RemoteStoreActions $actions)
     {
-        parent::__construct($context);
+        parent::__construct($context, $settings);
     }
 
-    public function execute()
+    protected function perform(): Redirect
     {
         $report = $this->actions->testConnection($this->storeId());
         $message = $report->message;
