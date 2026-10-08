@@ -141,6 +141,27 @@ final class SyncerTest extends DbTestCase
         self::assertSame(['exhausted', 3], [$this->state->get(1)->state, $this->state->get(1)->attempts]);
     }
 
+    public function testARunInProgressSaysSoAndATransientClearsAStaleReason(): void
+    {
+        $this->failWith(403, ['code' => 'store_limit', 'limit' => 1]);
+        $this->syncer->sync(1, 'debounce');
+        self::assertSame('store_limit', $this->state->get(1)->reason);
+        $this->failWith(409, ['code' => 'run_in_progress']);
+        $result = $this->syncer->sync(1, 'manual', true);
+        self::assertSame([SyncResult::RETRYING, 'Analysis run in progress — will clear when it finishes.'],
+            [$result->status, $result->message]);
+        self::assertSame(['retrying', 'run_in_progress'], [$this->state->get(1)->state, $this->state->get(1)->reason]);
+        $this->failWith(504);
+        $result = $this->syncer->sync(1, 'manual', true);
+        self::assertSame('AnswerEng is waking up or unreachable; retrying shortly.', $result->message);
+        self::assertNull($this->state->get(1)->reason);
+        $this->transport->enqueue(FakeTransport::json(429, ['code' => 'throttled'], ['Retry-After' => '60']));
+        $result = $this->syncer->sync(1, 'manual', true);
+        self::assertSame([SyncResult::EXHAUSTED,
+            'AnswerEng could not be reached after 3 attempts. The nightly sync will try again.'],
+            [$result->status, $result->message]);
+    }
+
     public function testStoreLimitPausesWithItsOwnReason(): void
     {
         $this->failWith(403, ['error' => 'plan allows 1 store(s)', 'code' => 'store_limit', 'limit' => 1]);

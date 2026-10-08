@@ -23,6 +23,8 @@ class SyncStateRepository
     public const PAUSED = 'paused';
     public const DEBOUNCE_SECONDS = 300;
     public const MAX_TRANSIENT_ATTEMPTS = 3;
+    public const CAUSE_RUN_IN_PROGRESS = 'run_in_progress';
+    public const CAUSE_EXPORT_FAILED = 'catalog_export_failed';
     private const RETRY_SECONDS = [300, 900];
 
     public function __construct(private readonly SqlExecutor $db)
@@ -150,8 +152,19 @@ class SyncStateRepository
         return $this->applied($changed, $storeId, $revision);
     }
 
-    public function recordTransient(int $storeId, int $revision, \DateTimeImmutable $now, ?int $throttleSeconds): bool
-    {
+    /**
+     * A transient failure: retry at +5 then +15 minutes, exhausted on the 3rd in a row.
+     *
+     * $cause replaces any stale reason (a manual sync of a paused/blocked view keeps nothing of it):
+     * null, CAUSE_RUN_IN_PROGRESS or CAUSE_EXPORT_FAILED; StateMessage words the state from it.
+     */
+    public function recordTransient(
+        int $storeId,
+        int $revision,
+        \DateTimeImmutable $now,
+        ?int $throttleSeconds,
+        ?string $cause = null
+    ): bool {
         $throttleUntil = $throttleSeconds === null ? null : Ts::fmt($now->modify("+$throttleSeconds seconds"));
         $changed = $this->db->execute(
             // state and next_attempt_at read the OLD attempts; attempts is assigned last.
@@ -159,6 +172,7 @@ class SyncStateRepository
                  state = IF(attempts + 1 >= ?, 'exhausted', 'retrying'),
                  next_attempt_at = IF(attempts + 1 >= ?, NULL, COALESCE(?, IF(attempts = 0, ?, ?))),
                  retry_reason = IF(attempts + 1 >= ?, NULL, ?),
+                 reason = ?,
                  attempts = attempts + 1
              WHERE store_id = ? AND config_revision = ?",
             [
@@ -167,6 +181,7 @@ class SyncStateRepository
                 Ts::fmt($now->modify('+' . self::RETRY_SECONDS[0] . ' seconds')),
                 Ts::fmt($now->modify('+' . self::RETRY_SECONDS[1] . ' seconds')),
                 self::MAX_TRANSIENT_ATTEMPTS, $throttleSeconds === null ? null : 'throttled',
+                $cause,
                 $storeId, $revision,
             ]
         );

@@ -138,6 +138,17 @@ final class SyncStateRepositoryTest extends DbTestCase
         self::assertSame(['exhausted', 3, null], [$s->state, $s->attempts, $s->nextAttemptAt]);
     }
 
+    public function testTransientReplacesAStaleReasonWithItsCause(): void
+    {
+        $this->set(1, ['state' => 'paused', 'reason' => 'store_limit']);
+        $this->set(2, ['state' => 'blocked', 'reason' => 'too_many_products']);
+        $rev = $this->repo->get(1)->configRevision;
+        self::assertTrue($this->repo->recordTransient(1, $rev, $this->now(), null));
+        self::assertTrue($this->repo->recordTransient(2, $rev, $this->now(), null, Repo::CAUSE_RUN_IN_PROGRESS));
+        self::assertSame(['retrying', null], [$this->repo->get(1)->state, $this->repo->get(1)->reason]);
+        self::assertSame(['retrying', 'run_in_progress'], [$this->repo->get(2)->state, $this->repo->get(2)->reason]);
+    }
+
     public function testThrottleHonoursRetryAfterAndIsReportedForManualSyncs(): void
     {
         $this->repo->ensure(1);

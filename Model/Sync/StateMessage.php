@@ -22,11 +22,15 @@ class StateMessage
             SyncStateRepository::OK => $reason === 'catalog_cleared' ? self::cleared() : null,
             SyncStateRepository::RETRYING => match (true) {
                 $retryReason === 'throttled' => (string) __('Rate limited by AnswerEng, retrying.'),
-                $reason === 'run_in_progress' => (string) __('Analysis run in progress — will clear when it finishes.'),
+                $reason === SyncStateRepository::CAUSE_RUN_IN_PROGRESS
+                    => (string) __('Analysis run in progress — will clear when it finishes.'),
+                $reason === SyncStateRepository::CAUSE_EXPORT_FAILED
+                    => (string) __('Reading the catalog failed; nothing was sent. Retrying shortly.'),
                 default => (string) __('AnswerEng is waking up or unreachable; retrying shortly.'),
             },
-            SyncStateRepository::EXHAUSTED => (string) __('AnswerEng could not be reached after 3 attempts. '
-                . 'The nightly sync will try again.'),
+            SyncStateRepository::EXHAUSTED => $reason === SyncStateRepository::CAUSE_EXPORT_FAILED
+                ? (string) __('Reading the catalog failed 3 times; nothing was sent. The nightly sync will try again.')
+                : (string) __('AnswerEng could not be reached after 3 attempts. The nightly sync will try again.'),
             SyncStateRepository::BLOCKED => self::blocked((string) $reason),
             SyncStateRepository::PAUSED => self::paused((string) $reason, $detail, $purgeAfter),
             default => null,

@@ -42,4 +42,17 @@ final class StateMessageTest extends TestCase
         self::assertStringContainsString('waking up', (string) StateMessage::for('retrying', null));
         self::assertStringContainsString('3 attempts', (string) StateMessage::for('exhausted', null));
     }
+
+    public function testRetryingAndExhaustedNameTheirCause(): void
+    {
+        self::assertSame('Analysis run in progress — will clear when it finishes.',
+            StateMessage::for('retrying', 'run_in_progress'));
+        self::assertSame('Reading the catalog failed; nothing was sent. Retrying shortly.',
+            StateMessage::for('retrying', 'catalog_export_failed'));
+        self::assertSame('Rate limited by AnswerEng, retrying.', StateMessage::for('retrying', null, 'throttled'));
+        self::assertSame('Reading the catalog failed 3 times; nothing was sent. The nightly sync will try again.',
+            StateMessage::for('exhausted', 'catalog_export_failed'));
+        self::assertSame('AnswerEng could not be reached after 3 attempts. The nightly sync will try again.',
+            StateMessage::for('exhausted', null));
+    }
 }

@@ -75,7 +75,8 @@ class Syncer implements SyncRunner
         } catch (\Throwable $e) {
             $this->logger->error('AnswerEng catalog export failed', ['store_id' => $storeId,
                 'exception' => get_class($e), 'message' => mb_substr($e->getMessage(), 0, 300)]);
-            $this->state->recordTransient($storeId, $revision, $this->clock->now(), null);
+            $this->state->recordTransient($storeId, $revision, $this->clock->now(), null,
+                SyncStateRepository::CAUSE_EXPORT_FAILED);
             $this->log->append($storeId, $this->clock->now(), $source, 'error', 'catalog export failed: ' . get_class($e));
             return new SyncResult(SyncResult::FAILED, (string) __('Reading the catalog failed; nothing was sent. It will be retried.'));
         }
@@ -140,14 +141,9 @@ class Syncer implements SyncRunner
             case OutcomeKind::Transient:
             case OutcomeKind::Throttled:
                 $applied = $this->state->recordTransient($id, $revision, $now,
-                    $o->kind === OutcomeKind::Throttled ? $o->retryAfterSeconds : null);
-                $exhausted = $this->state->get($id)->state === SyncStateRepository::EXHAUSTED;
-                $result = $exhausted
-                    ? new SyncResult(SyncResult::EXHAUSTED, (string) __('AnswerEng could not be reached after 3 attempts. '
-                        . 'The nightly sync will try again.'))
-                    : new SyncResult(SyncResult::RETRYING, $o->kind === OutcomeKind::Throttled
-                        ? (string) __('Rate limited, retrying.')
-                        : (string) __('AnswerEng is waking up or unreachable; retrying shortly.'));
+                    $o->kind === OutcomeKind::Throttled ? $o->retryAfterSeconds : null,
+                    $o->reason === 'run_in_progress' ? SyncStateRepository::CAUSE_RUN_IN_PROGRESS : null);
+                $result = $this->transientResult($id);
                 break;
             default:
                 $applied = $this->state->recordPaused($id, $revision, (string) $o->reason, $startedAt);
@@ -161,6 +157,18 @@ class Syncer implements SyncRunner
         }
         $this->log->append($id, $now, $source, $result->status, $o->detail);
         return $result;
+    }
+
+    /**
+     * RETRYING or EXHAUSTED for the state a transient failure just wrote, worded by StateMessage.
+     */
+    private function transientResult(int $storeId): SyncResult
+    {
+        $st = $this->state->get($storeId);
+        return new SyncResult(
+            $st->state === SyncStateRepository::EXHAUSTED ? SyncResult::EXHAUSTED : SyncResult::RETRYING,
+            (string) StateMessage::for($st->state, $st->reason, $st->retryReason)
+        );
     }
 
     private function blocked(int $storeId, int $revision, string $source, string $reason, ?string $detail = null): SyncResult
