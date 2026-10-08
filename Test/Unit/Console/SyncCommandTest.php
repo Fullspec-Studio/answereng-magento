@@ -7,6 +7,9 @@ use Fullspec\AnswerEng\Console\Command\Sync;
 use Fullspec\AnswerEng\Model\Sync\SyncResult;
 use Fullspec\AnswerEng\Test\Support\FakeRunner;
 use Fullspec\AnswerEng\Test\Support\FakeSettings;
+use Magento\Framework\App\State;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Phrase;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -15,6 +18,7 @@ final class SyncCommandTest extends TestCase
 {
     private FakeSettings $settings;
     private FakeRunner $runner;
+    private State $appState;
 
     protected function setUp(): void
     {
@@ -23,11 +27,12 @@ final class SyncCommandTest extends TestCase
         $this->settings->put(2);
         $this->settings->put(3, ['enabled' => false]);
         $this->runner = new FakeRunner();
+        $this->appState = $this->createMock(State::class);
     }
 
     private function runSync(array $input): CommandTester
     {
-        $tester = new CommandTester(new Sync($this->settings, $this->runner));
+        $tester = new CommandTester(new Sync($this->settings, $this->runner, $this->appState));
         $tester->execute($input);
         return $tester;
     }
@@ -67,5 +72,19 @@ final class SyncCommandTest extends TestCase
         self::assertSame(Command::FAILURE, $t->getStatusCode());
         self::assertSame([[1, 'cli', true], [2, 'cli', true]], $this->runner->calls);
         self::assertStringContainsString('boom', $t->getDisplay());
+    }
+
+    /** Found in the local end-to-end run: without an area the export failed with "Area code is not set". */
+    public function testSetsTheCronAreaBeforeSyncing(): void
+    {
+        $this->appState->expects(self::once())->method('setAreaCode')->with('crontab');
+        self::assertSame(Command::SUCCESS, $this->runSync([])->getStatusCode());
+    }
+
+    public function testAnAlreadySetAreaIsKept(): void
+    {
+        $this->appState->method('setAreaCode')->willThrowException(new LocalizedException(new Phrase('Area code is already set')));
+        self::assertSame(Command::SUCCESS, $this->runSync([])->getStatusCode());
+        self::assertSame([[1, 'cli', true], [2, 'cli', true]], $this->runner->calls);
     }
 }

@@ -5,6 +5,9 @@ namespace Fullspec\AnswerEng\Console\Command;
 
 use Fullspec\AnswerEng\Model\Config\SettingsProvider;
 use Fullspec\AnswerEng\Model\Sync\SyncRunner;
+use Magento\Framework\App\Area;
+use Magento\Framework\App\State;
+use Magento\Framework\Exception\LocalizedException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
@@ -15,7 +18,8 @@ class Sync extends Command
 {
     public function __construct(
         private readonly SettingsProvider $settings,
-        private readonly SyncRunner $runner
+        private readonly SyncRunner $runner,
+        private readonly State $appState
     ) {
         parent::__construct();
     }
@@ -29,6 +33,13 @@ class Sync extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        // bin/magento runs without an area; the catalog export's store emulation needs one.
+        // Use the cron area so the CLI takes exactly the code path the cron jobs take.
+        try {
+            $this->appState->setAreaCode(Area::AREA_CRONTAB);
+        } catch (LocalizedException) {
+            // area already set (e.g. invoked from another command): keep it
+        }
         $code = $input->getOption('store');
         $enabled = $this->settings->enabledStoreIds();
         if ($code !== null) {
