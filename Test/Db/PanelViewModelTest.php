@@ -124,4 +124,27 @@ final class PanelViewModelTest extends DbTestCase
         self::assertSame('/admin/answereng/action/syncnow', $rows[0]['syncUrl']);
         self::assertSame([2], array_column($vm->forDefault(2), 'storeId'));
     }
+
+    /** Found in the local end-to-end run: paused views showed only "paused (store_limit)". */
+    public function testPausedAndClearedViewsCarryTheMerchantMessage(): void
+    {
+        $settings = new FakeSettings();
+        $settings->put(1, [], 1);
+        $settings->put(2, [], 1);
+        $state = new SyncStateRepository($this->db);
+        $log = new SyncLog($this->db);
+        $clock = new FixedClock();
+        $state->ensure(1);
+        $state->ensure(2);
+        $state->recordPaused(1, $state->get(1)->configRevision, 'store_limit');
+        $log->append(1, $clock->now(), 'debounce', 'paused', 'HTTP 403 store_limit limit=3');
+        $state->recordSuccess(2, $state->get(2)->configRevision, $clock->now(), $clock->now(), 0, null, 'catalog_cleared');
+        $rows = $this->viewModel($settings, new FakeTransport())->forDefault();
+        self::assertStringContainsString('allows 3 store(s)', (string) $rows[0]['message']);
+        self::assertStringStartsWith('No eligible products', (string) $rows[1]['message']);
+        $transport = new FakeTransport();
+        $transport->enqueue(FakeTransport::json(404, ['code' => 'unknown_store']));
+        $view = $this->viewModel($settings, $transport)->forView(1);
+        self::assertStringContainsString('upgrade your plan', (string) $view['message']);
+    }
 }

@@ -6,6 +6,7 @@ namespace Fullspec\AnswerEng\Model\Admin;
 use Fullspec\AnswerEng\Model\Config\SettingsProvider;
 use Fullspec\AnswerEng\Model\Registry\RemoteStoreRegistry;
 use Fullspec\AnswerEng\Model\Registry\RoleResolver;
+use Fullspec\AnswerEng\Model\Sync\StateMessage;
 use Fullspec\AnswerEng\Model\Sync\SyncLog;
 use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 use Magento\Backend\Model\UrlInterface;
@@ -50,6 +51,7 @@ class PanelViewModel
                 'storeKey' => $this->settings->forStore($storeId)->storeKey,
                 'state' => $state->state,
                 'reason' => $state->reason,
+                'message' => $this->message($storeId, $state->state, $state->reason, $state->retryReason, null),
                 'lastSyncAt' => $state->lastSyncAt?->format('Y-m-d H:i'),
                 'productCount' => $state->productCount,
                 'canSync' => $canSync,
@@ -97,6 +99,8 @@ class PanelViewModel
             'storeKey' => $s->storeKey,
             'state' => $state->state,
             'reason' => $state->reason,
+            'message' => $this->message($storeId, $state->state, $state->reason, $state->retryReason,
+                $pending['purgeAfter'] ?? null),
             'lastSyncAt' => $state->lastSyncAt?->format('Y-m-d H:i'),
             'productCount' => $state->productCount,
             'log' => $this->log->recent($storeId),
@@ -114,5 +118,23 @@ class PanelViewModel
                 'forget' => $this->url->getUrl('answereng/action/forget'),
             ],
         ];
+    }
+
+    /**
+     * The merchant sentence for the state. Paused/blocked details (limit, HTTP status) come from the
+     * latest sync-log entry with that outcome, which holds only the sanitized ErrorDetail string.
+     */
+    private function message(int $storeId, string $state, ?string $reason, ?string $retryReason, ?string $purgeAfter): ?string
+    {
+        $detail = '';
+        if (in_array($state, [SyncStateRepository::PAUSED, SyncStateRepository::BLOCKED], true)) {
+            foreach ($this->log->recent($storeId) as $entry) {
+                if ($entry['outcome'] === $state) {
+                    $detail = (string) ($entry['detail'] ?? '');
+                    break;
+                }
+            }
+        }
+        return StateMessage::for($state, $reason, $retryReason, $detail, $purgeAfter);
     }
 }

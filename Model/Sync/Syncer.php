@@ -135,8 +135,7 @@ class Syncer implements SyncRunner
                     $successReason === null ? $s->storeKey : null, $successReason);
                 $result = $successReason === null
                     ? new SyncResult(SyncResult::PUSHED, (string) __('Sent %1 products to AnswerEng.', $count))
-                    : new SyncResult(SyncResult::CLEARED, (string) __('No eligible products — the AnswerEng catalog is '
-                        . 'cleared and weekly analysis is paused until products return.'));
+                    : new SyncResult(SyncResult::CLEARED, StateMessage::cleared());
                 break;
             case OutcomeKind::Transient:
             case OutcomeKind::Throttled:
@@ -152,7 +151,8 @@ class Syncer implements SyncRunner
                 break;
             default:
                 $applied = $this->state->recordPaused($id, $revision, (string) $o->reason);
-                $result = new SyncResult(SyncResult::PAUSED, (string) __('AnswerEng refused the request (%1).', $o->detail));
+                $result = new SyncResult(SyncResult::PAUSED,
+                    StateMessage::paused((string) $o->reason, $o->detail, $o->purgeAfter));
         }
         if (!$applied) {
             $this->log->append($id, $now, $source, 'superseded', 'superseded by a configuration change');
@@ -167,7 +167,7 @@ class Syncer implements SyncRunner
     {
         $this->state->recordBlocked($storeId, $revision, $reason);
         $this->log->append($storeId, $this->clock->now(), $source, 'blocked', $detail ?? $reason);
-        return new SyncResult(SyncResult::BLOCKED, (string) __('Not synced: %1.', $reason));
+        return new SyncResult(SyncResult::BLOCKED, StateMessage::blocked($reason));
     }
 
     private function isDuplicate(Settings $s): bool

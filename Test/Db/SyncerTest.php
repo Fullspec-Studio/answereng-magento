@@ -144,7 +144,10 @@ final class SyncerTest extends DbTestCase
     public function testStoreLimitPausesWithItsOwnReason(): void
     {
         $this->failWith(403, ['error' => 'plan allows 1 store(s)', 'code' => 'store_limit', 'limit' => 1]);
-        self::assertSame(SyncResult::PAUSED, $this->syncer->sync(1, 'debounce')->status);
+        $result = $this->syncer->sync(1, 'debounce');
+        self::assertSame(SyncResult::PAUSED, $result->status);
+        self::assertStringContainsString('allows 1 store(s)', $result->message);
+        self::assertStringContainsString('upgrade your plan', $result->message);
         self::assertSame(['paused', 'store_limit'], [$this->state->get(1)->state, $this->state->get(1)->reason]);
         self::assertSame('HTTP 403 store_limit limit=1', $this->log->recent(1)[0]['detail']);
     }
