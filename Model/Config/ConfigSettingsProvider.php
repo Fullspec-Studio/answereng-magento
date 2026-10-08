@@ -4,10 +4,15 @@ declare(strict_types=1);
 namespace Fullspec\AnswerEng\Model\Config;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 
+/**
+ * The API key is stored encrypted (Encrypted backend model). Because etc/config.xml
+ * declares that backend model for answereng/connection/api_key, ScopeConfig's
+ * metadata processor already returns the DECRYPTED value: decrypting again here
+ * would turn the key into binary garbage.
+ */
 class ConfigSettingsProvider implements SettingsProvider
 {
     public const DEFAULT_ENGINE_URL = 'https://api.answereng.io';
@@ -20,7 +25,6 @@ class ConfigSettingsProvider implements SettingsProvider
 
     public function __construct(
         private readonly ScopeConfigInterface $config,
-        private readonly EncryptorInterface $encryptor,
         private readonly StoreManagerInterface $storeManager
     ) {
     }
@@ -28,12 +32,11 @@ class ConfigSettingsProvider implements SettingsProvider
     public function forStore(int $storeId): Settings
     {
         $engineUrl = trim((string) $this->config->getValue(self::PATH_ENGINE_URL));
-        $encrypted = trim((string) $this->config->getValue(self::PATH_API_KEY));
         return new Settings(
             $storeId,
             (bool) $this->storeValue(self::PATH_ENABLED, $storeId),
             rtrim($engineUrl === '' ? self::DEFAULT_ENGINE_URL : $engineUrl, '/'),
-            $encrypted === '' ? '' : trim($this->encryptor->decrypt($encrypted)),
+            trim((string) $this->config->getValue(self::PATH_API_KEY)),
             StoreKeyPolicy::normalize((string) $this->storeValue(self::PATH_STORE_KEY, $storeId)),
             $this->lines((string) $this->storeValue(self::PATH_BRANDS, $storeId)),
             $this->lines((string) $this->storeValue(self::PATH_COMPETITORS, $storeId))
