@@ -6,21 +6,31 @@ namespace Fullspec\AnswerEng\Observer;
 use Magento\Catalog\Model\ResourceModel\Product as ProductResource;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Psr\Log\LoggerInterface;
 
 /** The product-website links are gone after delete; capture them first. */
 class ProductDeleteBefore implements ObserverInterface
 {
-    public function __construct(private readonly ProductResource $resource)
-    {
+    public function __construct(
+        private readonly ProductResource $resource,
+        private readonly LoggerInterface $logger
+    ) {
     }
 
     public function execute(Observer $observer): void
     {
-        /** @var \Magento\Catalog\Model\Product $product */
-        $product = $observer->getEvent()->getData('product');
-        $product->setData(
-            ProductSaveBefore::PREVIOUS_WEBSITES,
-            array_map('intval', (array) $this->resource->getWebsiteIds($product))
-        );
+        try {
+            /** @var \Magento\Catalog\Model\Product $product */
+            $product = $observer->getEvent()->getData('product');
+            $product->setData(
+                ProductSaveBefore::PREVIOUS_WEBSITES,
+                array_map('intval', (array) $this->resource->getWebsiteIds($product))
+            );
+        } catch (\Throwable $e) {
+            $this->logger->error('AnswerEng: change tracking failed', [
+                'exception_class' => $e::class,
+                'message' => mb_substr($e->getMessage(), 0, 300),
+            ]);
+        }
     }
 }

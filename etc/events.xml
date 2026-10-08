@@ -19,7 +19,7 @@
     <event name="catalog_product_to_website_change">
         <observer name="answereng_mark_all" instance="Fullspec\AnswerEng\Observer\MarkAllDirty"/>
     </event>
-    <event name="catalog_product_import_bunch_save_after">
+    <event name="catalog_product_import_finish_before">
         <observer name="answereng_mark_all" instance="Fullspec\AnswerEng\Observer\MarkAllDirty"/>
     </event>
     <event name="catalog_category_save_after">
