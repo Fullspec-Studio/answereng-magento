@@ -171,8 +171,10 @@ class RemoteStoreActions
             $this->registry->setStatus($rs->id, 'active', null);
             $this->resumeAfterCancel($rs->storeKey);
             $this->log->append($storeId, $this->clock->now(), 'admin', 'deletion_cancelled', $rs->storeKey, $adminUser);
-            return new ActionResult(true, (string) __('Deletion of "%1" cancelled. Re-enable syncing for this store view '
-                . 'when you are ready.', $rs->storeKey));
+            return new ActionResult(true, $s->enabled
+                ? (string) __('Deletion of "%1" cancelled. Syncing for this store view resumes shortly.', $rs->storeKey)
+                : (string) __('Deletion of "%1" cancelled. Re-enable syncing for this store view when you are ready.',
+                    $rs->storeKey));
         }
         if ($this->isUnknownStore($r)) {
             $this->registry->setStatus($rs->id, 'deleted', null);

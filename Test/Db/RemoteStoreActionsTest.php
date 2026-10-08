@@ -244,7 +244,9 @@ final class RemoteStoreActionsTest extends DbTestCase
         $this->settings->put(1, ['enabled' => false, 'storeKey' => 'shop.example.com']);
         $this->respond(200, []);
         $this->respond(200, ['status' => 'active']);
-        self::assertTrue($this->actions->cancel(1, $id, 'admin')->ok);
+        $result = $this->actions->cancel(1, $id, 'admin');
+        self::assertTrue($result->ok);
+        self::assertStringEndsWith('Re-enable syncing for this store view when you are ready.', $result->message);
         self::assertSame('active', $this->registry->get($id)?->remoteStatus);
         self::assertFalse($this->settings->forStore(1)->enabled);
 
@@ -269,7 +271,9 @@ final class RemoteStoreActionsTest extends DbTestCase
         $this->registry->setStatus($id, 'pending_deletion', $this->clock->now()->modify('+7 days'));
         $this->respond(200, []);
         $this->respond(200, ['status' => 'active']);
-        self::assertTrue($this->actions->cancel(2, $id, 'admin')->ok);
+        $result = $this->actions->cancel(2, $id, 'admin');
+        self::assertTrue($result->ok);
+        self::assertStringEndsWith('Syncing for this store view resumes shortly.', $result->message);
         $two = $this->state->get(2);
         self::assertSame(['ok', null, true], [$two->state, $two->reason, $two->dirty]);
         self::assertSame('paused', $this->state->get(1)->state);   // disabled: untouched, stays disabled
