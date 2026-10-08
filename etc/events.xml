@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="catalog_product_save_before">
+        <observer name="answereng_previous_websites" instance="Fullspec\AnswerEng\Observer\ProductSaveBefore"/>
+    </event>
+    <event name="catalog_product_save_after">
+        <observer name="answereng_mark_dirty" instance="Fullspec\AnswerEng\Observer\ProductSaveAfter"/>
+    </event>
+    <event name="catalog_product_delete_before">
+        <observer name="answereng_previous_websites" instance="Fullspec\AnswerEng\Observer\ProductDeleteBefore"/>
+    </event>
+    <event name="catalog_product_delete_after">
+        <observer name="answereng_mark_dirty" instance="Fullspec\AnswerEng\Observer\ProductDeleteAfter"/>
+    </event>
+    <event name="catalog_product_attribute_update_before">
+        <observer name="answereng_mark_all" instance="Fullspec\AnswerEng\Observer\MarkAllDirty"/>
+    </event>
+    <event name="catalog_product_to_website_change">
+        <observer name="answereng_mark_all" instance="Fullspec\AnswerEng\Observer\MarkAllDirty"/>
+    </event>
+    <event name="catalog_product_import_bunch_save_after">
+        <observer name="answereng_mark_all" instance="Fullspec\AnswerEng\Observer\MarkAllDirty"/>
+    </event>
+    <event name="catalog_category_save_after">
+        <observer name="answereng_mark_all" instance="Fullspec\AnswerEng\Observer\MarkAllDirty"/>
+    </event>
+</config>
