@@ -72,9 +72,13 @@ class EngineClient
                 $this->transport->send($method, $c->engineUrl . $path, $headers, $body, $timeout)
             );
         } catch (TransportException $e) {
+            // HTTP clients quote a rejected header value in their error text, which would put the key in
+            // answereng.log and the sync log (seen locally when a malformed key value was sent), so strip it out.
+            $error = mb_substr($c->apiKey === '' ? $e->getMessage()
+                : str_replace($c->apiKey, '[api key]', $e->getMessage()), 0, 200);
             $this->logger->warning('AnswerEng request failed', ['method' => $method, 'path' => $path,
-                'error' => mb_substr($e->getMessage(), 0, 200)]);
-            return EngineResult::transportFailure(mb_substr($e->getMessage(), 0, 200));
+                'error' => $error]);
+            return EngineResult::transportFailure($error);
         }
         $this->logger->info('AnswerEng request', ['method' => $method, 'path' => $path,
             'status' => $result->status, 'code' => $result->code()]);

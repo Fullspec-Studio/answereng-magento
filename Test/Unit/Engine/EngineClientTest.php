@@ -77,4 +77,21 @@ final class EngineClientTest extends TestCase
         $r = $this->client->postCatalog($this->conn, '{}');
         self::assertSame('connection refused', $r->transportError);
     }
+
+    public function testTransportErrorTextNeverCarriesTheKey(): void
+    {
+        $logger = new class extends \Psr\Log\AbstractLogger {
+            public string $all = '';
+
+            public function log($level, \Stringable|string $message, array $context = []): void
+            {
+                $this->all .= $message . json_encode($context);
+            }
+        };
+        $client = new EngineClient($this->transport, $logger);
+        $this->transport->enqueue(new TransportException('"ae_secret" is not valid header value.'));
+        $r = $client->postCatalog($this->conn, '{}');
+        self::assertSame('"[api key]" is not valid header value.', $r->transportError);
+        self::assertStringNotContainsString('ae_secret', $logger->all);
+    }
 }
