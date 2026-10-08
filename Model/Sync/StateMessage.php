@@ -12,7 +12,15 @@ namespace Fullspec\AnswerEng\Model\Sync;
 class StateMessage
 {
     /**
+     * The sentence for a view's state, or null when there is nothing to say.
+     *
+     * @param string $state
+     * @param string|null $reason
+     * @param string|null $retryReason
+     * @param string $detail
+     * @param string|null $purgeAfter
      * @param list<string> $existingKeys the workspace's store keys when known (store_limit names them)
+     * @return string|null
      */
     public static function for(
         string $state,
@@ -41,12 +49,23 @@ class StateMessage
         };
     }
 
+    /**
+     * Cleared.
+     *
+     * @return string
+     */
     public static function cleared(): string
     {
         return (string) __('No eligible products — the AnswerEng catalog is cleared and weekly analysis is paused '
             . 'until products return.');
     }
 
+    /**
+     * Blocked.
+     *
+     * @param string $reason
+     * @return string
+     */
     public static function blocked(string $reason): string
     {
         return match ($reason) {
@@ -62,6 +81,11 @@ class StateMessage
     }
 
     /**
+     * Paused.
+     *
+     * @param string $reason
+     * @param string $detail
+     * @param string|null $purgeAfter
      * @param list<string> $existingKeys the workspace's store keys from GET /stores, when the caller has them
      */
     public static function paused(

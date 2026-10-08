@@ -12,6 +12,15 @@ use Psr\Log\LoggerInterface;
 /** Nightly full push of every enabled, non-paused view whose retry (if any) is due. */
 class Reconcile
 {
+    /**
+     * Constructor.
+     *
+     * @param SettingsProvider $settings
+     * @param SyncStateRepository $state
+     * @param SyncRunner $runner
+     * @param Clock $clock
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         private readonly SettingsProvider $settings,
         private readonly SyncStateRepository $state,
@@ -21,6 +30,11 @@ class Reconcile
     ) {
     }
 
+    /**
+     * Execute.
+     *
+     * @return void
+     */
     public function execute(): void
     {
         foreach ($this->state->selectForReconcile($this->settings->enabledStoreIds(), $this->clock->now()) as $storeId) {

@@ -10,6 +10,13 @@ use Magento\Store\Model\ScopeInterface;
 
 class MagentoConfigDisabler implements ConfigDisabler
 {
+    /**
+     * Constructor.
+     *
+     * @param WriterInterface $writer
+     * @param ReinitableConfigInterface $config
+     * @param ConfigChangeHandler $changes
+     */
     public function __construct(
         private readonly WriterInterface $writer,
         private readonly ReinitableConfigInterface $config,
@@ -17,6 +24,9 @@ class MagentoConfigDisabler implements ConfigDisabler
     ) {
     }
 
+    /**
+     * @inheritdoc
+     */
     public function disable(int $storeId): void
     {
         $this->writer->save(ConfigSettingsProvider::PATH_ENABLED, '0', ScopeInterface::SCOPE_STORES, $storeId);

@@ -5,6 +5,17 @@ namespace Fullspec\AnswerEng\Model\Registry;
 
 class RemoteStore
 {
+    /**
+     * Constructor.
+     *
+     * @param int $id
+     * @param string $engineUrl
+     * @param string $accountId
+     * @param string $storeKey
+     * @param string $remoteStatus
+     * @param \DateTimeImmutable|null $purgeAfter
+     * @param \DateTimeImmutable|null $lastSyncedAt
+     */
     public function __construct(
         public readonly int $id,
         public readonly string $engineUrl,

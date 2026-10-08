@@ -23,12 +23,21 @@ class ConfigSettingsProvider implements SettingsProvider
     public const PATH_BRANDS = 'answereng/brand/brand_names';
     public const PATH_COMPETITORS = 'answereng/brand/competitors';
 
+    /**
+     * Constructor.
+     *
+     * @param ScopeConfigInterface $config
+     * @param StoreManagerInterface $storeManager
+     */
     public function __construct(
         private readonly ScopeConfigInterface $config,
         private readonly StoreManagerInterface $storeManager
     ) {
     }
 
+    /**
+     * @inheritdoc
+     */
     public function forStore(int $storeId): Settings
     {
         $engineUrl = trim((string) $this->config->getValue(self::PATH_ENGINE_URL));
@@ -43,6 +52,9 @@ class ConfigSettingsProvider implements SettingsProvider
         );
     }
 
+    /**
+     * @inheritdoc
+     */
     public function allStoreIds(): array
     {
         $ids = [];
@@ -53,6 +65,9 @@ class ConfigSettingsProvider implements SettingsProvider
         return $ids;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function enabledStoreIds(): array
     {
         return array_values(array_filter(
@@ -61,6 +76,9 @@ class ConfigSettingsProvider implements SettingsProvider
         ));
     }
 
+    /**
+     * @inheritdoc
+     */
     public function storeIdsForWebsites(array $websiteIds): array
     {
         $ids = [];
@@ -74,12 +92,18 @@ class ConfigSettingsProvider implements SettingsProvider
         return array_values(array_intersect($this->enabledStoreIds(), $ids));
     }
 
+    /**
+     * @inheritdoc
+     */
     public function storeName(int $storeId): string
     {
         $store = $this->storeManager->getStore($storeId);
         return $store->getName() . ' (' . $store->getCode() . ')';
     }
 
+    /**
+     * @inheritdoc
+     */
     public function storeIdByCode(string $code): ?int
     {
         foreach ($this->storeManager->getStores(false) as $store) {
@@ -90,12 +114,22 @@ class ConfigSettingsProvider implements SettingsProvider
         return null;
     }
 
+    /**
+     * Store value.
+     *
+     * @param string $path
+     * @param int $storeId
+     * @return mixed
+     */
     private function storeValue(string $path, int $storeId): mixed
     {
         return $this->config->getValue($path, ScopeInterface::SCOPE_STORE, $storeId);
     }
 
     /**
+     * Lines.
+     *
+     * @param string $value
      * @return list<string>
      */
     private function lines(string $value): array

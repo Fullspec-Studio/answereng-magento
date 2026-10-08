@@ -15,43 +15,97 @@ class EngineClient
     private const WRITE_TIMEOUT = 30;
     private const READ_TIMEOUT = 15;
 
+    /**
+     * Constructor.
+     *
+     * @param Transport $transport
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         private readonly Transport $transport,
         private readonly LoggerInterface $logger
     ) {
     }
 
+    /**
+     * Post catalog.
+     *
+     * @param Connection $c
+     * @param string $json
+     * @return EngineResult
+     */
     public function postCatalog(Connection $c, string $json): EngineResult
     {
         return $this->once('POST', $c, '/catalog', $json, self::WRITE_TIMEOUT);
     }
 
+    /**
+     * Clear catalog.
+     *
+     * @param Connection $c
+     * @param string $storeKey
+     * @return EngineResult
+     */
     public function clearCatalog(Connection $c, string $storeKey): EngineResult
     {
         return $this->once('DELETE', $c, '/stores/' . rawurlencode($storeKey) . '/catalog', null, self::WRITE_TIMEOUT);
     }
 
+    /**
+     * Delete store.
+     *
+     * @param Connection $c
+     * @param string $storeKey
+     * @return EngineResult
+     */
     public function deleteStore(Connection $c, string $storeKey): EngineResult
     {
         $body = json_encode(['confirm_store_key' => $storeKey], JSON_THROW_ON_ERROR);
         return $this->once('DELETE', $c, '/stores/' . rawurlencode($storeKey), $body, self::WRITE_TIMEOUT);
     }
 
+    /**
+     * Restore store.
+     *
+     * @param Connection $c
+     * @param string $storeKey
+     * @return EngineResult
+     */
     public function restoreStore(Connection $c, string $storeKey): EngineResult
     {
         return $this->once('POST', $c, '/stores/' . rawurlencode($storeKey) . '/restore', null, self::WRITE_TIMEOUT);
     }
 
+    /**
+     * List stores.
+     *
+     * @param Connection $c
+     * @return EngineResult
+     */
     public function listStores(Connection $c): EngineResult
     {
         return $this->read($c, '/stores');
     }
 
+    /**
+     * Summary.
+     *
+     * @param Connection $c
+     * @param string $storeKey
+     * @return EngineResult
+     */
     public function summary(Connection $c, string $storeKey): EngineResult
     {
         return $this->read($c, '/stores/' . rawurlencode($storeKey) . '/summary');
     }
 
+    /**
+     * A GET, retried once on a transient failure.
+     *
+     * @param Connection $c
+     * @param string $path
+     * @return EngineResult
+     */
     private function read(Connection $c, string $path): EngineResult
     {
         $first = $this->once('GET', $c, $path, null, self::READ_TIMEOUT);
@@ -61,6 +115,16 @@ class EngineClient
         return $this->once('GET', $c, $path, null, self::READ_TIMEOUT);
     }
 
+    /**
+     * One request; transport failures come back as an EngineResult.
+     *
+     * @param string $method
+     * @param Connection $c
+     * @param string $path
+     * @param string|null $body
+     * @param int $timeout
+     * @return EngineResult
+     */
     private function once(string $method, Connection $c, string $path, ?string $body, int $timeout): EngineResult
     {
         $headers = ['x-api-key' => $c->apiKey, 'Accept' => 'application/json'];

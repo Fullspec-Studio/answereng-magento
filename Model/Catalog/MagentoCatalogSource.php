@@ -31,6 +31,19 @@ class MagentoCatalogSource implements CatalogSource
     /** @var list<string>|null */
     private ?array $visibleCodes = null;
 
+    /**
+     * Constructor.
+     *
+     * @param ProductCollectionFactory $products
+     * @param CategoryCollectionFactory $categories
+     * @param AttributeCollectionFactory $attributes
+     * @param Visibility $visibility
+     * @param StoreManagerInterface $storeManager
+     * @param ResourceConnection $resource
+     * @param Emulation $emulation
+     * @param PriceTableResolver $priceTables
+     * @param DimensionFactory $dimensions
+     */
     public function __construct(
         private readonly ProductCollectionFactory $products,
         private readonly CategoryCollectionFactory $categories,
@@ -44,6 +57,9 @@ class MagentoCatalogSource implements CatalogSource
     ) {
     }
 
+    /**
+     * @inheritdoc
+     */
     public function eligibleIds(int $storeId): array
     {
         $collection = $this->products->create();
@@ -54,6 +70,9 @@ class MagentoCatalogSource implements CatalogSource
         return array_map('intval', $collection->getAllIds());
     }
 
+    /**
+     * @inheritdoc
+     */
     public function loadChunk(int $storeId, array $ids): array
     {
         $this->emulation->startEnvironmentEmulation($storeId, Area::AREA_FRONTEND, true);
@@ -65,6 +84,8 @@ class MagentoCatalogSource implements CatalogSource
     }
 
     /**
+     * Load emulated.
+     *
      * @param int $storeId
      * @param list<int> $ids
      * @return list<ProductRecord>
@@ -142,6 +163,8 @@ class MagentoCatalogSource implements CatalogSource
     }
 
     /**
+     * Map labels.
+     *
      * @param array<string,string> $map
      * @param mixed $raw
      * @param string $input
@@ -164,6 +187,8 @@ class MagentoCatalogSource implements CatalogSource
     }
 
     /**
+     * Visible codes.
+     *
      * @return list<string>
      */
     private function visibleCodes(): array
@@ -179,8 +204,12 @@ class MagentoCatalogSource implements CatalogSource
     }
 
     /**
+     * Price table.
+     *
      * Price index table for the website / NOT LOGGED IN pair; in dimension
      * mode the rows live in per-dimension tables, not the base table.
+     *
+     * @param int $websiteId
      */
     private function priceTable(int $websiteId): string
     {
@@ -194,6 +223,8 @@ class MagentoCatalogSource implements CatalogSource
     }
 
     /**
+     * Prices.
+     *
      * @param int $websiteId
      * @param list<int> $ids
      * @return array<int,float>
@@ -216,6 +247,10 @@ class MagentoCatalogSource implements CatalogSource
     }
 
     /**
+     * Category keys.
+     *
+     * @param int $storeId
+     * @param int $rootId
      * @param array<\Magento\Framework\DataObject> $products
      * @return array<int,string> product id => category url_key
      */

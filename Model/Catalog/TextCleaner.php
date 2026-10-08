@@ -5,6 +5,12 @@ namespace Fullspec\AnswerEng\Model\Catalog;
 
 class TextCleaner
 {
+    /**
+     * Plain.
+     *
+     * @param string $html
+     * @return string
+     */
     public static function plain(string $html): string
     {
         $text = preg_replace('/<(br|\/p|\/div|\/li|\/h[1-6])\b[^>]*>/i', ' ', $html) ?? $html;

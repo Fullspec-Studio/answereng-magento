@@ -16,6 +16,13 @@ class SyncResult
     public const SUPERSEDED = 'superseded';
     public const FAILED = 'failed';
 
+    /**
+     * Constructor.
+     *
+     * @param string $status
+     * @param string $message
+     * @param \DateTimeImmutable|null $until
+     */
     public function __construct(
         public readonly string $status,
         public readonly string $message,
@@ -23,6 +30,11 @@ class SyncResult
     ) {
     }
 
+    /**
+     * Is error.
+     *
+     * @return bool
+     */
     public function isError(): bool
     {
         return in_array(

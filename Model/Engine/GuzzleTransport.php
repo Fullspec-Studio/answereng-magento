@@ -8,10 +8,18 @@ use GuzzleHttp\ClientInterface;
 /** Guzzle ships with Magento 2.4 and supports DELETE with a body. */
 class GuzzleTransport implements Transport
 {
+    /**
+     * Constructor.
+     *
+     * @param ClientInterface $client
+     */
     public function __construct(private readonly ClientInterface $client)
     {
     }
 
+    /**
+     * @inheritdoc
+     */
     public function send(string $method, string $url, array $headers, ?string $body, int $timeoutSeconds): HttpResponse
     {
         try {

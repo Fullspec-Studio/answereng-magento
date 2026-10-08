@@ -26,6 +26,19 @@ use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
  */
 class RemoteStoreActions
 {
+    /**
+     * Constructor.
+     *
+     * @param SettingsProvider $settings
+     * @param SyncStateRepository $state
+     * @param SyncLog $log
+     * @param EngineClient $engine
+     * @param Classifier $classifier
+     * @param RemoteStoreRegistry $registry
+     * @param RoleResolver $roles
+     * @param ConfigDisabler $disabler
+     * @param Clock $clock
+     */
     public function __construct(
         private readonly SettingsProvider $settings,
         private readonly SyncStateRepository $state,
@@ -39,6 +52,12 @@ class RemoteStoreActions
     ) {
     }
 
+    /**
+     * Test connection.
+     *
+     * @param int $storeId
+     * @return ConnectionReport
+     */
     public function testConnection(int $storeId): ConnectionReport
     {
         $s = $this->settings->forStore($storeId);
@@ -81,6 +100,13 @@ class RemoteStoreActions
         );
     }
 
+    /**
+     * Clear.
+     *
+     * @param int $storeId
+     * @param string $adminUser
+     * @return ActionResult
+     */
     public function clear(int $storeId, string $adminUser): ActionResult
     {
         $none = new ActionResult(false, (string) __('This store view has no current AnswerEng store to clear.'));
@@ -117,6 +143,16 @@ class RemoteStoreActions
         return new ActionResult(false, $this->refusal($r, $rs->storeKey));
     }
 
+    /**
+     * Delete.
+     *
+     * @param int $storeId
+     * @param int $identityId
+     * @param string $typedKey
+     * @param bool $acknowledged
+     * @param string $adminUser
+     * @return ActionResult
+     */
     public function delete(int $storeId, int $identityId, string $typedKey, bool $acknowledged, string $adminUser): ActionResult
     {
         $rs = $this->identityForView($identityId, $storeId);
@@ -183,6 +219,14 @@ class RemoteStoreActions
         return new ActionResult(false, $this->refusal($r, $rs->storeKey));
     }
 
+    /**
+     * Cancel.
+     *
+     * @param int $storeId
+     * @param int $identityId
+     * @param string $adminUser
+     * @return ActionResult
+     */
     public function cancel(int $storeId, int $identityId, string $adminUser): ActionResult
     {
         $rs = $this->identityForView($identityId, $storeId);
@@ -211,6 +255,14 @@ class RemoteStoreActions
         return new ActionResult(false, $this->refusal($r, $rs->storeKey));
     }
 
+    /**
+     * Forget.
+     *
+     * @param int $storeId
+     * @param int $identityId
+     * @param string $adminUser
+     * @return ActionResult
+     */
     public function forget(int $storeId, int $identityId, string $adminUser): ActionResult
     {
         $rs = $this->identityForView($identityId, $storeId);
@@ -230,6 +282,7 @@ class RemoteStoreActions
     /**
      * Reconcile remote statuses for identities reachable through the CURRENT connection.
      *
+     * @param int $storeId
      * @return list<string>|null the workspace's store keys read from GET /stores, or null when no call was made
      *                           (no key, no identities) or it failed
      */
@@ -277,6 +330,7 @@ class RemoteStoreActions
     /**
      * The workspace's store keys (GET /stores), or null without a key or on failure.
      *
+     * @param int $storeId
      * @return list<string>|null
      */
     public function existingStoreKeys(int $storeId): ?array
@@ -293,6 +347,13 @@ class RemoteStoreActions
         return $this->storeKeys($r);
     }
 
+    /**
+     * Guard.
+     *
+     * @param RemoteStore $rs
+     * @param Settings $s
+     * @return string|null
+     */
     private function guard(RemoteStore $rs, Settings $s): ?string
     {
         $mismatch = (string) __('"%1" was synced through a different AnswerEng connection (engine %2, account %3). '
@@ -315,10 +376,15 @@ class RemoteStoreActions
     }
 
     /**
-     * Refuses while another enabled view targets the store. Decided from settings, not from the per-view
-     * account cache (which lags an API-key change until each view next talks to the engine): it always runs
-     * after guard() proved the configured engine URL and the live account match the identity, and the
-     * engine URL and API key are default-scope, so every view with the same store key targets this store.
+     * Refuses while another enabled view targets the store.
+     *
+     * Decided from settings, not from the per-view account cache (which lags an API-key change until each
+     * view next talks to the engine): it always runs after guard() proved the configured engine URL and the
+     * live account match the identity, and the engine URL and API key are default-scope, so every view with
+     * the same store key targets this store.
+     *
+     * @param RemoteStore $rs
+     * @param int $storeId
      */
     private function crossView(RemoteStore $rs, int $storeId): ?string
     {
@@ -332,7 +398,10 @@ class RemoteStoreActions
 
     /**
      * The store is active again: enabled views paused store_pending_deletion on it resume syncing.
+     *
      * Disabled views stay disabled (Cancel never re-enables a view).
+     *
+     * @param string $storeKey
      */
     private function resumeAfterCancel(string $storeKey): void
     {
@@ -344,6 +413,9 @@ class RemoteStoreActions
     }
 
     /**
+     * Enabled views using key.
+     *
+     * @param string $storeKey
      * @return list<int> enabled store views whose configured store key is $storeKey
      */
     private function enabledViewsUsingKey(string $storeKey): array
@@ -356,6 +428,9 @@ class RemoteStoreActions
 
     /**
      * An identity linked to the view under its configured store key, preferring the configured engine URL.
+     *
+     * @param int $storeId
+     * @param Settings $s
      */
     private function identityForKey(int $storeId, Settings $s): ?RemoteStore
     {
@@ -372,12 +447,26 @@ class RemoteStoreActions
         return $found;
     }
 
+    /**
+     * Identity for view.
+     *
+     * @param int $identityId
+     * @param int $storeId
+     * @return RemoteStore|null
+     */
     private function identityForView(int $identityId, int $storeId): ?RemoteStore
     {
         $rs = $this->registry->get($identityId);
         return ($rs !== null && in_array($storeId, $this->registry->viewsOf($identityId), true)) ? $rs : null;
     }
 
+    /**
+     * Note account.
+     *
+     * @param Settings $s
+     * @param EngineResult $r
+     * @return void
+     */
     private function noteAccount(Settings $s, EngineResult $r): void
     {
         if ($r->account !== null) {
@@ -386,6 +475,9 @@ class RemoteStoreActions
     }
 
     /**
+     * Store keys.
+     *
+     * @param EngineResult $r
      * @return list<string>
      */
     private function storeKeys(EngineResult $r): array
@@ -399,11 +491,23 @@ class RemoteStoreActions
         return $keys;
     }
 
+    /**
+     * Purge after.
+     *
+     * @param EngineResult $r
+     * @return \DateTimeImmutable|null
+     */
     private function purgeAfter(EngineResult $r): ?\DateTimeImmutable
     {
         return $this->parseUtc($r->purgeAfter());
     }
 
+    /**
+     * Parse utc.
+     *
+     * @param mixed $value
+     * @return \DateTimeImmutable|null
+     */
     private function parseUtc(mixed $value): ?\DateTimeImmutable
     {
         if (!is_string($value) || $value === '') {
@@ -416,11 +520,24 @@ class RemoteStoreActions
         }
     }
 
+    /**
+     * Is unknown store.
+     *
+     * @param EngineResult $r
+     * @return bool
+     */
     private function isUnknownStore(EngineResult $r): bool
     {
         return $r->status === 404 && $r->code() === 'unknown_store';
     }
 
+    /**
+     * Refusal.
+     *
+     * @param EngineResult $r
+     * @param string $storeKey
+     * @return string
+     */
     private function refusal(EngineResult $r, string $storeKey = ''): string
     {
         return match ($r->code()) {

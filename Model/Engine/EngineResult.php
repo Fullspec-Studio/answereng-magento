@@ -6,7 +6,13 @@ namespace Fullspec\AnswerEng\Model\Engine;
 class EngineResult
 {
     /**
+     * Constructor.
+     *
+     * @param int|null $status
      * @param array<mixed>|null $json decoded body when it is a JSON object/array
+     * @param string|null $account
+     * @param int|null $retryAfter
+     * @param string|null $transportError
      */
     public function __construct(
         public readonly ?int $status,
@@ -17,6 +23,12 @@ class EngineResult
     ) {
     }
 
+    /**
+     * From response.
+     *
+     * @param HttpResponse $r
+     * @return self
+     */
     public static function fromResponse(HttpResponse $r): self
     {
         $json = null;
@@ -38,28 +50,54 @@ class EngineResult
         );
     }
 
+    /**
+     * Transport failure.
+     *
+     * @param string $message
+     * @return self
+     */
     public static function transportFailure(string $message): self
     {
         return new self(null, null, null, null, $message);
     }
 
+    /**
+     * Is success.
+     *
+     * @return bool
+     */
     public function isSuccess(): bool
     {
         return $this->status !== null && $this->status >= 200 && $this->status < 300;
     }
 
+    /**
+     * The engine's error `code` from the body, if any.
+     *
+     * @return string|null
+     */
     public function code(): ?string
     {
         $code = $this->json['code'] ?? null;
         return is_string($code) ? $code : null;
     }
 
+    /**
+     * Limit.
+     *
+     * @return int|null
+     */
     public function limit(): ?int
     {
         $limit = $this->json['limit'] ?? null;
         return is_int($limit) ? $limit : null;
     }
 
+    /**
+     * Purge after.
+     *
+     * @return string|null
+     */
     public function purgeAfter(): ?string
     {
         $value = $this->json['purge_after'] ?? null;

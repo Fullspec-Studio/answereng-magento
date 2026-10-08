@@ -11,12 +11,21 @@ use Psr\Log\LoggerInterface;
 /** The product-website links are gone after delete; capture them first. */
 class ProductDeleteBefore implements ObserverInterface
 {
+    /**
+     * Constructor.
+     *
+     * @param ProductResource $resource
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         private readonly ProductResource $resource,
         private readonly LoggerInterface $logger
     ) {
     }
 
+    /**
+     * @inheritdoc
+     */
     public function execute(Observer $observer): void
     {
         try {

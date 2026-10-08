@@ -5,6 +5,16 @@ namespace Fullspec\AnswerEng\Model\Sync;
 
 class Outcome
 {
+    /**
+     * Constructor.
+     *
+     * @param OutcomeKind $kind
+     * @param string|null $reason
+     * @param string $detail
+     * @param int|null $retryAfterSeconds
+     * @param string|null $purgeAfter
+     * @param int|null $limit
+     */
     public function __construct(
         public readonly OutcomeKind $kind,
         public readonly ?string $reason,

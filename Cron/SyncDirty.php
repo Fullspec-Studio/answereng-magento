@@ -12,6 +12,15 @@ use Psr\Log\LoggerInterface;
 /** Every 5 minutes: views dirty and quiet for 5 minutes, plus due retries (spec §6). */
 class SyncDirty
 {
+    /**
+     * Constructor.
+     *
+     * @param SettingsProvider $settings
+     * @param SyncStateRepository $state
+     * @param SyncRunner $runner
+     * @param Clock $clock
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         private readonly SettingsProvider $settings,
         private readonly SyncStateRepository $state,
@@ -21,6 +30,11 @@ class SyncDirty
     ) {
     }
 
+    /**
+     * Execute.
+     *
+     * @return void
+     */
     public function execute(): void
     {
         foreach ($this->state->selectForDebounce($this->settings->enabledStoreIds(), $this->clock->now()) as $storeId) {

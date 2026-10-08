@@ -13,6 +13,17 @@ class SummaryView
     public const NO_RUN = 'no_run';
     public const PENDING_DELETION = 'pending_deletion';
 
+    /**
+     * Constructor.
+     *
+     * @param string $state
+     * @param string $dashboardUrl
+     * @param float|null $rate
+     * @param float|null $low
+     * @param float|null $high
+     * @param string|null $runStartedAt
+     * @param \DateTimeImmutable|null $fetchedAt
+     */
     public function __construct(
         public readonly string $state,
         public readonly string $dashboardUrl,

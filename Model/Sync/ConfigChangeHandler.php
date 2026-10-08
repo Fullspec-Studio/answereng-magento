@@ -18,6 +18,14 @@ use Fullspec\AnswerEng\Model\Support\Clock;
  */
 class ConfigChangeHandler
 {
+    /**
+     * Constructor.
+     *
+     * @param SettingsProvider $settings
+     * @param SyncStateRepository $state
+     * @param Clock $clock
+     * @param KeyValueCache $cache
+     */
     public function __construct(
         private readonly SettingsProvider $settings,
         private readonly SyncStateRepository $state,
@@ -27,6 +35,8 @@ class ConfigChangeHandler
     }
 
     /**
+     * Handle.
+     *
      * @return list<int>
      */
     public function handle(): array
@@ -44,8 +54,13 @@ class ConfigChangeHandler
     }
 
     /**
+     * Drop stale summary.
+     *
      * Cache entry and snapshot are always written together under the same fingerprint, so the stored one
      * names the only live cache entry.
+     *
+     * @param int $storeId
+     * @param string $fingerprint
      */
     private function dropStaleSummary(int $storeId, string $fingerprint): void
     {

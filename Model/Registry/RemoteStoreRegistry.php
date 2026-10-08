@@ -13,20 +13,45 @@ use Fullspec\AnswerEng\Model\Support\Ts;
  */
 class RemoteStoreRegistry
 {
+    /**
+     * Constructor.
+     *
+     * @param SqlExecutor $db
+     */
     public function __construct(private readonly SqlExecutor $db)
     {
     }
 
+    /**
+     * Stores.
+     *
+     * @return string
+     */
     private function stores(): string
     {
         return $this->db->table('answereng_remote_store');
     }
 
+    /**
+     * Links.
+     *
+     * @return string
+     */
     private function links(): string
     {
         return $this->db->table('answereng_remote_store_view');
     }
 
+    /**
+     * Record push.
+     *
+     * @param string $engineUrl
+     * @param string $accountId
+     * @param string $storeKey
+     * @param int $storeId
+     * @param \DateTimeImmutable $now
+     * @return int
+     */
     public function recordPush(string $engineUrl, string $accountId, string $storeKey, int $storeId, \DateTimeImmutable $now): int
     {
         // purge_after is assigned before remote_status: it must read the old status.
@@ -48,7 +73,12 @@ class RemoteStoreRegistry
         return $id;
     }
 
-    /** @return list<RemoteStore> newest link first */
+    /**
+     * For view.
+     *
+     * @param int $storeId
+     * @return list<RemoteStore> newest link first
+     */
     public function forView(int $storeId): array
     {
         $rows = $this->db->fetchAll(
@@ -60,6 +90,12 @@ class RemoteStoreRegistry
         return array_map([$this, 'row'], $rows);
     }
 
+    /**
+     * The identity with this id, or null.
+     *
+     * @param int $id
+     * @return RemoteStore|null
+     */
     public function get(int $id): ?RemoteStore
     {
         $row = $this->db->fetchRow(
@@ -69,7 +105,12 @@ class RemoteStoreRegistry
         return $row === null ? null : $this->row($row);
     }
 
-    /** @return list<int> */
+    /**
+     * Views of.
+     *
+     * @param int $id
+     * @return list<int>
+     */
     public function viewsOf(int $id): array
     {
         return array_map(static fn (array $r) => (int) $r['store_id'], $this->db->fetchAll(
@@ -78,6 +119,14 @@ class RemoteStoreRegistry
         ));
     }
 
+    /**
+     * Set status.
+     *
+     * @param int $id
+     * @param string $status
+     * @param \DateTimeImmutable|null $purgeAfter
+     * @return void
+     */
     public function setStatus(int $id, string $status, ?\DateTimeImmutable $purgeAfter): void
     {
         $this->db->execute(
@@ -86,7 +135,12 @@ class RemoteStoreRegistry
         );
     }
 
-    /** Local only: drops this view's link, and the identity with its last link. */
+    /**
+     * Local only: drops this view's link, and the identity with its last link.
+     *
+     * @param int $id
+     * @param int $storeId
+     */
     public function forget(int $id, int $storeId): void
     {
         $this->db->execute("DELETE FROM {$this->links()} WHERE remote_store_id = ? AND store_id = ?", [$id, $storeId]);
@@ -97,7 +151,11 @@ class RemoteStoreRegistry
         );
     }
 
-    /** @param array<string,mixed> $row */
+    /**
+     * Hydrate a registry row.
+     *
+     * @param array<string,mixed> $row
+     */
     private function row(array $row): RemoteStore
     {
         return new RemoteStore(

@@ -16,6 +16,20 @@ use Psr\Log\LoggerInterface;
 /** Everything status.phtml renders, as plain arrays/value objects. */
 class PanelViewModel
 {
+    /**
+     * Constructor.
+     *
+     * @param SettingsProvider $settings
+     * @param SyncStateRepository $state
+     * @param SyncLog $log
+     * @param SummaryProvider $summaries
+     * @param RemoteStoreActions $actions
+     * @param RemoteStoreRegistry $registry
+     * @param RoleResolver $roles
+     * @param AuthorizationInterface $authorization
+     * @param UrlInterface $url
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         private readonly SettingsProvider $settings,
         private readonly SyncStateRepository $state,
@@ -33,6 +47,7 @@ class PanelViewModel
     /**
      * One row per enabled view.
      *
+     * @param int|null $websiteId
      * @return list<array<string,mixed>>
      */
     public function forDefault(?int $websiteId = null): array
@@ -61,6 +76,9 @@ class PanelViewModel
     }
 
     /**
+     * For view.
+     *
+     * @param int $storeId
      * @return array<string,mixed>
      */
     public function forView(int $storeId): array
@@ -138,6 +156,13 @@ class PanelViewModel
      * latest sync-log entry with that outcome, which holds only the sanitized ErrorDetail string.
      */
     /**
+     * Message.
+     *
+     * @param int $storeId
+     * @param string $state
+     * @param string|null $reason
+     * @param string|null $retryReason
+     * @param string|null $purgeAfter
      * @param list<string> $existingKeys
      */
     private function message(

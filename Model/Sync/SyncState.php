@@ -7,6 +7,28 @@ use Fullspec\AnswerEng\Model\Support\Ts;
 
 class SyncState
 {
+    /**
+     * Constructor.
+     *
+     * @param int $storeId
+     * @param bool $dirty
+     * @param \DateTimeImmutable|null $lastChangeAt
+     * @param string $state
+     * @param string|null $reason
+     * @param string|null $retryReason
+     * @param int $attempts
+     * @param \DateTimeImmutable|null $nextAttemptAt
+     * @param int $configRevision
+     * @param string|null $settingsHash
+     * @param \DateTimeImmutable|null $lastSyncAt
+     * @param int|null $productCount
+     * @param string|null $syncedStoreKey
+     * @param string|null $accountId
+     * @param string|null $accountKeyHash
+     * @param string|null $snapshotJson
+     * @param string|null $snapshotFingerprint
+     * @param \DateTimeImmutable|null $snapshotFetchedAt
+     */
     public function __construct(
         public readonly int $storeId,
         public readonly bool $dirty,
@@ -29,7 +51,11 @@ class SyncState
     ) {
     }
 
-    /** @param array<string,mixed> $row */
+    /**
+     * From row.
+     *
+     * @param array<string,mixed> $row
+     */
     public static function fromRow(array $row): self
     {
         $str = static fn (string $k): ?string => $row[$k] === null ? null : (string) $row[$k];

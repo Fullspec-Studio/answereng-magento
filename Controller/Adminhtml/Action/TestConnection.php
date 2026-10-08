@@ -13,11 +13,21 @@ class TestConnection extends AbstractAction
 {
     public const ADMIN_RESOURCE = 'Fullspec_AnswerEng::config';
 
+    /**
+     * Constructor.
+     *
+     * @param Context $context
+     * @param SettingsProvider $settings
+     * @param RemoteStoreActions $actions
+     */
     public function __construct(Context $context, SettingsProvider $settings, private readonly RemoteStoreActions $actions)
     {
         parent::__construct($context, $settings);
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function perform(): Redirect
     {
         $report = $this->actions->testConnection($this->storeId());

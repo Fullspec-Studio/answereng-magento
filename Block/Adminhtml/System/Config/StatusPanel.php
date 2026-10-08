@@ -11,9 +11,17 @@ use Magento\Framework\Data\Form\Element\AbstractElement;
 
 class StatusPanel extends Field
 {
+    /**
+     * @var string
+     */
     protected $_template = 'Fullspec_AnswerEng::status.phtml';
 
     /**
+     * Constructor.
+     *
+     * @param Context $context
+     * @param PanelViewModel $panel
+     * @param SettingsProvider $settings
      * @param array<string,mixed> $data
      */
     public function __construct(
@@ -25,11 +33,19 @@ class StatusPanel extends Field
         parent::__construct($context, $data);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function render(AbstractElement $element)
     {
         return $this->_decorateRowHtml($element, '<td colspan="4">' . $this->toHtml() . '</td>');
     }
 
+    /**
+     * Get store id.
+     *
+     * @return int
+     */
     public function getStoreId(): int
     {
         $id = (int) $this->getRequest()->getParam('store');
@@ -37,6 +53,8 @@ class StatusPanel extends Field
     }
 
     /**
+     * Get panel.
+     *
      * @return array<string,mixed>|list<array<string,mixed>>
      */
     public function getPanel(): array

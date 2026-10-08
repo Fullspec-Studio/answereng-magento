@@ -14,10 +14,26 @@ class SyncLog
 {
     public const KEEP = 20;
 
+    /**
+     * Constructor.
+     *
+     * @param SqlExecutor $db
+     */
     public function __construct(private readonly SqlExecutor $db)
     {
     }
 
+    /**
+     * Append.
+     *
+     * @param int $storeId
+     * @param \DateTimeImmutable $at
+     * @param string $source
+     * @param string $outcome
+     * @param string|null $detail
+     * @param string|null $adminUser
+     * @return void
+     */
     public function append(
         int $storeId,
         \DateTimeImmutable $at,
@@ -42,6 +58,10 @@ class SyncLog
     }
 
     /**
+     * Recent.
+     *
+     * @param int $storeId
+     * @param int $limit
      * @return list<array<string,mixed>>
      */
     public function recent(int $storeId, int $limit = self::KEEP): array

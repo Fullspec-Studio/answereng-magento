@@ -22,6 +22,20 @@ use Psr\Log\LoggerInterface;
  */
 class Syncer implements SyncRunner
 {
+    /**
+     * Constructor.
+     *
+     * @param SettingsProvider $settings
+     * @param SyncStateRepository $state
+     * @param SyncLog $log
+     * @param CatalogBuilder $builder
+     * @param EngineClient $engine
+     * @param Classifier $classifier
+     * @param RemoteStoreRegistry $registry
+     * @param SyncLock $lock
+     * @param Clock $clock
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         private readonly SettingsProvider $settings,
         private readonly SyncStateRepository $state,
@@ -36,6 +50,9 @@ class Syncer implements SyncRunner
     ) {
     }
 
+    /**
+     * @inheritdoc
+     */
     public function sync(int $storeId, string $source, bool $manual = false): SyncResult
     {
         $lockName = 'answereng_sync_' . $storeId;
@@ -50,6 +67,14 @@ class Syncer implements SyncRunner
         }
     }
 
+    /**
+     * The sync itself, under the view's lock.
+     *
+     * @param int $storeId
+     * @param string $source
+     * @param bool $manual
+     * @return SyncResult
+     */
     private function run(int $storeId, string $source, bool $manual): SyncResult
     {
         $revision = $this->state->get($storeId)->configRevision;
@@ -109,6 +134,15 @@ class Syncer implements SyncRunner
         return $this->apply($s, $revision, $startedAt, $this->classifier->classify($result), $export->count, $source, null);
     }
 
+    /**
+     * Clear empty.
+     *
+     * @param Settings $s
+     * @param int $revision
+     * @param \DateTimeImmutable $startedAt
+     * @param string $source
+     * @return SyncResult
+     */
     private function clearEmpty(Settings $s, int $revision, \DateTimeImmutable $startedAt, string $source): SyncResult
     {
         if ($this->state->get($s->storeId)->syncedStoreKey === null) {
@@ -127,6 +161,14 @@ class Syncer implements SyncRunner
         return $this->apply($s, $revision, $startedAt, $this->classifier->classify($result, true), 0, $source, 'catalog_cleared');
     }
 
+    /**
+     * After engine call.
+     *
+     * @param Settings $s
+     * @param EngineResult $result
+     * @param bool $isPush
+     * @return void
+     */
     private function afterEngineCall(Settings $s, EngineResult $result, bool $isPush): void
     {
         if ($result->account === null) {
@@ -141,6 +183,18 @@ class Syncer implements SyncRunner
         }
     }
 
+    /**
+     * Apply.
+     *
+     * @param Settings $s
+     * @param int $revision
+     * @param \DateTimeImmutable $startedAt
+     * @param Outcome $o
+     * @param int $count
+     * @param string $source
+     * @param string|null $successReason
+     * @return SyncResult
+     */
     private function apply(
         Settings $s,
         int $revision,
@@ -195,6 +249,9 @@ class Syncer implements SyncRunner
 
     /**
      * The outcome was discarded because the configuration changed meanwhile (revision guard).
+     *
+     * @param int $storeId
+     * @param string $source
      */
     private function superseded(int $storeId, string $source): SyncResult
     {
@@ -211,6 +268,8 @@ class Syncer implements SyncRunner
 
     /**
      * RETRYING or EXHAUSTED for the state a transient failure just wrote, worded by StateMessage.
+     *
+     * @param int $storeId
      */
     private function transientResult(int $storeId): SyncResult
     {
@@ -221,6 +280,16 @@ class Syncer implements SyncRunner
         );
     }
 
+    /**
+     * Blocked.
+     *
+     * @param int $storeId
+     * @param int $revision
+     * @param string $source
+     * @param string $reason
+     * @param string|null $detail
+     * @return SyncResult
+     */
     private function blocked(int $storeId, int $revision, string $source, string $reason, ?string $detail = null): SyncResult
     {
         if (!$this->state->recordBlocked($storeId, $revision, $reason)) {
@@ -230,6 +299,12 @@ class Syncer implements SyncRunner
         return new SyncResult(SyncResult::BLOCKED, StateMessage::blocked($reason));
     }
 
+    /**
+     * Is duplicate.
+     *
+     * @param Settings $s
+     * @return bool
+     */
     private function isDuplicate(Settings $s): bool
     {
         foreach ($this->settings->enabledStoreIds() as $other) {

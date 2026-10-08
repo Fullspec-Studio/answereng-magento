@@ -17,10 +17,21 @@ class CatalogBuilder
     private const JSON_FLAGS = JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
         | JSON_INVALID_UTF8_SUBSTITUTE;
 
+    /**
+     * Constructor.
+     *
+     * @param CatalogSource $source
+     */
     public function __construct(private readonly CatalogSource $source)
     {
     }
 
+    /**
+     * Build.
+     *
+     * @param Settings $s
+     * @return ExportResult
+     */
     public function build(Settings $s): ExportResult
     {
         $ids = array_values(array_unique(array_map('intval', $this->source->eligibleIds($s->storeId))));
@@ -53,6 +64,9 @@ class CatalogBuilder
     }
 
     /**
+     * One product of the catalog payload, in contract key order.
+     *
+     * @param ProductRecord $r
      * @return array<string,mixed> keys in contract order
      */
     private function map(ProductRecord $r): array

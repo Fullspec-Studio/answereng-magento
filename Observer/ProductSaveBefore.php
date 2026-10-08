@@ -13,12 +13,21 @@ class ProductSaveBefore implements ObserverInterface
 {
     public const PREVIOUS_WEBSITES = '_answereng_previous_website_ids';
 
+    /**
+     * Constructor.
+     *
+     * @param ProductResource $resource
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         private readonly ProductResource $resource,
         private readonly LoggerInterface $logger
     ) {
     }
 
+    /**
+     * @inheritdoc
+     */
     public function execute(Observer $observer): void
     {
         try {

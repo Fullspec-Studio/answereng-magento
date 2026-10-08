@@ -10,12 +10,21 @@ use Psr\Log\LoggerInterface;
 
 class ConfigSaved implements ObserverInterface
 {
+    /**
+     * Constructor.
+     *
+     * @param ConfigChangeHandler $handler
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         private readonly ConfigChangeHandler $handler,
         private readonly LoggerInterface $logger
     ) {
     }
 
+    /**
+     * @inheritdoc
+     */
     public function execute(Observer $observer): void
     {
         try {

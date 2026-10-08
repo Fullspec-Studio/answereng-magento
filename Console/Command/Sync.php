@@ -16,6 +16,13 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Sync extends Command
 {
+    /**
+     * Constructor.
+     *
+     * @param SettingsProvider $settings
+     * @param SyncRunner $runner
+     * @param State $appState
+     */
     public function __construct(
         private readonly SettingsProvider $settings,
         private readonly SyncRunner $runner,
@@ -24,6 +31,9 @@ class Sync extends Command
         parent::__construct();
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function configure(): void
     {
         $this->setName('answereng:sync')
@@ -31,12 +41,16 @@ class Sync extends Command
             ->addOption('store', null, InputOption::VALUE_REQUIRED, 'Store view code (default: every enabled view)');
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         // bin/magento runs without an area; the catalog export's store emulation needs one.
         // Use the cron area so the CLI takes exactly the code path the cron jobs take.
         try {
             $this->appState->setAreaCode(Area::AREA_CRONTAB);
+        // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch -- area already set: keep it
         } catch (LocalizedException) {
             // area already set (e.g. invoked from another command): keep it
         }

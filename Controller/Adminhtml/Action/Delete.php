@@ -12,11 +12,21 @@ class Delete extends AbstractAction
 {
     public const ADMIN_RESOURCE = 'Fullspec_AnswerEng::delete_store';
 
+    /**
+     * Constructor.
+     *
+     * @param Context $context
+     * @param SettingsProvider $settings
+     * @param RemoteStoreActions $actions
+     */
     public function __construct(Context $context, SettingsProvider $settings, private readonly RemoteStoreActions $actions)
     {
         parent::__construct($context, $settings);
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function perform(): Redirect
     {
         $request = $this->getRequest();

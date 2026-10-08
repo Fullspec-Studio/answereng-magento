@@ -19,6 +19,15 @@ class SummaryProvider
     public const CACHE_PREFIX = 'answereng_summary_';
     public const DASHBOARD = 'https://app.answereng.io/stores/';
 
+    /**
+     * Constructor.
+     *
+     * @param SettingsProvider $settings
+     * @param SyncStateRepository $state
+     * @param EngineClient $engine
+     * @param KeyValueCache $cache
+     * @param Clock $clock
+     */
     public function __construct(
         private readonly SettingsProvider $settings,
         private readonly SyncStateRepository $state,
@@ -28,6 +37,12 @@ class SummaryProvider
     ) {
     }
 
+    /**
+     * For view.
+     *
+     * @param int $storeId
+     * @return SummaryView
+     */
     public function forView(int $storeId): SummaryView
     {
         $s = $this->settings->forStore($storeId);
@@ -61,6 +76,15 @@ class SummaryProvider
         return new SummaryView(SummaryView::UNAVAILABLE, $url);
     }
 
+    /**
+     * From json.
+     *
+     * @param string $json
+     * @param string $state
+     * @param string $url
+     * @param \DateTimeImmutable|null $fetchedAt
+     * @return SummaryView
+     */
     private function fromJson(string $json, string $state, string $url, ?\DateTimeImmutable $fetchedAt): SummaryView
     {
         $data = json_decode($json, true) ?: [];

@@ -11,6 +11,13 @@ use Magento\Framework\Escaper;
 /** Field comment for the store key: the warning before it changes (spec §3). */
 class StoreKeyComment implements CommentInterface
 {
+    /**
+     * Constructor.
+     *
+     * @param RequestInterface $request
+     * @param SyncStateRepository $state
+     * @param Escaper $escaper
+     */
     public function __construct(
         private readonly RequestInterface $request,
         private readonly SyncStateRepository $state,
@@ -18,6 +25,9 @@ class StoreKeyComment implements CommentInterface
     ) {
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getCommentText($elementValue)
     {
         $default = (string) __('Leave blank to use this store view\'s domain when you enable it. '

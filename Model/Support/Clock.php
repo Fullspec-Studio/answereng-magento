@@ -5,6 +5,8 @@ namespace Fullspec\AnswerEng\Model\Support;
 
 interface Clock
 {
-    /** Current time in UTC. */
+    /**
+     * Current time in UTC.
+     */
     public function now(): \DateTimeImmutable;
 }

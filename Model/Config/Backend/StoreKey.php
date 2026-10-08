@@ -26,6 +26,18 @@ use Magento\Store\Model\StoreManagerInterface;
 class StoreKey extends Value
 {
     /**
+     * Constructor.
+     *
+     * @param Context $context
+     * @param Registry $registry
+     * @param ScopeConfigInterface $config
+     * @param TypeListInterface $cacheTypeList
+     * @param StoreManagerInterface $storeManager
+     * @param SettingsProvider $settings
+     * @param SyncStateRepository $state
+     * @param ManagerInterface $messages
+     * @param AbstractResource|null $resource
+     * @param AbstractDb|null $resourceCollection
      * @param array<string,mixed> $data
      */
     public function __construct(
@@ -44,6 +56,9 @@ class StoreKey extends Value
         parent::__construct($context, $registry, $config, $cacheTypeList, $resource, $resourceCollection, $data);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function beforeSave()
     {
         $storeId = (int) $this->getScopeId();
@@ -73,6 +88,9 @@ class StoreKey extends Value
         return parent::beforeSave();
     }
 
+    /**
+     * @inheritdoc
+     */
     public function afterSave()
     {
         $synced = $this->state->get((int) $this->getScopeId())->syncedStoreKey;

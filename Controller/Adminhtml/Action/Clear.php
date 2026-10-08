@@ -12,11 +12,21 @@ class Clear extends AbstractAction
 {
     public const ADMIN_RESOURCE = 'Fullspec_AnswerEng::sync';
 
+    /**
+     * Constructor.
+     *
+     * @param Context $context
+     * @param SettingsProvider $settings
+     * @param RemoteStoreActions $actions
+     */
     public function __construct(Context $context, SettingsProvider $settings, private readonly RemoteStoreActions $actions)
     {
         parent::__construct($context, $settings);
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function perform(): Redirect
     {
         return $this->back($this->actions->clear($this->storeId(), $this->adminUser()));

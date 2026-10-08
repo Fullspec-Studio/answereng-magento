@@ -6,7 +6,17 @@ namespace Fullspec\AnswerEng\Model\Catalog;
 /** Raw, store-view-scoped product data from a CatalogSource. */
 class ProductRecord
 {
-    /** @param array<string,string> $attributes attribute code => storefront text */
+    /**
+     * Constructor.
+     *
+     * @param string $sku
+     * @param string $name
+     * @param string $shortDescription
+     * @param string $description
+     * @param float|null $price
+     * @param string $category
+     * @param array<string,string> $attributes attribute code => storefront text
+     */
     public function __construct(
         public readonly string $sku,
         public readonly string $name,

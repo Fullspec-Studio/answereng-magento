@@ -10,12 +10,21 @@ use Psr\Log\LoggerInterface;
 
 class ProductDeleteAfter implements ObserverInterface
 {
+    /**
+     * Constructor.
+     *
+     * @param ChangeTracker $tracker
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         private readonly ChangeTracker $tracker,
         private readonly LoggerInterface $logger
     ) {
     }
 
+    /**
+     * @inheritdoc
+     */
     public function execute(Observer $observer): void
     {
         try {

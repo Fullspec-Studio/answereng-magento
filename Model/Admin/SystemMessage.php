@@ -22,6 +22,8 @@ class SystemMessage implements MessageInterface
     private ?array $rows = null;
 
     /**
+     * Constructor.
+     *
      * @param SettingsProvider $settings
      * @param SyncStateRepository $state
      * @param UrlInterface $url

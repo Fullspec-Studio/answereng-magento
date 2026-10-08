@@ -16,6 +16,12 @@ class ErrorDetail
     private const MAX_ITEM = 200;
     private const MAX_TOTAL = 1000;
 
+    /**
+     * The sanitized, storable detail of an engine result.
+     *
+     * @param EngineResult $r
+     * @return string
+     */
     public static function of(EngineResult $r): string
     {
         if ($r->status === null) {

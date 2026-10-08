@@ -11,12 +11,21 @@ use Psr\Log\LoggerInterface;
 /** Bulk changes (mass attribute/website updates, imports, category saves): mark every enabled view. */
 class MarkAllDirty implements ObserverInterface
 {
+    /**
+     * Constructor.
+     *
+     * @param ChangeTracker $tracker
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         private readonly ChangeTracker $tracker,
         private readonly LoggerInterface $logger
     ) {
     }
 
+    /**
+     * @inheritdoc
+     */
     public function execute(Observer $observer): void
     {
         try {

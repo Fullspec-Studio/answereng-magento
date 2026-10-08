@@ -13,11 +13,20 @@ use Magento\Framework\Controller\Result\Redirect;
 /** POST-only, form-key protected (backend default), ACL via ADMIN_RESOURCE; redirects back to the section. */
 abstract class AbstractAction extends Action implements HttpPostActionInterface
 {
+    /**
+     * Constructor.
+     *
+     * @param Context $context
+     * @param SettingsProvider $settingsProvider
+     */
     public function __construct(Context $context, private readonly SettingsProvider $settingsProvider)
     {
         parent::__construct($context);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function execute()
     {
         if (!in_array($this->requestedStoreId(), $this->settingsProvider->allStoreIds(), true)) {
@@ -30,13 +39,28 @@ abstract class AbstractAction extends Action implements HttpPostActionInterface
         return $this->perform();
     }
 
+    /**
+     * Perform.
+     *
+     * @return Redirect
+     */
     abstract protected function perform(): Redirect;
 
+    /**
+     * Store id.
+     *
+     * @return int
+     */
     protected function storeId(): int
     {
         return $this->requestedStoreId();
     }
 
+    /**
+     * Admin user.
+     *
+     * @return string
+     */
     protected function adminUser(): string
     {
         /** @var \Magento\User\Model\User|null $user */
@@ -44,6 +68,13 @@ abstract class AbstractAction extends Action implements HttpPostActionInterface
         return (string) $user?->getUserName();
     }
 
+    /**
+     * Flash the result and redirect back to the AnswerEng section.
+     *
+     * @param ActionResult $result
+     * @param bool $notice
+     * @return Redirect
+     */
     protected function back(ActionResult $result, bool $notice = false): Redirect
     {
         if (!$result->ok) {
@@ -59,6 +90,11 @@ abstract class AbstractAction extends Action implements HttpPostActionInterface
         );
     }
 
+    /**
+     * Requested store id.
+     *
+     * @return int
+     */
     private function requestedStoreId(): int
     {
         return (int) $this->getRequest()->getParam('store');

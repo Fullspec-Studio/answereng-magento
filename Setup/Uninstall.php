@@ -12,6 +12,9 @@ class Uninstall implements UninstallInterface
     private const TABLES = ['answereng_remote_store_view', 'answereng_remote_store', 'answereng_sync_log',
         'answereng_sync_state'];
 
+    /**
+     * @inheritdoc
+     */
     public function uninstall(SchemaSetupInterface $setup, ModuleContextInterface $context)
     {
         $setup->startSetup();

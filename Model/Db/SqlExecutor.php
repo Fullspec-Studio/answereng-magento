@@ -10,29 +10,52 @@ namespace Fullspec\AnswerEng\Model\Db;
  */
 interface SqlExecutor
 {
-    /** Physical name for a logical table (Magento may add a prefix). */
+    /**
+     * Physical name for a logical table (Magento may add a prefix).
+     *
+     * @param string $name
+     */
     public function table(string $name): string;
 
     /**
+     * Execute.
+     *
+     * @param string $sql
      * @param list<scalar|null> $bind
      * @return int rows changed (MySQL counts changed, not matched)
      */
     public function execute(string $sql, array $bind = []): int;
 
     /**
+     * Fetch all.
+     *
+     * @param string $sql
      * @param list<scalar|null> $bind
      * @return list<array<string,mixed>>
      */
     public function fetchAll(string $sql, array $bind = []): array;
 
     /**
+     * Fetch row.
+     *
+     * @param string $sql
      * @param list<scalar|null> $bind
      * @return array<string,mixed>|null
      */
     public function fetchRow(string $sql, array $bind = []): ?array;
 
-    /** @param list<scalar|null> $bind */
+    /**
+     * Fetch one.
+     *
+     * @param string $sql
+     * @param list<scalar|null> $bind
+     */
     public function fetchOne(string $sql, array $bind = []): mixed;
 
+    /**
+     * Last insert id.
+     *
+     * @return int
+     */
     public function lastInsertId(): int;
 }

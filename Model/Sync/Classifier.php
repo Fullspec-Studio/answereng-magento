@@ -13,6 +13,13 @@ class Classifier
     private const PAUSING_CODES = ['invalid_key', 'store_limit', 'product_limit', 'store_owned_elsewhere',
         'store_pending_deletion', 'validation_failed'];
 
+    /**
+     * Classify.
+     *
+     * @param EngineResult $r
+     * @param bool $isClear
+     * @return Outcome
+     */
     public function classify(EngineResult $r, bool $isClear = false): Outcome
     {
         $detail = ErrorDetail::of($r);

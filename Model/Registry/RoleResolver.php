@@ -13,6 +13,13 @@ use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
  */
 class RoleResolver
 {
+    /**
+     * Constructor.
+     *
+     * @param SettingsProvider $settings
+     * @param SyncStateRepository $state
+     * @param RemoteStoreRegistry $registry
+     */
     public function __construct(
         private readonly SettingsProvider $settings,
         private readonly SyncStateRepository $state,
@@ -20,6 +27,13 @@ class RoleResolver
     ) {
     }
 
+    /**
+     * Is current.
+     *
+     * @param RemoteStore $r
+     * @param int $storeId
+     * @return bool
+     */
     public function isCurrent(RemoteStore $r, int $storeId): bool
     {
         $s = $this->settings->forStore($storeId);
@@ -31,6 +45,12 @@ class RoleResolver
             && $state->accountId === $r->accountId;
     }
 
+    /**
+     * Current for.
+     *
+     * @param int $storeId
+     * @return RemoteStore|null
+     */
     public function currentFor(int $storeId): ?RemoteStore
     {
         foreach ($this->registry->forView($storeId) as $r) {
@@ -43,6 +63,8 @@ class RoleResolver
 
     /**
      * The identity Clear acts on: like currentFor but ignoring the enabled flag (spec §7).
+     *
+     * @param int $storeId
      */
     public function clearTargetFor(int $storeId): ?RemoteStore
     {
@@ -60,7 +82,12 @@ class RoleResolver
         return null;
     }
 
-    /** @return list<int> views for which this identity is current */
+    /**
+     * Active users.
+     *
+     * @param int $identityId
+     * @return list<int> views for which this identity is current
+     */
     public function activeUsers(int $identityId): array
     {
         $identity = $this->registry->get($identityId);
