@@ -1,16 +1,19 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <!-- Dirty marks run after the merchant's save/delete transaction commits (*_commit_after), never inside it:
+         an observer write inside it would lock sync-state rows for the whole transaction, and a deadlock there
+         would roll the product save back. The *_before observers only stash website ids on the same object. -->
     <event name="catalog_product_save_before">
         <observer name="answereng_previous_websites" instance="Fullspec\AnswerEng\Observer\ProductSaveBefore"/>
     </event>
-    <event name="catalog_product_save_after">
+    <event name="catalog_product_save_commit_after">
         <observer name="answereng_mark_dirty" instance="Fullspec\AnswerEng\Observer\ProductSaveAfter"/>
     </event>
     <event name="catalog_product_delete_before">
         <observer name="answereng_previous_websites" instance="Fullspec\AnswerEng\Observer\ProductDeleteBefore"/>
     </event>
-    <event name="catalog_product_delete_after">
+    <event name="catalog_product_delete_commit_after">
         <observer name="answereng_mark_dirty" instance="Fullspec\AnswerEng\Observer\ProductDeleteAfter"/>
     </event>
     <event name="catalog_product_attribute_update_before">
@@ -22,7 +25,7 @@
     <event name="catalog_product_import_finish_before">
         <observer name="answereng_mark_all" instance="Fullspec\AnswerEng\Observer\MarkAllDirty"/>
     </event>
-    <event name="catalog_category_save_after">
+    <event name="catalog_category_save_commit_after">
         <observer name="answereng_mark_all" instance="Fullspec\AnswerEng\Observer\MarkAllDirty"/>
     </event>
 </config>
