@@ -1,0 +1,40 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.1', '8.3']
+    services:
+      mariadb:
+        image: mariadb:10.6
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: answereng_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      ANSWERENG_TEST_DB_DSN: mysql:host=127.0.0.1;port=3306;dbname=answereng_test
+      ANSWERENG_TEST_DB_USER: root
+      ANSWERENG_TEST_DB_PASSWORD: root
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: bcmath, ctype, curl, dom, gd, intl, mbstring, pdo_mysql, soap, sodium, xsl, zip
+          tools: composer:v2
+      - uses: actions/cache@v4
+        with:
+          path: vendor
+          key: vendor-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
+      - run: composer validate --strict
+      - run: composer install --no-interaction --no-progress
+      - run: vendor/bin/phpunit
+      - run: vendor/bin/phpcs
+      - run: vendor/bin/phpstan analyse --no-progress

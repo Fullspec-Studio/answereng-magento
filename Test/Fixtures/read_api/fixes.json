@@ -1,0 +1,27 @@
+[
+  {
+    "fix_id": 118,
+    "kind": "copy",
+    "content": "Waterproof, wide-fit leather hiking boot with a Vibram sole, sized for wide feet.",
+    "status": "suggested",
+    "priority": "high",
+    "reasons": [
+      "The description doesn't mention wide fit.",
+      "Answers for this question favor products that state their fit."
+    ],
+    "prompt_text": "waterproof hiking boots for wide feet",
+    "engine": "perplexity"
+  },
+  {
+    "fix_id": 117,
+    "kind": "attribute",
+    "content": "weight_g: 95",
+    "status": "suggested",
+    "priority": "medium",
+    "reasons": [
+      "The stove's weight isn't in a structured attribute."
+    ],
+    "prompt_text": "lightest camp stove for backpacking",
+    "engine": "bedrock"
+  }
+]
