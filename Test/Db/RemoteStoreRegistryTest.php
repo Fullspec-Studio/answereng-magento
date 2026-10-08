@@ -76,7 +76,7 @@ final class RemoteStoreRegistryTest extends DbTestCase
         $id = $this->pushed(1, 'shop.example.com');
         $this->registry->setStatus($id, 'pending_deletion', $this->now->modify('+7 days'));
         self::assertSame('2026-10-14 12:00:00', $this->registry->get($id)?->purgeAfter?->format('Y-m-d H:i:s'));
-        $this->registry->setStatus($id, 'deleted', null);
+        $this->registry->setStatus($id, 'deleted', $this->now->modify('+7 days'));
         $this->pushed(1, 'shop.example.com');
         self::assertSame(['active', null], [$this->registry->get($id)?->remoteStatus, $this->registry->get($id)?->purgeAfter]);
     }
