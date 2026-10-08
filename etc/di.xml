@@ -11,6 +11,10 @@
                 type="Fullspec\AnswerEng\Model\Config\ConfigSettingsProvider"/>
     <preference for="Fullspec\AnswerEng\Model\Catalog\CatalogSource"
                 type="Fullspec\AnswerEng\Model\Catalog\MagentoCatalogSource"/>
+    <preference for="Fullspec\AnswerEng\Model\Support\SyncLock"
+                type="Fullspec\AnswerEng\Model\Support\MagentoSyncLock"/>
+    <preference for="Fullspec\AnswerEng\Model\Sync\SyncRunner"
+                type="Fullspec\AnswerEng\Model\Sync\Syncer"/>
     <type name="Fullspec\AnswerEng\Model\Engine\GuzzleTransport">
         <arguments>
             <argument name="client" xsi:type="object">GuzzleHttp\Client</argument>
@@ -31,6 +35,11 @@
         </arguments>
     </virtualType>
     <type name="Fullspec\AnswerEng\Model\Engine\EngineClient">
+        <arguments>
+            <argument name="logger" xsi:type="object">Fullspec\AnswerEng\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Fullspec\AnswerEng\Model\Sync\Syncer">
         <arguments>
             <argument name="logger" xsi:type="object">Fullspec\AnswerEng\Logger</argument>
         </arguments>

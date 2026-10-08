@@ -14,6 +14,8 @@ final class FakeTransport implements Transport
     public array $requests = [];
     /** @var list<HttpResponse|TransportException> */
     private array $queue = [];
+    /** Called with each request before its response is returned (e.g. to change config mid-push). */
+    public ?\Closure $onSend = null;
 
     public function enqueue(HttpResponse|TransportException $next): self
     {
@@ -29,6 +31,9 @@ final class FakeTransport implements Transport
 
     public function send(string $method, string $url, array $headers, ?string $body, int $timeoutSeconds): HttpResponse
     {
+        if ($this->onSend !== null) {
+            ($this->onSend)($method, $url);
+        }
         $this->requests[] = ['method' => $method, 'url' => $url, 'headers' => $headers,
             'body' => $body, 'timeout' => $timeoutSeconds];
         if ($this->queue === []) {
