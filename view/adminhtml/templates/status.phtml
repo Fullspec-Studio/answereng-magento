@@ -1,0 +1,150 @@
+<?php
+/**
+ * @var \Fullspec\AnswerEng\Block\Adminhtml\System\Config\StatusPanel $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+$storeId = $block->getStoreId();
+$panel = $block->getPanel();
+$pct = static fn (?float $x): string => $x === null ? '–' : number_format($x * 100, 1) . '%';
+?>
+<div class="answereng-panel" data-mage-init='{"Fullspec_AnswerEng/js/panel-actions": {}}'>
+<?php if ($storeId <= 0): ?>
+    <p><?= $escaper->escapeHtml(__('Choose a store view (scope switcher, top left) to sync, test the connection or manage AnswerEng stores.')) ?></p>
+    <?php if ($panel === []): ?>
+        <p><?= $escaper->escapeHtml(__('No store view is enabled for AnswerEng yet.')) ?></p>
+    <?php else: ?>
+        <table class="data-grid">
+            <thead><tr>
+                <th><?= $escaper->escapeHtml(__('Store view')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Store key')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Status')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Last sync (UTC)')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Products')) ?></th>
+            </tr></thead>
+            <tbody>
+            <?php foreach ($panel as $row): ?>
+                <tr>
+                    <td><?= $escaper->escapeHtml($row['name']) ?></td>
+                    <td><?= $escaper->escapeHtml($row['storeKey']) ?></td>
+                    <td><?= $escaper->escapeHtml($row['state'] . ($row['reason'] ? ' (' . $row['reason'] . ')' : '')) ?></td>
+                    <td><?= $escaper->escapeHtml($row['lastSyncAt'] ?? '–') ?></td>
+                    <td><?= $escaper->escapeHtml((string) ($row['productCount'] ?? '–')) ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
+<?php else: ?>
+    <?php $summary = $panel['summary']; ?>
+    <p>
+        <strong><?= $escaper->escapeHtml(__('Sync status:')) ?></strong>
+        <?= $escaper->escapeHtml($panel['state'] . ($panel['reason'] ? ' (' . $panel['reason'] . ')' : '')) ?>
+        · <?= $escaper->escapeHtml(__('Last sync (UTC): %1', $panel['lastSyncAt'] ?? '–')) ?>
+        · <?= $escaper->escapeHtml(__('Products: %1', (string) ($panel['productCount'] ?? '–'))) ?>
+    </p>
+    <p>
+        <strong><?= $escaper->escapeHtml(__('AI visibility:')) ?></strong>
+        <?php if (in_array($summary->state, ['fresh', 'stale'], true) && $summary->rate !== null): ?>
+            <?= $escaper->escapeHtml($pct($summary->rate) . ' (' . $pct($summary->low) . '–' . $pct($summary->high) . ')') ?>
+            <?php if ($summary->state === 'stale'): ?>
+                <em><?= $escaper->escapeHtml(__('Stale — last fetched %1 UTC', $summary->fetchedAt?->format('Y-m-d H:i') ?? '')) ?></em>
+            <?php endif; ?>
+        <?php else: ?>
+            <?= $escaper->escapeHtml(match ($summary->state) {
+                'not_synced' => __('Not synced yet.'),
+                'no_run' => __('Connected — waiting for the first analysis run.'),
+                'pending_deletion' => __('This store is scheduled for deletion.'),
+                'disabled' => __('Enable this store view and enter an API key to see results.'),
+                default => __('Results unavailable — engine unreachable.'),
+            }) ?>
+        <?php endif; ?>
+        <a href="<?= $escaper->escapeUrl($summary->dashboardUrl) ?>" target="_blank" rel="noopener">
+            <?= $escaper->escapeHtml(__('Open full results in AnswerEng →')) ?></a>
+    </p>
+    <p>
+        <?php if ($panel['canSync']): ?>
+            <button type="button" class="action-secondary"
+                    data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['syncNow']) ?>"
+                    data-fields='<?= $escaper->escapeHtmlAttr(json_encode(['store' => $storeId])) ?>'>
+                <?= $escaper->escapeHtml(__('Sync now')) ?></button>
+        <?php endif; ?>
+        <button type="button" class="action-secondary"
+                data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['testConnection']) ?>"
+                data-fields='<?= $escaper->escapeHtmlAttr(json_encode(['store' => $storeId])) ?>'>
+            <?= $escaper->escapeHtml(__('Test connection')) ?></button>
+        <?php if ($panel['canSync'] && $panel['canClear']): ?>
+            <button type="button" class="action-secondary"
+                    data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['clear']) ?>"
+                    data-confirm-text="<?= $escaper->escapeHtmlAttr(__('Remove this store\'s products from AnswerEng and pause weekly analysis? History and results are kept, and the store still counts toward your plan. The next sync restores the catalog.')) ?>"
+                    data-fields='<?= $escaper->escapeHtmlAttr(json_encode(['store' => $storeId])) ?>'>
+                <?= $escaper->escapeHtml(__('Clear AnswerEng catalog')) ?></button>
+        <?php endif; ?>
+    </p>
+    <?php if ($panel['log'] !== []): ?>
+        <table class="data-grid">
+            <thead><tr>
+                <th><?= $escaper->escapeHtml(__('When (UTC)')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Source')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Outcome')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Detail')) ?></th>
+            </tr></thead>
+            <tbody>
+            <?php foreach ($panel['log'] as $entry): ?>
+                <tr>
+                    <td><?= $escaper->escapeHtml((string) $entry['created_at']) ?></td>
+                    <td><?= $escaper->escapeHtml($entry['source'] . ($entry['admin_user'] ? ' (' . $entry['admin_user'] . ')' : '')) ?></td>
+                    <td><?= $escaper->escapeHtml((string) $entry['outcome']) ?></td>
+                    <td><?= $escaper->escapeHtml((string) ($entry['detail'] ?? '')) ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
+
+    <?php if ($panel['canDelete'] && $panel['identities'] !== []): ?>
+        <details class="answereng-danger-zone">
+            <summary><strong><?= $escaper->escapeHtml(__('Danger zone')) ?></strong></summary>
+            <?php foreach ($panel['identities'] as $identity): ?>
+                <div class="answereng-identity" data-answereng-identity
+                     data-store-key="<?= $escaper->escapeHtmlAttr($identity['storeKey']) ?>">
+                    <p>
+                        <strong><?= $escaper->escapeHtml($identity['storeKey']) ?></strong>
+                        (<?= $escaper->escapeHtml($identity['role']) ?>, <?= $escaper->escapeHtml($identity['status']) ?><?=
+                        $identity['purgeAfter'] ? $escaper->escapeHtml(', ' . __('purge %1 UTC', $identity['purgeAfter'])) : '' ?>)
+                        <?php if ($identity['usedBy'] !== []): ?>
+                            — <?= $escaper->escapeHtml(__('also active for %1', implode(', ', $identity['usedBy']))) ?>
+                        <?php endif; ?>
+                    </p>
+                    <?php $fields = ['store' => $storeId, 'identity_id' => $identity['id']]; ?>
+                    <?php if ($identity['status'] === 'active'): ?>
+                        <p class="message message-error"><?= $escaper->escapeHtml(__(
+                            'Deleting %1 schedules permanent removal of everything AnswerEng holds for this store: its catalog, questions, every analysis run and raw AI answer, diagnoses and drafted fixes, and its dashboard project with its reviewers and invitations. You have 7 days to cancel. After that it cannot be recovered, and the store\'s plan slot is freed. Results already shown in the dashboard will disappear.',
+                            $identity['storeKey']
+                        )) ?></p>
+                        <label><?= $escaper->escapeHtml(__('Type the store key to confirm')) ?>
+                            <input type="text" data-confirm-key autocomplete="off"></label>
+                        <label><input type="checkbox" data-confirm-ack>
+                            <?= $escaper->escapeHtml(__('I understand this cannot be undone after 7 days')) ?></label>
+                        <button type="button" class="action-secondary" disabled data-confirm-delete
+                                data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['delete']) ?>"
+                                data-fields='<?= $escaper->escapeHtmlAttr(json_encode($fields)) ?>'>
+                            <?= $escaper->escapeHtml(__('Delete store from AnswerEng')) ?></button>
+                    <?php elseif ($identity['status'] === 'pending_deletion'): ?>
+                        <button type="button" class="action-secondary"
+                                data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['cancel']) ?>"
+                                data-fields='<?= $escaper->escapeHtmlAttr(json_encode($fields)) ?>'>
+                            <?= $escaper->escapeHtml(__('Cancel deletion')) ?></button>
+                    <?php endif; ?>
+                    <?php if ($identity['role'] === 'previous'): ?>
+                        <button type="button" class="action-secondary"
+                                data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['forget']) ?>"
+                                data-confirm-text="<?= $escaper->escapeHtmlAttr(__('Forget this store here? Nothing changes in AnswerEng: the store and its plan slot stay.')) ?>"
+                                data-fields='<?= $escaper->escapeHtmlAttr(json_encode($fields)) ?>'>
+                            <?= $escaper->escapeHtml(__('Forget')) ?></button>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        </details>
+    <?php endif; ?>
+<?php endif; ?>
+</div>
