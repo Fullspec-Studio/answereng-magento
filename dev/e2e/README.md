@@ -34,6 +34,8 @@ docker compose -f "$MAGENTO_LOCAL/compose.yaml" exec -T phpfpm php var/scripts/p
 |---|---|
 | `create-second-website.php` | Website `second` / view `second_view` (base URL http://127.0.0.1:8894/) with 40 products. |
 | `product.php <sku> [k=v ...]` | Save a product through `ProductRepository` (`websites=1,2`, `status=2`, `name=…`). |
+| `product-delete.php <sku> [sku …]` | Delete products through `ProductRepository` (the delete events). |
+| `category-save.php <categoryId> [name]` | Save a category through `CategoryRepository` (the category save events). |
 | `mass-status.php <storeId> <1\|2> [all\|sku,…]` | `Product\Action::updateAttributes` (the admin mass update). |
 | `import.php <csv> [append\|replace\|delete]` | Product CSV import through the ImportExport `Import` model. |
 | `acl-users.php` | Limited roles: `aesync` / `Sync1234!local` (config + sync), `aeconfig` / `Conf1234!local` (config only). |
