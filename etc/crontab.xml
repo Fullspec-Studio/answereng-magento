@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/crontab.xsd">
+    <group id="default">
+        <job name="answereng_sync_dirty" instance="Fullspec\AnswerEng\Cron\SyncDirty" method="execute">
+            <schedule>*/5 * * * *</schedule>
+        </job>
+        <job name="answereng_reconcile" instance="Fullspec\AnswerEng\Cron\Reconcile" method="execute">
+            <schedule>17 3 * * *</schedule>
+        </job>
+    </group>
+</config>

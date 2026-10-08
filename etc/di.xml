@@ -44,4 +44,11 @@
             <argument name="logger" xsi:type="object">Fullspec\AnswerEng\Logger</argument>
         </arguments>
     </type>
+    <type name="Magento\Framework\Console\CommandListInterface">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="answereng_sync" xsi:type="object">Fullspec\AnswerEng\Console\Command\Sync</item>
+            </argument>
+        </arguments>
+    </type>
 </config>
