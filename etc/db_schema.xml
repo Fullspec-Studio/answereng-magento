@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="answereng_sync_state" resource="default" engine="innodb" comment="AnswerEng per-store-view sync state">
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" comment="Store view ID"/>
+        <column xsi:type="smallint" name="dirty" unsigned="true" nullable="false" default="0" comment="Catalog changed since the last push"/>
+        <column xsi:type="datetime" name="last_change_at" nullable="true" comment="Last catalog change (UTC)"/>
+        <column xsi:type="varchar" name="state" length="16" nullable="false" default="ok" comment="ok|retrying|exhausted|blocked|paused"/>
+        <column xsi:type="varchar" name="reason" length="64" nullable="true" comment="Blocked or paused reason code"/>
+        <column xsi:type="varchar" name="retry_reason" length="16" nullable="true" comment="throttled while honoring Retry-After"/>
+        <column xsi:type="smallint" name="attempts" unsigned="true" nullable="false" default="0" comment="Consecutive transient failures"/>
+        <column xsi:type="datetime" name="next_attempt_at" nullable="true" comment="Earliest retry (UTC)"/>
+        <column xsi:type="int" name="config_revision" unsigned="true" nullable="false" default="1" comment="Bumped by configuration changes"/>
+        <column xsi:type="varchar" name="settings_hash" length="64" nullable="true" comment="Hash of the effective settings"/>
+        <column xsi:type="datetime" name="last_sync_at" nullable="true" comment="Last successful push or clear (UTC)"/>
+        <column xsi:type="int" name="product_count" unsigned="true" nullable="true" comment="Products in the last push"/>
+        <column xsi:type="varchar" name="synced_store_key" length="255" nullable="true" comment="Store key of the last successful push"/>
+        <column xsi:type="varchar" name="account_id" length="64" nullable="true" comment="Account last seen for account_key_hash"/>
+        <column xsi:type="varchar" name="account_key_hash" length="64" nullable="true" comment="sha256 of the API key that account was seen with"/>
+        <column xsi:type="text" name="snapshot_json" nullable="true" comment="Last summary response"/>
+        <column xsi:type="varchar" name="snapshot_fingerprint" length="64" nullable="true" comment="Connection fingerprint of the snapshot"/>
+        <column xsi:type="datetime" name="snapshot_fetched_at" nullable="true" comment="When the snapshot was fetched (UTC)"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="store_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="ANSWERENG_SYNC_STATE_STORE_ID_STORE_STORE_ID"
+                    table="answereng_sync_state" column="store_id" referenceTable="store"
+                    referenceColumn="store_id" onDelete="CASCADE"/>
+    </table>
+    <table name="answereng_sync_log" resource="default" engine="innodb" comment="AnswerEng sync log (last 20 per view)">
+        <column xsi:type="int" name="log_id" unsigned="true" nullable="false" identity="true" comment="Log ID"/>
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" comment="Store view ID"/>
+        <column xsi:type="datetime" name="created_at" nullable="false" comment="When (UTC)"/>
+        <column xsi:type="varchar" name="source" length="32" nullable="false" comment="debounce|reconcile|manual|cli|admin"/>
+        <column xsi:type="varchar" name="outcome" length="32" nullable="false" comment="Outcome label"/>
+        <column xsi:type="varchar" name="detail" length="1000" nullable="true" comment="Sanitized detail"/>
+        <column xsi:type="varchar" name="admin_user" length="64" nullable="true" comment="Admin username for admin actions"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="log_id"/>
+        </constraint>
+        <index referenceId="ANSWERENG_SYNC_LOG_STORE_ID" indexType="btree">
+            <column name="store_id"/>
+        </index>
+        <constraint xsi:type="foreign" referenceId="ANSWERENG_SYNC_LOG_STORE_ID_STORE_STORE_ID"
+                    table="answereng_sync_log" column="store_id" referenceTable="store"
+                    referenceColumn="store_id" onDelete="CASCADE"/>
+    </table>
+    <table name="answereng_remote_store" resource="default" engine="innodb" comment="AnswerEng remote store identities">
+        <column xsi:type="int" name="remote_store_id" unsigned="true" nullable="false" identity="true" comment="Identity ID"/>
+        <column xsi:type="varchar" name="engine_url" length="255" nullable="false" comment="Engine URL used"/>
+        <column xsi:type="varchar" name="account_id" length="64" nullable="false" comment="X-AnswerEng-Account"/>
+        <column xsi:type="varchar" name="store_key" length="255" nullable="false" comment="Remote store key"/>
+        <column xsi:type="varchar" name="remote_status" length="20" nullable="false" default="active" comment="active|pending_deletion|deleted"/>
+        <column xsi:type="datetime" name="purge_after" nullable="true" comment="Purge date while pending (UTC)"/>
+        <column xsi:type="datetime" name="first_synced_at" nullable="false" comment="First successful push (UTC)"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="remote_store_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="ANSWERENG_REMOTE_STORE_IDENTITY">
+            <column name="engine_url"/>
+            <column name="account_id"/>
+            <column name="store_key"/>
+        </constraint>
+    </table>
+    <table name="answereng_remote_store_view" resource="default" engine="innodb" comment="Store views that pushed to a remote store">
+        <column xsi:type="int" name="remote_store_id" unsigned="true" nullable="false" comment="Identity ID"/>
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" comment="Store view ID"/>
+        <column xsi:type="datetime" name="last_synced_at" nullable="false" comment="Last push from this view (UTC)"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="remote_store_id"/>
+            <column name="store_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="ANSWERENG_REMOTE_STORE_VIEW_REMOTE_STORE_ID"
+                    table="answereng_remote_store_view" column="remote_store_id"
+                    referenceTable="answereng_remote_store" referenceColumn="remote_store_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="ANSWERENG_REMOTE_STORE_VIEW_STORE_ID_STORE_STORE_ID"
+                    table="answereng_remote_store_view" column="store_id" referenceTable="store"
+                    referenceColumn="store_id" onDelete="CASCADE"/>
+    </table>
+</schema>

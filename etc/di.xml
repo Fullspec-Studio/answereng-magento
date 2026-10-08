@@ -3,6 +3,8 @@
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <preference for="Fullspec\AnswerEng\Model\Engine\Transport"
                 type="Fullspec\AnswerEng\Model\Engine\GuzzleTransport"/>
+    <preference for="Fullspec\AnswerEng\Model\Db\SqlExecutor"
+                type="Fullspec\AnswerEng\Model\Db\MagentoSqlExecutor"/>
     <type name="Fullspec\AnswerEng\Model\Engine\GuzzleTransport">
         <arguments>
             <argument name="client" xsi:type="object">GuzzleHttp\Client</argument>

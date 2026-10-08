@@ -1,0 +1,26 @@
+{
+    "answereng_sync_state": {
+        "column": {"store_id": true, "dirty": true, "last_change_at": true, "state": true, "reason": true,
+            "retry_reason": true, "attempts": true, "next_attempt_at": true, "config_revision": true,
+            "settings_hash": true, "last_sync_at": true, "product_count": true, "synced_store_key": true,
+            "account_id": true, "account_key_hash": true, "snapshot_json": true,
+            "snapshot_fingerprint": true, "snapshot_fetched_at": true},
+        "constraint": {"PRIMARY": true, "ANSWERENG_SYNC_STATE_STORE_ID_STORE_STORE_ID": true}
+    },
+    "answereng_sync_log": {
+        "column": {"log_id": true, "store_id": true, "created_at": true, "source": true, "outcome": true,
+            "detail": true, "admin_user": true},
+        "index": {"ANSWERENG_SYNC_LOG_STORE_ID": true},
+        "constraint": {"PRIMARY": true, "ANSWERENG_SYNC_LOG_STORE_ID_STORE_STORE_ID": true}
+    },
+    "answereng_remote_store": {
+        "column": {"remote_store_id": true, "engine_url": true, "account_id": true, "store_key": true,
+            "remote_status": true, "purge_after": true, "first_synced_at": true},
+        "constraint": {"PRIMARY": true, "ANSWERENG_REMOTE_STORE_IDENTITY": true}
+    },
+    "answereng_remote_store_view": {
+        "column": {"remote_store_id": true, "store_id": true, "last_synced_at": true},
+        "constraint": {"PRIMARY": true, "ANSWERENG_REMOTE_STORE_VIEW_REMOTE_STORE_ID": true,
+            "ANSWERENG_REMOTE_STORE_VIEW_STORE_ID_STORE_STORE_ID": true}
+    }
+}
