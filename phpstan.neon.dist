@@ -1,5 +1,6 @@
 parameters:
     level: 6
+    phpVersion: 80100
     bootstrapFiles:
         - Test/bootstrap.php
     paths:
