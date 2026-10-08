@@ -169,6 +169,7 @@ class RemoteStoreActions
         $r = $this->engine->restoreStore($s->connection(), $rs->storeKey);
         if ($r->isSuccess()) {
             $this->registry->setStatus($rs->id, 'active', null);
+            $this->resumeAfterCancel($rs->storeKey);
             $this->log->append($storeId, $this->clock->now(), 'admin', 'deletion_cancelled', $rs->storeKey, $adminUser);
             return new ActionResult(true, (string) __('Deletion of "%1" cancelled. Re-enable syncing for this store view '
                 . 'when you are ready.', $rs->storeKey));
@@ -225,6 +226,9 @@ class RemoteStoreActions
                 $pending = in_array($item['status'] ?? 'active', ['pending_deletion', 'purging'], true);
                 $purge = $this->parseUtc($item['purge_after'] ?? null);
                 $this->registry->setStatus($rs->id, $pending ? 'pending_deletion' : 'active', $pending ? $purge : null);
+                if (!$pending && $rs->remoteStatus === 'pending_deletion') {
+                    $this->resumeAfterCancel($rs->storeKey);   // deletion cancelled elsewhere
+                }
             } elseif ($rs->remoteStatus === 'pending_deletion' && $rs->purgeAfter !== null && $rs->purgeAfter <= $now) {
                 $this->registry->setStatus($rs->id, 'deleted', null);
             }
@@ -266,6 +270,16 @@ class RemoteStoreActions
         }
         return (string) __('"%1" is the active AnswerEng store for store view %2. Disable that view or change its '
             . 'store key first.', $rs->storeKey, implode(', ', array_map([$this->settings, 'storeName'], $others)));
+    }
+
+    /**
+     * The store is active again: enabled views paused store_pending_deletion on it resume syncing.
+     * Disabled views stay disabled (Cancel never re-enables a view).
+     */
+    private function resumeAfterCancel(string $storeKey): void
+    {
+        $this->state->resumePaused($this->enabledViewsUsingKey($storeKey), 'store_pending_deletion',
+            $this->clock->now());
     }
 
     /**

@@ -217,6 +217,24 @@ class SyncStateRepository
         return $this->setTerminal($storeId, $revision, self::BLOCKED, $reason);
     }
 
+    /**
+     * Resume views paused for $reason (no revision bump: nothing about the configuration changed). Used
+     * when the condition behind a non-catalog pause is lifted, e.g. a cancelled store deletion.
+     *
+     * @param list<int> $storeIds
+     */
+    public function resumePaused(array $storeIds, string $reason, \DateTimeImmutable $now): void
+    {
+        if ($storeIds === []) {
+            return;
+        }
+        $this->db->execute(
+            "UPDATE {$this->t()} SET state = 'ok', reason = NULL, dirty = 1, last_change_at = ?
+             WHERE store_id IN ({$this->placeholders($storeIds)}) AND state = 'paused' AND reason = ?",
+            [Ts::fmt($now), ...$storeIds, $reason]
+        );
+    }
+
     public function recordAccount(int $storeId, string $accountId, string $apiKeyHash): void
     {
         $this->ensure($storeId);

@@ -256,6 +256,38 @@ final class RemoteStoreActionsTest extends DbTestCase
         self::assertStringContainsString('can no longer be cancelled', $result->message);
     }
 
+    public function testCancelResumesEnabledViewsPausedForThePendingDeletion(): void
+    {
+        $id = $this->pushed(1, 'shop.example.com');
+        $this->pushed(2, 'shop.example.com');
+        $this->settings->put(1, ['enabled' => false, 'storeKey' => 'shop.example.com']);   // its own Delete disabled it
+        $this->settings->put(3, ['storeKey' => 'other.example.com']);
+        foreach ([1, 2, 3] as $v) {
+            $this->state->recordPaused($v, $this->state->get($v)->configRevision, 'store_pending_deletion',
+                $this->clock->now());
+        }
+        $this->registry->setStatus($id, 'pending_deletion', $this->clock->now()->modify('+7 days'));
+        $this->respond(200, []);
+        $this->respond(200, ['status' => 'active']);
+        self::assertTrue($this->actions->cancel(2, $id, 'admin')->ok);
+        $two = $this->state->get(2);
+        self::assertSame(['ok', null, true], [$two->state, $two->reason, $two->dirty]);
+        self::assertSame('paused', $this->state->get(1)->state);   // disabled: untouched, stays disabled
+        self::assertFalse($this->settings->forStore(1)->enabled);
+        self::assertSame('paused', $this->state->get(3)->state);   // another store
+    }
+
+    public function testRefreshResumesWhenTheDeletionWasCancelledElsewhere(): void
+    {
+        $id = $this->pushed(1, 'shop.example.com');
+        $this->state->recordPaused(1, $this->state->get(1)->configRevision, 'store_pending_deletion', $this->clock->now());
+        $this->registry->setStatus($id, 'pending_deletion', $this->clock->now()->modify('+7 days'));
+        $this->respond(200, [['store_key' => 'shop.example.com', 'status' => 'active']]);
+        $this->actions->refreshStatuses(1);
+        self::assertSame('active', $this->registry->get($id)?->remoteStatus);
+        self::assertSame(['ok', true], [$this->state->get(1)->state, $this->state->get(1)->dirty]);
+    }
+
     public function testForgetIsLocalAndOnlyForPreviousStores(): void
     {
         $current = $this->pushed(1, 'shop.example.com');
