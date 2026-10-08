@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Fullspec\AnswerEng\Model\Engine;
 
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\GuzzleException;
 
 /** Guzzle ships with Magento 2.4 and supports DELETE with a body. */
 class GuzzleTransport implements Transport
@@ -23,13 +22,13 @@ class GuzzleTransport implements Transport
                 'connect_timeout' => min(10, $timeoutSeconds),
                 'http_errors' => false,
             ]);
-        } catch (GuzzleException $e) {
+            $lower = [];
+            foreach ($response->getHeaders() as $name => $values) {
+                $lower[strtolower((string) $name)] = implode(', ', $values);
+            }
+            return new HttpResponse($response->getStatusCode(), $lower, (string) $response->getBody());
+        } catch (\Exception $e) {
             throw new TransportException($e->getMessage(), 0, $e);
         }
-        $lower = [];
-        foreach ($response->getHeaders() as $name => $values) {
-            $lower[strtolower((string) $name)] = implode(', ', $values);
-        }
-        return new HttpResponse($response->getStatusCode(), $lower, (string) $response->getBody());
     }
 }
