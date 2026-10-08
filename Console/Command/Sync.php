@@ -59,7 +59,8 @@ class Sync extends Command
         if ($code !== null) {
             $id = $this->settings->storeIdByCode((string) $code);
             if ($id === null || !in_array($id, $enabled, true)) {
-                $output->writeln("<error>Store view \"" . OutputFormatter::escape((string) $code) . "\" does not exist or is not enabled for AnswerEng.</error>");
+                $output->writeln("<error>Store view \"" . OutputFormatter::escape((string) $code)
+                    . "\" does not exist or is not enabled for AnswerEng.</error>");
                 return Command::FAILURE;
             }
             $enabled = [$id];

@@ -81,7 +81,8 @@ class RemoteStoreActions
         $keys = $this->storeKeys($r);
         if (!in_array($s->storeKey, $keys, true)) {
             return new ConnectionReport(ConnectionReport::FIRST_SYNC_NEEDED, (string) __(
-                'Connected — first sync needed (store "%1" will be created on first sync; it uses 1 of your plan\'s stores).',
+                'Connected — first sync needed (store "%1" will be created on first sync; it uses 1 of your '
+                . 'plan\'s stores).',
                 $s->storeKey
             ), $keys);
         }
@@ -137,8 +138,11 @@ class RemoteStoreActions
         $o = $this->classifier->classify($r, true);
         if ($o->kind === OutcomeKind::Success || $o->kind === OutcomeKind::AlreadyClear) {
             $this->log->append($storeId, $this->clock->now(), 'admin', 'catalog_cleared', $rs->storeKey, $adminUser);
-            return new ActionResult(true, (string) __('Cleared the AnswerEng catalog for "%1". History and results are '
-                . 'kept, and the store still counts toward your plan. The next sync restores the catalog.', $rs->storeKey));
+            return new ActionResult(true, (string) __(
+                'Cleared the AnswerEng catalog for "%1". History and results are '
+                . 'kept, and the store still counts toward your plan. The next sync restores the catalog.',
+                $rs->storeKey
+            ));
         }
         return new ActionResult(false, $this->refusal($r, $rs->storeKey));
     }
@@ -153,8 +157,13 @@ class RemoteStoreActions
      * @param string $adminUser
      * @return ActionResult
      */
-    public function delete(int $storeId, int $identityId, string $typedKey, bool $acknowledged, string $adminUser): ActionResult
-    {
+    public function delete(
+        int $storeId,
+        int $identityId,
+        string $typedKey,
+        bool $acknowledged,
+        string $adminUser
+    ): ActionResult {
         $rs = $this->identityForView($identityId, $storeId);
         if ($rs === null) {
             return new ActionResult(false, (string) __('That AnswerEng store is not linked to this store view.'));
@@ -275,8 +284,8 @@ class RemoteStoreActions
         }
         $this->registry->forget($rs->id, $storeId);
         $this->log->append($storeId, $this->clock->now(), 'admin', 'forgotten', $rs->storeKey, $adminUser);
-        return new ActionResult(true, (string) __('Forgot "%1" here. Nothing was changed in AnswerEng: the store and its '
-            . 'plan slot are untouched.', $rs->storeKey));
+        return new ActionResult(true, (string) __('Forgot "%1" here. Nothing was changed in AnswerEng: the store and '
+            . 'its plan slot are untouched.', $rs->storeKey));
     }
 
     /**
@@ -356,8 +365,13 @@ class RemoteStoreActions
      */
     private function guard(RemoteStore $rs, Settings $s): ?string
     {
-        $mismatch = (string) __('"%1" was synced through a different AnswerEng connection (engine %2, account %3). '
-            . 'Reconnect with that connection to manage it, or Forget it here.', $rs->storeKey, $rs->engineUrl, $rs->accountId);
+        $mismatch = (string) __(
+            '"%1" was synced through a different AnswerEng connection (engine %2, account %3). '
+            . 'Reconnect with that connection to manage it, or Forget it here.',
+            $rs->storeKey,
+            $rs->engineUrl,
+            $rs->accountId
+        );
         if ($s->apiKey === '') {
             return (string) __('Enter an API key first.');
         }
@@ -543,7 +557,10 @@ class RemoteStoreActions
         return match ($r->code()) {
             'invalid_key' => (string) __('API key rejected or account inactive — check the key.'),
             'run_in_progress' => (string) __('An analysis run is in progress; try again in a few minutes.'),
-            'unknown_store' => (string) __('AnswerEng has no store "%1" (it may already have been deleted).', $storeKey),
+            'unknown_store' => (string) __(
+                'AnswerEng has no store "%1" (it may already have been deleted).',
+                $storeKey
+            ),
             'purge_in_progress' => (string) __('Deletion has already started and can no longer be cancelled.'),
             'store_pending_deletion' => (string) __('"%1" is already scheduled for deletion.', $storeKey),
             default => (string) __('AnswerEng refused the request (%1).', ErrorDetail::of($r)),

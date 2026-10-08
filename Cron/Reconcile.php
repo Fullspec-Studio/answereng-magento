@@ -37,7 +37,8 @@ class Reconcile
      */
     public function execute(): void
     {
-        foreach ($this->state->selectForReconcile($this->settings->enabledStoreIds(), $this->clock->now()) as $storeId) {
+        $due = $this->state->selectForReconcile($this->settings->enabledStoreIds(), $this->clock->now());
+        foreach ($due as $storeId) {
             try {
                 $this->runner->sync($storeId, 'reconcile');
             } catch (\Throwable $e) {

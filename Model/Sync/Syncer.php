@@ -82,8 +82,9 @@ class Syncer implements SyncRunner
         if (!$s->enabled) {
             return new SyncResult(SyncResult::SKIPPED, (string) __('This store view is not enabled for AnswerEng.'));
         }
-        foreach ([['no_api_key', $s->apiKey === ''], ['no_brand_names', $s->brandNames === []],
-                     ['no_store_key', $s->storeKey === ''], ['duplicate_store_key', $this->isDuplicate($s)]] as [$reason, $hit]) {
+        $guards = [['no_api_key', $s->apiKey === ''], ['no_brand_names', $s->brandNames === []],
+            ['no_store_key', $s->storeKey === ''], ['duplicate_store_key', $this->isDuplicate($s)]];
+        foreach ($guards as [$reason, $hit]) {
             if ($hit) {
                 return $this->blocked($storeId, $revision, $source, $reason);
             }
@@ -123,7 +124,13 @@ class Syncer implements SyncRunner
         }
 
         if ($export->kind === ExportResult::TOO_MANY) {
-            return $this->blocked($storeId, $revision, $source, 'too_many_products', "{$export->count} eligible products");
+            return $this->blocked(
+                $storeId,
+                $revision,
+                $source,
+                'too_many_products',
+                "{$export->count} eligible products"
+            );
         }
         if ($export->kind === ExportResult::EMPTY) {
             return $this->clearEmpty($s, $revision, $startedAt, $source);
@@ -131,7 +138,8 @@ class Syncer implements SyncRunner
 
         $result = $this->engine->postCatalog($s->connection(), $export->json);
         $this->afterEngineCall($s, $result, true);
-        return $this->apply($s, $revision, $startedAt, $this->classifier->classify($result), $export->count, $source, null);
+        $outcome = $this->classifier->classify($result);
+        return $this->apply($s, $revision, $startedAt, $outcome, $export->count, $source, null);
     }
 
     /**
@@ -158,7 +166,8 @@ class Syncer implements SyncRunner
         }
         $result = $this->engine->clearCatalog($s->connection(), $s->storeKey);
         $this->afterEngineCall($s, $result, false);
-        return $this->apply($s, $revision, $startedAt, $this->classifier->classify($result, true), 0, $source, 'catalog_cleared');
+        $outcome = $this->classifier->classify($result, true);
+        return $this->apply($s, $revision, $startedAt, $outcome, 0, $source, 'catalog_cleared');
     }
 
     /**
@@ -173,13 +182,22 @@ class Syncer implements SyncRunner
     {
         if ($result->account === null) {
             if ($isPush && $result->isSuccess()) {
-                $this->logger->warning('AnswerEng push succeeded without an account header', ['store_id' => $s->storeId]);
+                $this->logger->warning(
+                    'AnswerEng push succeeded without an account header',
+                    ['store_id' => $s->storeId]
+                );
             }
             return;
         }
         $this->state->recordAccount($s->storeId, $result->account, $s->apiKeyHash());
         if ($isPush && $result->isSuccess()) {
-            $this->registry->recordPush($s->engineUrl, $result->account, $s->storeKey, $s->storeId, $this->clock->now());
+            $this->registry->recordPush(
+                $s->engineUrl,
+                $result->account,
+                $s->storeKey,
+                $s->storeId,
+                $this->clock->now()
+            );
         }
     }
 
@@ -290,8 +308,13 @@ class Syncer implements SyncRunner
      * @param string|null $detail
      * @return SyncResult
      */
-    private function blocked(int $storeId, int $revision, string $source, string $reason, ?string $detail = null): SyncResult
-    {
+    private function blocked(
+        int $storeId,
+        int $revision,
+        string $source,
+        string $reason,
+        ?string $detail = null
+    ): SyncResult {
         if (!$this->state->recordBlocked($storeId, $revision, $reason)) {
             return $this->superseded($storeId, $source);
         }

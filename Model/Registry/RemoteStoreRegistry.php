@@ -52,8 +52,13 @@ class RemoteStoreRegistry
      * @param \DateTimeImmutable $now
      * @return int
      */
-    public function recordPush(string $engineUrl, string $accountId, string $storeKey, int $storeId, \DateTimeImmutable $now): int
-    {
+    public function recordPush(
+        string $engineUrl,
+        string $accountId,
+        string $storeKey,
+        int $storeId,
+        \DateTimeImmutable $now
+    ): int {
         // purge_after is assigned before remote_status: it must read the old status.
         $this->db->execute(
             "INSERT INTO {$this->stores()} (engine_url, account_id, store_key, remote_status, first_synced_at)

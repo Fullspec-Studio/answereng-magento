@@ -60,6 +60,8 @@ class StatusPanel extends Field
     public function getPanel(): array
     {
         $storeId = $this->getStoreId();
-        return $storeId > 0 ? $this->panel->forView($storeId) : $this->panel->forDefault((int) $this->getRequest()->getParam('website'));
+        return $storeId > 0
+            ? $this->panel->forView($storeId)
+            : $this->panel->forDefault((int) $this->getRequest()->getParam('website'));
     }
 }

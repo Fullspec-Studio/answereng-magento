@@ -30,7 +30,9 @@ abstract class AbstractAction extends Action implements HttpPostActionInterface
     public function execute()
     {
         if (!in_array($this->requestedStoreId(), $this->settingsProvider->allStoreIds(), true)) {
-            $this->messageManager->addErrorMessage((string) __('Unknown store view. Choose a store view and try again.'));
+            $this->messageManager->addErrorMessage(
+                (string) __('Unknown store view. Choose a store view and try again.')
+            );
             return $this->resultRedirectFactory->create()->setPath(
                 'adminhtml/system_config/edit',
                 ['section' => 'answereng']

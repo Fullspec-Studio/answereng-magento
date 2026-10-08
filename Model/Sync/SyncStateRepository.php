@@ -66,7 +66,8 @@ class SyncStateRepository
     public function get(int $storeId): SyncState
     {
         $this->ensure($storeId);
-        return SyncState::fromRow((array) $this->db->fetchRow("SELECT * FROM {$this->t()} WHERE store_id = ?", [$storeId]));
+        $row = $this->db->fetchRow("SELECT * FROM {$this->t()} WHERE store_id = ?", [$storeId]);
+        return SyncState::fromRow((array) $row);
     }
 
     /**

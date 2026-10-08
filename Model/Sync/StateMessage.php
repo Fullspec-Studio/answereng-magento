@@ -70,7 +70,8 @@ class StateMessage
     {
         return match ($reason) {
             'too_many_products' => (string) __('This store view has more than 5,000 eligible products, the AnswerEng '
-                . 'limit, so it is not synced. Reduce the enabled, visible products on this website to 5,000 or fewer.'),
+                . 'limit, so it is not synced. Reduce the enabled, visible products on this website to 5,000 or '
+                . 'fewer.'),
             'duplicate_store_key' => (string) __('Another enabled store view uses the same store key. Store keys must '
                 . 'be unique.'),
             'no_api_key' => (string) __('Enter an API key to sync.'),

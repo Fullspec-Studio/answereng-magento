@@ -155,7 +155,9 @@ class MagentoCatalogSource implements CatalogSource
         $attribute->setStoreId($storeId);
         $map = [];
         foreach ($attribute->getSource()->getAllOptions() as $option) {
-            if (is_array($option) && isset($option['value']) && $option['value'] !== '' && !is_array($option['value'])) {
+            if (is_array($option) && isset($option['value']) && $option['value'] !== ''
+                && !is_array($option['value'])
+            ) {
                 $map[(string) $option['value']] = (string) $option['label'];
             }
         }

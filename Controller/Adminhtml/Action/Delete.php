@@ -19,8 +19,11 @@ class Delete extends AbstractAction
      * @param SettingsProvider $settings
      * @param RemoteStoreActions $actions
      */
-    public function __construct(Context $context, SettingsProvider $settings, private readonly RemoteStoreActions $actions)
-    {
+    public function __construct(
+        Context $context,
+        SettingsProvider $settings,
+        private readonly RemoteStoreActions $actions
+    ) {
         parent::__construct($context, $settings);
     }
 
