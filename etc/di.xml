@@ -9,6 +9,8 @@
                 type="Fullspec\AnswerEng\Model\Support\SystemClock"/>
     <preference for="Fullspec\AnswerEng\Model\Config\SettingsProvider"
                 type="Fullspec\AnswerEng\Model\Config\ConfigSettingsProvider"/>
+    <preference for="Fullspec\AnswerEng\Model\Catalog\CatalogSource"
+                type="Fullspec\AnswerEng\Model\Catalog\MagentoCatalogSource"/>
     <type name="Fullspec\AnswerEng\Model\Engine\GuzzleTransport">
         <arguments>
             <argument name="client" xsi:type="object">GuzzleHttp\Client</argument>
