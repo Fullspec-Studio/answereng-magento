@@ -18,6 +18,9 @@ final class StateMessageTest extends TestCase
             self::assertStringContainsString($option, (string) $m);
         }
         self::assertStringContainsString('all in use', StateMessage::paused('store_limit'));
+        self::assertStringContainsString('existing stores (Test connection lists them) if', (string) $m);
+        self::assertStringContainsString('existing stores (your stores: a.example.com, b.example.com) if',
+            (string) StateMessage::for('paused', 'store_limit', null, '', null, ['a.example.com', 'b.example.com']));
     }
 
     public function testPausedReasonsUseTheSpecCopy(): void

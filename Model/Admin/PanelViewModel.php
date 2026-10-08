@@ -65,13 +65,21 @@ class PanelViewModel
      */
     public function forView(int $storeId): array
     {
+        $keys = null;
         try {
-            $this->actions->refreshStatuses($storeId);
+            $keys = $this->actions->refreshStatuses($storeId);
         } catch (\Throwable $e) {
             $this->logger->warning('AnswerEng status refresh failed', ['exception' => get_class($e)]);
         }
         $s = $this->settings->forStore($storeId);
         $state = $this->state->get($storeId);
+        if ($keys === null && $state->state === SyncStateRepository::PAUSED && $state->reason === 'store_limit') {
+            try {
+                $keys = $this->actions->existingStoreKeys($storeId);   // store_limit lists them (spec §6)
+            } catch (\Throwable $e) {
+                $this->logger->warning('AnswerEng store list failed', ['exception' => get_class($e)]);
+            }
+        }
         $identities = [];
         foreach ($this->registry->forView($storeId) as $rs) {
             $others = array_values(array_diff($this->roles->activeUsers($rs->id), [$storeId]));
@@ -99,7 +107,7 @@ class PanelViewModel
             'state' => $state->state,
             'reason' => $state->reason,
             'message' => $this->message($storeId, $state->state, $state->reason, $state->retryReason,
-                $pending['purgeAfter'] ?? null),
+                $pending['purgeAfter'] ?? null, $state->reason === 'store_limit' ? ($keys ?? []) : []),
             'lastSyncAt' => $state->lastSyncAt?->format('Y-m-d H:i'),
             'productCount' => $state->productCount,
             'log' => $this->log->recent($storeId),
@@ -123,8 +131,17 @@ class PanelViewModel
      * The merchant sentence for the state. Paused/blocked details (limit, HTTP status) come from the
      * latest sync-log entry with that outcome, which holds only the sanitized ErrorDetail string.
      */
-    private function message(int $storeId, string $state, ?string $reason, ?string $retryReason, ?string $purgeAfter): ?string
-    {
+    /**
+     * @param list<string> $existingKeys
+     */
+    private function message(
+        int $storeId,
+        string $state,
+        ?string $reason,
+        ?string $retryReason,
+        ?string $purgeAfter,
+        array $existingKeys = []
+    ): ?string {
         $detail = '';
         if (in_array($state, [SyncStateRepository::PAUSED, SyncStateRepository::BLOCKED], true)) {
             foreach ($this->log->recent($storeId) as $entry) {
@@ -134,6 +151,6 @@ class PanelViewModel
                 }
             }
         }
-        return StateMessage::for($state, $reason, $retryReason, $detail, $purgeAfter);
+        return StateMessage::for($state, $reason, $retryReason, $detail, $purgeAfter, $existingKeys);
     }
 }

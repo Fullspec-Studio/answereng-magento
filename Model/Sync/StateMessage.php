@@ -11,12 +11,16 @@ namespace Fullspec\AnswerEng\Model\Sync;
  */
 class StateMessage
 {
+    /**
+     * @param list<string> $existingKeys the workspace's store keys when known (store_limit names them)
+     */
     public static function for(
         string $state,
         ?string $reason,
         ?string $retryReason = null,
         string $detail = '',
-        ?string $purgeAfter = null
+        ?string $purgeAfter = null,
+        array $existingKeys = []
     ): ?string {
         return match ($state) {
             SyncStateRepository::OK => $reason === 'catalog_cleared' ? self::cleared() : null,
@@ -32,7 +36,7 @@ class StateMessage
                 ? (string) __('Reading the catalog failed 3 times; nothing was sent. The nightly sync will try again.')
                 : (string) __('AnswerEng could not be reached after 3 attempts. The nightly sync will try again.'),
             SyncStateRepository::BLOCKED => self::blocked((string) $reason),
-            SyncStateRepository::PAUSED => self::paused((string) $reason, $detail, $purgeAfter),
+            SyncStateRepository::PAUSED => self::paused((string) $reason, $detail, $purgeAfter, $existingKeys),
             default => null,
         };
     }
@@ -57,8 +61,18 @@ class StateMessage
         };
     }
 
-    public static function paused(string $reason, string $detail = '', ?string $purgeAfter = null): string
-    {
+    /**
+     * @param list<string> $existingKeys the workspace's store keys from GET /stores, when the caller has them
+     */
+    public static function paused(
+        string $reason,
+        string $detail = '',
+        ?string $purgeAfter = null,
+        array $existingKeys = []
+    ): string {
+        $where = $existingKeys === []
+            ? (string) __('(Test connection lists them)')
+            : (string) __('(your stores: %1)', implode(', ', $existingKeys));
         $limit = preg_match('/\blimit=(\d+)/', $detail, $m) === 1 ? $m[1] : null;
         $http = preg_match('/^HTTP (\d{3})/', $detail, $m) === 1 ? $m[1] : null;
         return match ($reason) {
@@ -67,9 +81,9 @@ class StateMessage
                     ? (string) __('Your AnswerEng plan allows %1 store(s) and they are all in use.', $limit)
                     : (string) __('Your AnswerEng plan\'s stores are all in use.'))
                 . ' ' . __('Disabling a view or clearing a catalog does not free a slot. Options: upgrade your plan; '
-                . 'set this view\'s store key to one of your existing stores (Test connection lists them) if that is '
-                . 'the store you meant; delete a store you no longer need (its slot frees when the 7-day undo window '
-                . 'ends); or contact support@answereng.io.'),
+                . 'set this view\'s store key to one of your existing stores %1 if that is the store you meant; '
+                . 'delete a store you no longer need (its slot frees when the 7-day undo window ends); or contact '
+                . 'support@answereng.io.', $where),
             'product_limit' => $limit !== null
                 ? (string) __('This catalog exceeds your plan\'s %1-product limit.', $limit)
                 : (string) __('This catalog exceeds your plan\'s product limit.'),

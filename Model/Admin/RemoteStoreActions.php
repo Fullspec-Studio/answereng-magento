@@ -196,18 +196,23 @@ class RemoteStoreActions
             . 'plan slot are untouched.', $rs->storeKey));
     }
 
-    /** Reconcile remote statuses for identities reachable through the CURRENT connection. */
-    public function refreshStatuses(int $storeId): void
+    /**
+     * Reconcile remote statuses for identities reachable through the CURRENT connection.
+     *
+     * @return list<string>|null the workspace's store keys read from GET /stores, or null when no call was made
+     *                           (no key, no identities) or it failed
+     */
+    public function refreshStatuses(int $storeId): ?array
     {
         $s = $this->settings->forStore($storeId);
         $identities = array_filter($this->registry->forView($storeId),
             static fn (RemoteStore $r) => $r->engineUrl === $s->engineUrl);
         if ($s->apiKey === '' || $identities === []) {
-            return;
+            return null;
         }
         $r = $this->engine->listStores($s->connection());
         if (!$r->isSuccess() || $r->account === null) {
-            return;
+            return null;
         }
         $this->noteAccount($s, $r);
         $remote = [];
@@ -233,6 +238,26 @@ class RemoteStoreActions
                 $this->registry->setStatus($rs->id, 'deleted', null);
             }
         }
+        return $this->storeKeys($r);
+    }
+
+    /**
+     * The workspace's store keys (GET /stores), or null without a key or on failure.
+     *
+     * @return list<string>|null
+     */
+    public function existingStoreKeys(int $storeId): ?array
+    {
+        $s = $this->settings->forStore($storeId);
+        if ($s->apiKey === '') {
+            return null;
+        }
+        $r = $this->engine->listStores($s->connection());
+        if (!$r->isSuccess()) {
+            return null;
+        }
+        $this->noteAccount($s, $r);
+        return $this->storeKeys($r);
     }
 
     private function guard(RemoteStore $rs, Settings $s): ?string

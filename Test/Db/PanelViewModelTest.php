@@ -126,6 +126,26 @@ final class PanelViewModelTest extends DbTestCase
         self::assertSame([2], array_column($vm->forDefault(2), 'storeId'));
     }
 
+    public function testStoreLimitPanelListsTheWorkspaceStores(): void
+    {
+        $settings = new FakeSettings();
+        $settings->put(1, ['storeKey' => 'third.example.com']);
+        $state = new SyncStateRepository($this->db);
+        $state->ensure(1);
+        $state->recordPaused(1, $state->get(1)->configRevision, 'store_limit', (new FixedClock())->now());
+        $transport = new FakeTransport();
+        // no identities yet, so refreshStatuses makes no call: the panel asks GET /stores once, then the summary
+        $transport->enqueue(FakeTransport::json(200, [['store_key' => 'a.example.com', 'status' => 'active'],
+            ['store_key' => 'b.example.com', 'status' => 'active']], ['X-AnswerEng-Account' => 'acct_a']))
+            ->enqueue(FakeTransport::json(404, ['code' => 'unknown_store']));
+        $vm = $this->viewModel($settings, $transport);
+        $data = $vm->forView(1);
+        self::assertStringContainsString('(your stores: a.example.com, b.example.com)', (string) $data['message']);
+        self::assertSame(['GET', 'GET'], array_column($transport->requests, 'method'));
+        // default-scope rows keep the Test-connection wording (no engine call per row)
+        self::assertStringContainsString('(Test connection lists them)', (string) $vm->forDefault()[0]['message']);
+    }
+
     /** Found in the local end-to-end run: paused views showed only "paused (store_limit)". */
     public function testPausedAndClearedViewsCarryTheMerchantMessage(): void
     {
@@ -144,7 +164,8 @@ final class PanelViewModelTest extends DbTestCase
         self::assertStringContainsString('allows 3 store(s)', (string) $rows[0]['message']);
         self::assertStringStartsWith('No eligible products', (string) $rows[1]['message']);
         $transport = new FakeTransport();
-        $transport->enqueue(FakeTransport::json(404, ['code' => 'unknown_store']));
+        $transport->enqueue(FakeTransport::json(200, [], ['X-AnswerEng-Account' => 'acct_a']))   // GET /stores
+            ->enqueue(FakeTransport::json(404, ['code' => 'unknown_store']));
         $view = $this->viewModel($settings, $transport)->forView(1);
         self::assertStringContainsString('upgrade your plan', (string) $view['message']);
     }
