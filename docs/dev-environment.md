@@ -192,6 +192,46 @@ rsync -a --delete --exclude .git --exclude vendor --exclude dist --exclude dev/m
 docker compose exec -T phpfpm bash -c 'rm -rf generated/code/Fullspec generated/metadata/* && bin/magento cache:flush'
 ```
 
+### Production-mode compile and release-zip checks (final review #1, #2)
+
+The copy-mode install mirrors the repo's dev `vendor/` into
+`src/vendor/fullspec/module-answereng/vendor`; `setup:di:compile` scans it and
+fatals ("Cannot declare trait Aws\Api\ErrorParser\JsonParserTrait"). Delete that
+copy before compiling (the refresh rsync excludes `vendor`, so it stays gone):
+
+```bash
+rm -rf src/vendor/fullspec/module-answereng/vendor
+docker compose exec -T phpfpm bash -c '
+  bin/magento setup:di:compile
+  grep -l __set_state generated/metadata/*.php          # expect nothing
+  bin/magento deploy:mode:set production --skip-compilation'
+# load http://localhost:8894/ and the AnswerEng section at default + store-view scope,
+# run scripts/cron.sh, check var/log/exception.log, then:
+docker compose exec -T phpfpm bash -c '
+  bin/magento deploy:mode:set developer
+  rm -rf generated/code/* generated/metadata/* && bin/magento cache:flush'
+```
+
+Release zip, installed exactly as the README says (the zip archives HEAD, so
+commit first). Back up the root `composer.json`/`composer.lock`, which the
+artifact install rewrites:
+
+```bash
+(cd ../answereng-magento && bin/build-zip.sh 0.1.0)
+mkdir -p src/var/answereng-artifact && cp ../answereng-magento/dist/answereng-magento-0.1.0.zip src/var/answereng-artifact/
+cp src/composer.json /tmp/composer.json.bak && cp src/composer.lock /tmp/composer.lock.bak
+docker compose exec -T phpfpm bash -c '
+  composer config repositories.answereng artifact /var/www/html/var/answereng-artifact
+  composer require --no-interaction fullspec/module-answereng     # "Using version ^0.1.0"
+  bin/magento module:enable Fullspec_AnswerEng && bin/magento setup:upgrade'
+# restore the path-repo install
+cp /tmp/composer.json.bak src/composer.json && cp /tmp/composer.lock.bak src/composer.lock
+docker compose exec -T phpfpm bash -c '
+  composer install --no-interaction && rm -rf vendor/fullspec/module-answereng/vendor
+  bin/magento setup:upgrade'
+rm -rf src/var/answereng-artifact
+```
+
 ### Configure
 
 Stores › Configuration › Catalog › AnswerEng:
