@@ -12,7 +12,6 @@ use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 use Magento\Backend\Model\UrlInterface;
 use Magento\Framework\AuthorizationInterface;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 
 /** Everything status.phtml renders, as plain arrays/value objects. */
 class PanelViewModel
@@ -27,7 +26,7 @@ class PanelViewModel
         private readonly RoleResolver $roles,
         private readonly AuthorizationInterface $authorization,
         private readonly UrlInterface $url,
-        private readonly LoggerInterface $logger = new NullLogger()
+        private readonly LoggerInterface $logger
     ) {
     }
 

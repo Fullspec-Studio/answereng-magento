@@ -48,6 +48,11 @@
             <argument name="logger" xsi:type="object">Fullspec\AnswerEng\Logger</argument>
         </arguments>
     </type>
+    <type name="Fullspec\AnswerEng\Model\Admin\PanelViewModel">
+        <arguments>
+            <argument name="logger" xsi:type="object">Fullspec\AnswerEng\Logger</argument>
+        </arguments>
+    </type>
     <type name="Magento\Framework\Console\CommandListInterface">
         <arguments>
             <argument name="commands" xsi:type="array">

@@ -47,7 +47,7 @@ final class PanelViewModelTest extends DbTestCase
         $url = $this->createMock(UrlInterface::class);
         $url->method('getUrl')->willReturnCallback(static fn (string $route) => "/admin/$route");
         $vm = new PanelViewModel($settings, $state, $log, new SummaryProvider($settings, $state, $engine, new ArrayCache(), $clock),
-            $actions, $registry, $roles, $auth, $url);
+            $actions, $registry, $roles, $auth, $url, new NullLogger());
 
         $data = $vm->forView(1);
         self::assertSame('ok', $data['state']);
@@ -75,7 +75,8 @@ final class PanelViewModelTest extends DbTestCase
         $url = $this->createMock(UrlInterface::class);
         $url->method('getUrl')->willReturnCallback(static fn (string $route) => "/admin/$route");
         return new PanelViewModel($settings, $state, $log,
-            new SummaryProvider($settings, $state, $engine, new ArrayCache(), $clock), $actions, $registry, $roles, $auth, $url);
+            new SummaryProvider($settings, $state, $engine, new ArrayCache(), $clock), $actions, $registry, $roles, $auth,
+            $url, new NullLogger());
     }
 
     public function testDisabledViewStillOffersClearForItsCurrentIdentity(): void
