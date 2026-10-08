@@ -237,8 +237,13 @@ final class RemoteStoreActionsTest extends DbTestCase
         $id = $this->pushed(1, 'shop.example.com');
         $this->respond(200, []);
         $this->respond(404, ['code' => 'unknown_store']);
-        self::assertFalse($this->actions->delete(1, $id, 'shop.example.com', true, 'admin')->ok);
+        $result = $this->actions->delete(1, $id, 'shop.example.com', true, 'admin');
+        self::assertFalse($result->ok);
+        self::assertStringEndsWith('Syncing for this store view is now disabled.', $result->message);
         self::assertSame('deleted', $this->registry->get($id)?->remoteStatus);
+        self::assertSame([1], $this->disabler->disabled);
+        self::assertSame(['deletion_requested', 'shop.example.com already gone (HTTP 404)', 'admin'],
+            [$this->log->recent(1)[0]['outcome'], $this->log->recent(1)[0]['detail'], $this->log->recent(1)[0]['admin_user']]);
 
         $id2 = $this->pushed(1, 'other.example.com');
         $this->registry->setStatus($id2, 'pending_deletion', $this->clock->now());
@@ -246,6 +251,20 @@ final class RemoteStoreActionsTest extends DbTestCase
         $this->respond(404, ['code' => 'unknown_store']);
         self::assertFalse($this->actions->cancel(1, $id2, 'admin')->ok);
         self::assertSame('deleted', $this->registry->get($id2)?->remoteStatus);
+    }
+
+    public function testDeleteOfAPreviousStoreAlreadyGoneLeavesTheViewSyncing(): void
+    {
+        $old = $this->pushed(1, 'old.example.com');
+        $this->pushed(1, 'new.example.com');
+        $this->respond(200, []);
+        $this->respond(404, ['code' => 'unknown_store']);
+        $result = $this->actions->delete(1, $old, 'old.example.com', true, 'admin');
+        self::assertFalse($result->ok);
+        self::assertStringNotContainsString('disabled', $result->message);
+        self::assertSame('deleted', $this->registry->get($old)?->remoteStatus);
+        self::assertSame([], $this->disabler->disabled);
+        self::assertTrue($this->settings->forStore(1)->enabled);
     }
 
     public function testDeleteIsRefusedUnlessActive(): void

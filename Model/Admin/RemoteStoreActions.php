@@ -127,6 +127,15 @@ class RemoteStoreActions
             $this->registry->setStatus($rs->id, 'pending_deletion', $this->purgeAfter($r));
         } elseif ($this->isUnknownStore($r)) {
             $this->registry->setStatus($rs->id, 'deleted', null);
+            if ($wasCurrent) {
+                // The merchant asked for this store to be gone and it already is: stop syncing exactly as a
+                // successful delete does, or the next sync would re-create it.
+                $this->log->append($storeId, $this->clock->now(), 'admin', 'deletion_requested',
+                    $rs->storeKey . ' already gone (HTTP 404)', $adminUser);
+                $this->disabler->disable($storeId);
+                return new ActionResult(false, $this->refusal($r, $rs->storeKey) . ' '
+                    . __('Syncing for this store view is now disabled.'));
+            }
         }
         return new ActionResult(false, $this->refusal($r, $rs->storeKey));
     }
