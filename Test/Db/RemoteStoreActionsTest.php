@@ -115,6 +115,43 @@ final class RemoteStoreActionsTest extends DbTestCase
         self::assertSame(['GET https://engine.test/stores'], $this->methods());
     }
 
+    public function testClearOfAStoreFromAnotherConnectionGivesTheConnectionMessage(): void
+    {
+        $this->pushed(1, 'shop.example.com');
+        $this->settings->put(1, ['storeKey' => 'shop.example.com', 'apiKey' => 'ae_other']);   // key switched
+        $this->respond(200, [], self::B);
+        $result = $this->actions->clear(1, 'admin');
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('different AnswerEng connection', $result->message);
+        self::assertSame(['GET https://engine.test/stores'], $this->methods());
+
+        $this->settings->put(1, ['storeKey' => 'shop.example.com', 'engineUrl' => 'https://other-engine.test']);
+        $result = $this->actions->clear(1, 'admin');
+        self::assertStringContainsString('different AnswerEng connection', $result->message);
+        self::assertCount(1, $this->transport->requests);   // URL mismatch is refused without a request
+    }
+
+    public function testClearAfterAKeyRotationOnTheSameAccountProceeds(): void
+    {
+        $this->pushed(1, 'shop.example.com');
+        $this->settings->put(1, ['storeKey' => 'shop.example.com', 'apiKey' => 'ae_rotated']);   // same workspace
+        $this->respond(200, []);                         // GET /stores records the account for the new key
+        $this->respond(200, ['products_deleted' => 3]);
+        $result = $this->actions->clear(1, 'admin');
+        self::assertTrue($result->ok, $result->message);
+        self::assertSame(['GET https://engine.test/stores', 'DELETE https://engine.test/stores/shop.example.com/catalog'],
+            $this->methods());
+    }
+
+    public function testClearWithNoIdentityForTheKeySaysSo(): void
+    {
+        $this->pushed(1, 'old.example.com');
+        $this->settings->put(1, ['storeKey' => 'new.example.com', 'apiKey' => 'ae_rotated']);
+        $result = $this->actions->clear(1, 'admin');
+        self::assertStringContainsString('no current AnswerEng store', $result->message);
+        self::assertSame([], $this->transport->requests);
+    }
+
     public function testClearIsRefusedWhileAnotherViewIsUsingTheStore(): void
     {
         $this->pushed(1, 'shop.example.com');

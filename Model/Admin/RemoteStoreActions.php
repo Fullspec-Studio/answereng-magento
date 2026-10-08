@@ -73,12 +73,28 @@ class RemoteStoreActions
 
     public function clear(int $storeId, string $adminUser): ActionResult
     {
+        $none = new ActionResult(false, (string) __('This store view has no current AnswerEng store to clear.'));
+        $s = $this->settings->forStore($storeId);
         $rs = $this->roles->clearTargetFor($storeId);
         if ($rs === null) {
-            return new ActionResult(false, (string) __('This store view has no current AnswerEng store to clear.'));
+            // No identity matches the account recorded for the CURRENT key: either the view's store key was
+            // synced through another connection (say so), or the key changed since the view last talked to
+            // the engine (the connection check records the account, then the target resolves).
+            $candidate = $this->identityForKey($storeId, $s);
+            if ($candidate === null) {
+                return $none;
+            }
+            if (($error = $this->guard($candidate, $s)) !== null) {
+                return new ActionResult(false, $error);
+            }
+            $rs = $this->roles->clearTargetFor($storeId);
+            if ($rs === null) {
+                return $none;
+            }
+        } elseif (($error = $this->guard($rs, $s)) !== null) {
+            return new ActionResult(false, $error);
         }
-        $s = $this->settings->forStore($storeId);
-        if (($error = $this->guard($rs, $s) ?? $this->crossView($rs, $storeId)) !== null) {
+        if (($error = $this->crossView($rs, $storeId)) !== null) {
             return new ActionResult(false, $error);
         }
         $r = $this->engine->clearCatalog($s->connection(), $rs->storeKey);
@@ -244,6 +260,24 @@ class RemoteStoreActions
         }
         return (string) __('"%1" is the active AnswerEng store for store view %2. Disable that view or change its '
             . 'store key first.', $rs->storeKey, implode(', ', array_map([$this->settings, 'storeName'], $others)));
+    }
+
+    /**
+     * An identity linked to the view under its configured store key, preferring the configured engine URL.
+     */
+    private function identityForKey(int $storeId, Settings $s): ?RemoteStore
+    {
+        $found = null;
+        foreach ($this->registry->forView($storeId) as $rs) {
+            if ($rs->storeKey !== $s->storeKey) {
+                continue;
+            }
+            if ($rs->engineUrl === $s->engineUrl) {
+                return $rs;
+            }
+            $found ??= $rs;
+        }
+        return $found;
     }
 
     private function identityForView(int $identityId, int $storeId): ?RemoteStore
