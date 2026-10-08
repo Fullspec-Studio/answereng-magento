@@ -24,4 +24,9 @@ class MagentoKeyValueCache implements KeyValueCache
     {
         $this->cache->save($value, $key, [self::TAG], $ttlSeconds);
     }
+
+    public function remove(string $key): void
+    {
+        $this->cache->remove($key);
+    }
 }

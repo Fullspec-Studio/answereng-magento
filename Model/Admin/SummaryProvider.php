@@ -16,6 +16,7 @@ use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 class SummaryProvider
 {
     public const CACHE_SECONDS = 900;
+    public const CACHE_PREFIX = 'answereng_summary_';
     public const DASHBOARD = 'https://app.answereng.io/stores/';
 
     public function __construct(
@@ -34,7 +35,7 @@ class SummaryProvider
         if (!$s->enabled || $s->apiKey === '' || $s->storeKey === '') {
             return new SummaryView(SummaryView::DISABLED, $url);
         }
-        $key = 'answereng_summary_' . $s->fingerprint();
+        $key = self::CACHE_PREFIX . $s->fingerprint();
         $cached = $this->cache->load($key);
         if ($cached !== null) {
             return $this->fromJson($cached, SummaryView::FRESH, $url, null);

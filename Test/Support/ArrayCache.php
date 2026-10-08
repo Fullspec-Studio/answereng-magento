@@ -19,4 +19,9 @@ final class ArrayCache implements KeyValueCache
     {
         $this->items[$key] = $value;
     }
+
+    public function remove(string $key): void
+    {
+        unset($this->items[$key]);
+    }
 }

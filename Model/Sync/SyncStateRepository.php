@@ -289,6 +289,18 @@ class SyncStateRepository
         );
     }
 
+    /**
+     * Forget the fallback summary snapshot (its connection fingerprint no longer applies).
+     */
+    public function clearSnapshot(int $storeId): void
+    {
+        $this->db->execute(
+            "UPDATE {$this->t()} SET snapshot_fingerprint = NULL, snapshot_json = NULL, snapshot_fetched_at = NULL
+             WHERE store_id = ?",
+            [$storeId]
+        );
+    }
+
     private function setTerminal(int $storeId, int $revision, string $state, string $reason): bool
     {
         $changed = $this->db->execute(
