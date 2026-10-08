@@ -59,4 +59,13 @@ final class SyncCommandTest extends TestCase
         self::assertSame(Command::FAILURE, $t->getStatusCode());
         self::assertStringContainsString('Rate limited', $t->getDisplay());
     }
+
+    public function testAThrowingViewFailsButTheNextStillRuns(): void
+    {
+        $this->runner->throwFor = [1];
+        $t = $this->runSync([]);
+        self::assertSame(Command::FAILURE, $t->getStatusCode());
+        self::assertSame([[1, 'cli', true], [2, 'cli', true]], $this->runner->calls);
+        self::assertStringContainsString('boom', $t->getDisplay());
+    }
 }

@@ -6,6 +6,7 @@ namespace Fullspec\AnswerEng\Console\Command;
 use Fullspec\AnswerEng\Model\Config\SettingsProvider;
 use Fullspec\AnswerEng\Model\Sync\SyncRunner;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -33,14 +34,24 @@ class Sync extends Command
         if ($code !== null) {
             $id = $this->settings->storeIdByCode((string) $code);
             if ($id === null || !in_array($id, $enabled, true)) {
-                $output->writeln("<error>Store view \"$code\" does not exist or is not enabled for AnswerEng.</error>");
+                $output->writeln("<error>Store view \"" . OutputFormatter::escape((string) $code) . "\" does not exist or is not enabled for AnswerEng.</error>");
                 return Command::FAILURE;
             }
             $enabled = [$id];
         }
         $status = Command::SUCCESS;
         foreach ($enabled as $storeId) {
-            $result = $this->runner->sync($storeId, 'cli', true);
+            try {
+                $result = $this->runner->sync($storeId, 'cli', true);
+            } catch (\Throwable $e) {
+                $output->writeln(sprintf(
+                    '<error>%s: sync failed: %s</error>',
+                    OutputFormatter::escape($this->settings->storeName($storeId)),
+                    OutputFormatter::escape(mb_substr($e->getMessage(), 0, 300))
+                ));
+                $status = Command::FAILURE;
+                continue;
+            }
             $output->writeln(sprintf('%s: %s', $this->settings->storeName($storeId), $result->message));
             if ($result->isError()) {
                 $status = Command::FAILURE;

@@ -11,6 +11,8 @@ final class FakeRunner implements SyncRunner
     /** @var list<array{int,string,bool}> */
     public array $calls = [];
     public SyncResult $result;
+    /** @var list<int> */
+    public array $throwFor = [];
 
     public function __construct()
     {
@@ -20,6 +22,9 @@ final class FakeRunner implements SyncRunner
     public function sync(int $storeId, string $source, bool $manual = false): SyncResult
     {
         $this->calls[] = [$storeId, $source, $manual];
+        if (in_array($storeId, $this->throwFor, true)) {
+            throw new \RuntimeException('boom');
+        }
         return $this->result;
     }
 }
