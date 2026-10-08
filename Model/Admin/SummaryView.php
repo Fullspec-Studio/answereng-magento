@@ -1,0 +1,26 @@
+<?php
+declare(strict_types=1);
+
+namespace Fullspec\AnswerEng\Model\Admin;
+
+class SummaryView
+{
+    public const DISABLED = 'disabled';
+    public const FRESH = 'fresh';
+    public const STALE = 'stale';
+    public const UNAVAILABLE = 'unavailable';
+    public const NOT_SYNCED = 'not_synced';
+    public const NO_RUN = 'no_run';
+    public const PENDING_DELETION = 'pending_deletion';
+
+    public function __construct(
+        public readonly string $state,
+        public readonly string $dashboardUrl,
+        public readonly ?float $rate = null,
+        public readonly ?float $low = null,
+        public readonly ?float $high = null,
+        public readonly ?string $runStartedAt = null,
+        public readonly ?\DateTimeImmutable $fetchedAt = null
+    ) {
+    }
+}

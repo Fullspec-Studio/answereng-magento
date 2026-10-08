@@ -15,6 +15,10 @@
                 type="Fullspec\AnswerEng\Model\Support\MagentoSyncLock"/>
     <preference for="Fullspec\AnswerEng\Model\Sync\SyncRunner"
                 type="Fullspec\AnswerEng\Model\Sync\Syncer"/>
+    <preference for="Fullspec\AnswerEng\Model\Admin\KeyValueCache"
+                type="Fullspec\AnswerEng\Model\Admin\MagentoKeyValueCache"/>
+    <preference for="Fullspec\AnswerEng\Model\Config\ConfigDisabler"
+                type="Fullspec\AnswerEng\Model\Config\MagentoConfigDisabler"/>
     <type name="Fullspec\AnswerEng\Model\Engine\GuzzleTransport">
         <arguments>
             <argument name="client" xsi:type="object">GuzzleHttp\Client</argument>
