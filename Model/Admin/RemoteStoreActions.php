@@ -252,14 +252,29 @@ class RemoteStoreActions
         return $r->account === $rs->accountId ? null : $mismatch;
     }
 
+    /**
+     * Refuses while another enabled view targets the store. Decided from settings, not from the per-view
+     * account cache (which lags an API-key change until each view next talks to the engine): it always runs
+     * after guard() proved the configured engine URL and the live account match the identity, and the
+     * engine URL and API key are default-scope, so every view with the same store key targets this store.
+     */
     private function crossView(RemoteStore $rs, int $storeId): ?string
     {
-        $others = array_values(array_diff($this->roles->activeUsers($rs->id), [$storeId]));
+        $others = array_values(array_diff($this->enabledViewsUsingKey($rs->storeKey), [$storeId]));
         if ($others === []) {
             return null;
         }
         return (string) __('"%1" is the active AnswerEng store for store view %2. Disable that view or change its '
             . 'store key first.', $rs->storeKey, implode(', ', array_map([$this->settings, 'storeName'], $others)));
+    }
+
+    /**
+     * @return list<int> enabled store views whose configured store key is $storeKey
+     */
+    private function enabledViewsUsingKey(string $storeKey): array
+    {
+        return array_values(array_filter($this->settings->enabledStoreIds(),
+            fn (int $id) => $this->settings->forStore($id)->storeKey === $storeKey));
     }
 
     /**

@@ -163,6 +163,37 @@ final class RemoteStoreActionsTest extends DbTestCase
         self::assertStringContainsString('Store 2', $result->message);
     }
 
+    public function testCrossViewCheckIgnoresAStaleAccountCacheOnTheOtherView(): void
+    {
+        $id = $this->pushed(1, 'shop.example.com');
+        $this->pushed(2, 'shop.example.com');
+        $this->db->execute("UPDATE answereng_sync_state SET account_key_hash = 'stale' WHERE store_id = 2");
+        $this->respond(200, []);
+        $result = $this->actions->clear(1, 'admin');
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('Store 2', $result->message);
+        $this->respond(200, []);
+        $result = $this->actions->delete(1, $id, 'shop.example.com', true, 'admin');
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('Store 2', $result->message);
+        self::assertSame(['GET https://engine.test/stores', 'GET https://engine.test/stores'], $this->methods());
+    }
+
+    public function testCrossViewCheckCountsAnEnabledViewThatNeverPushed(): void
+    {
+        $id = $this->pushed(1, 'shop.example.com');
+        $this->settings->put(2, ['storeKey' => 'shop.example.com']);   // enabled, no association yet
+        $this->respond(200, []);
+        self::assertStringContainsString('Store 2', $this->actions->clear(1, 'admin')->message);
+        $this->respond(200, []);
+        self::assertStringContainsString('Store 2',
+            $this->actions->delete(1, $id, 'shop.example.com', true, 'admin')->message);
+        $this->settings->put(2, ['storeKey' => 'shop.example.com', 'enabled' => false]);   // disabled: no longer counts
+        $this->respond(200, []);
+        $this->respond(200, ['products_deleted' => 1]);
+        self::assertTrue($this->actions->clear(1, 'admin')->ok);
+    }
+
     public function testDeleteNeedsTheExactKeyAndTheAcknowledgement(): void
     {
         $id = $this->pushed(1, 'shop.example.com');
