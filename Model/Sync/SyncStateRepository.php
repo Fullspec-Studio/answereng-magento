@@ -235,6 +235,31 @@ class SyncStateRepository
         );
     }
 
+    /**
+     * Enabled views the admin system message reports: over the product cap, or exhausted.
+     *
+     * @param list<int> $enabledStoreIds
+     * @return list<array{store_id: int, state: string, reason: ?string}>
+     */
+    public function viewsNeedingAttention(array $enabledStoreIds): array
+    {
+        if ($enabledStoreIds === []) {
+            return [];
+        }
+        $rows = $this->db->fetchAll(
+            "SELECT store_id, state, reason FROM {$this->t()}
+             WHERE store_id IN ({$this->placeholders($enabledStoreIds)})
+               AND (state = 'exhausted' OR (state = 'blocked' AND reason = 'too_many_products'))
+             ORDER BY store_id",
+            $enabledStoreIds
+        );
+        return array_map(static fn (array $r) => [
+            'store_id' => (int) $r['store_id'],
+            'state' => (string) $r['state'],
+            'reason' => $r['reason'] === null ? null : (string) $r['reason'],
+        ], $rows);
+    }
+
     public function recordAccount(int $storeId, string $accountId, string $apiKeyHash): void
     {
         $this->ensure($storeId);
