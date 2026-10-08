@@ -210,4 +210,66 @@ final class RemoteStoreActionsTest extends DbTestCase
         self::assertSame(['pending_deletion', '2026-10-14 12:00:00'],
             [$this->registry->get($waiting)?->remoteStatus, $this->registry->get($waiting)?->purgeAfter?->format('Y-m-d H:i:s')]);
     }
+
+    public function testClearWorksOnADisabledView(): void
+    {
+        $this->pushed(1, 'shop.example.com');
+        $this->settings->put(1, ['enabled' => false, 'storeKey' => 'shop.example.com']);
+        $this->respond(200, []);
+        $this->respond(200, ['products_deleted' => 3]);
+        $result = $this->actions->clear(1, 'admin');
+        self::assertTrue($result->ok, $result->message);
+        self::assertSame('DELETE https://engine.test/stores/shop.example.com/catalog', $this->methods()[1]);
+    }
+
+    public function testClearNamesTheStoreWhenPendingDeletion(): void
+    {
+        $this->pushed(1, 'shop.example.com');
+        $this->respond(200, []);
+        $this->respond(409, ['code' => 'store_pending_deletion']);
+        $result = $this->actions->clear(1, 'admin');
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('shop.example.com', $result->message);
+    }
+
+    public function testDeleteAndCancelOnUnknownStoreMarkTheIdentityDeleted(): void
+    {
+        $id = $this->pushed(1, 'shop.example.com');
+        $this->respond(200, []);
+        $this->respond(404, ['code' => 'unknown_store']);
+        self::assertFalse($this->actions->delete(1, $id, 'shop.example.com', true, 'admin')->ok);
+        self::assertSame('deleted', $this->registry->get($id)?->remoteStatus);
+
+        $id2 = $this->pushed(1, 'other.example.com');
+        $this->registry->setStatus($id2, 'pending_deletion', $this->clock->now());
+        $this->respond(200, []);
+        $this->respond(404, ['code' => 'unknown_store']);
+        self::assertFalse($this->actions->cancel(1, $id2, 'admin')->ok);
+        self::assertSame('deleted', $this->registry->get($id2)?->remoteStatus);
+    }
+
+    public function testDeleteIsRefusedUnlessActive(): void
+    {
+        $id = $this->pushed(1, 'shop.example.com');
+        $this->registry->setStatus($id, 'pending_deletion', $this->clock->now());
+        self::assertFalse($this->actions->delete(1, $id, 'shop.example.com', true, 'admin')->ok);
+        self::assertSame([], $this->transport->requests);
+    }
+
+    public function testDeleteSyncsLocalStatusOnPendingDeletionConflict(): void
+    {
+        $id = $this->pushed(1, 'shop.example.com');
+        $this->respond(200, []);
+        $this->respond(409, ['code' => 'store_pending_deletion', 'purge_after' => '2026-10-14T12:00:00+00:00']);
+        self::assertFalse($this->actions->delete(1, $id, 'shop.example.com', true, 'admin')->ok);
+        self::assertSame('pending_deletion', $this->registry->get($id)?->remoteStatus);
+    }
+
+    public function testRefreshToleratesAMalformedPurgeAfter(): void
+    {
+        $id = $this->pushed(1, 'shop.example.com');
+        $this->respond(200, [['store_key' => 'shop.example.com', 'status' => 'pending_deletion', 'purge_after' => 'garbage']]);
+        $this->actions->refreshStatuses(1);
+        self::assertSame('pending_deletion', $this->registry->get($id)?->remoteStatus);
+    }
 }

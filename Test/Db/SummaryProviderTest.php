@@ -70,6 +70,17 @@ final class SummaryProviderTest extends DbTestCase
         self::assertSame(SummaryView::UNAVAILABLE, $this->provider->forView(1)->state);
     }
 
+    public function testNon404ClientErrorsNeverFallBackToASnapshot(): void
+    {
+        $this->transport->enqueue(FakeTransport::json(200, $this->fixture('summary.json')));
+        $this->provider->forView(1);
+        $this->cache->items = [];
+        $this->transport->enqueue(FakeTransport::json(403, ['code' => 'invalid_key']));
+        self::assertSame(SummaryView::UNAVAILABLE, $this->provider->forView(1)->state);
+        $this->transport->enqueue(FakeTransport::json(404, null));
+        self::assertSame(SummaryView::NOT_SYNCED, $this->provider->forView(1)->state);
+    }
+
     public function testNotSyncedNoRunPendingAndDisabled(): void
     {
         $this->transport->enqueue(FakeTransport::json(404, ['code' => 'unknown_store']));

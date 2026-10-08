@@ -46,14 +46,15 @@ class SummaryProvider
             $this->state->saveSnapshot($storeId, $s->fingerprint(), $json, $this->clock->now());
             return $this->fromJson($json, SummaryView::FRESH, $url, null);
         }
-        if ($r->status === 404 && $r->code() === 'unknown_store') {
+        if ($r->status === 404) {
             return new SummaryView(SummaryView::NOT_SYNCED, $url);
         }
         if ($r->status === 409 && $r->code() === 'store_pending_deletion') {
             return new SummaryView(SummaryView::PENDING_DELETION, $url);
         }
+        $transient = $r->status === null || $r->status >= 500 || $r->status === 429;
         $state = $this->state->get($storeId);
-        if ($state->snapshotJson !== null && $state->snapshotFingerprint === $s->fingerprint()) {
+        if ($transient && $state->snapshotJson !== null && $state->snapshotFingerprint === $s->fingerprint()) {
             return $this->fromJson($state->snapshotJson, SummaryView::STALE, $url, $state->snapshotFetchedAt);
         }
         return new SummaryView(SummaryView::UNAVAILABLE, $url);

@@ -73,7 +73,7 @@ class RemoteStoreActions
 
     public function clear(int $storeId, string $adminUser): ActionResult
     {
-        $rs = $this->roles->currentFor($storeId);
+        $rs = $this->roles->clearTargetFor($storeId);
         if ($rs === null) {
             return new ActionResult(false, (string) __('This store view has no current AnswerEng store to clear.'));
         }
@@ -88,7 +88,7 @@ class RemoteStoreActions
             return new ActionResult(true, (string) __('Cleared the AnswerEng catalog for "%1". History and results are '
                 . 'kept, and the store still counts toward your plan. The next sync restores the catalog.', $rs->storeKey));
         }
-        return new ActionResult(false, $this->refusal($r));
+        return new ActionResult(false, $this->refusal($r, $rs->storeKey));
     }
 
     public function delete(int $storeId, int $identityId, string $typedKey, bool $acknowledged, string $adminUser): ActionResult
@@ -100,6 +100,10 @@ class RemoteStoreActions
         if ($typedKey !== $rs->storeKey || !$acknowledged) {
             return new ActionResult(false, (string) __('Type the store key exactly and tick the box to confirm.'));
         }
+        if ($rs->remoteStatus !== 'active') {
+            return new ActionResult(false, (string) __('"%1" is not active in AnswerEng, so it cannot be deleted.',
+                $rs->storeKey));
+        }
         $s = $this->settings->forStore($storeId);
         if (($error = $this->guard($rs, $s) ?? $this->crossView($rs, $storeId)) !== null) {
             return new ActionResult(false, $error);
@@ -109,11 +113,11 @@ class RemoteStoreActions
         if ($r->isSuccess()) {
             $purgeAfter = $this->purgeAfter($r) ?? $this->clock->now()->modify('+7 days');
             $this->registry->setStatus($rs->id, 'pending_deletion', $purgeAfter);
+            $this->log->append($storeId, $this->clock->now(), 'admin', 'deletion_requested',
+                $rs->storeKey . ' purge_after=' . Ts::fmt($purgeAfter), $adminUser);
             if ($wasCurrent) {
                 $this->disabler->disable($storeId);
             }
-            $this->log->append($storeId, $this->clock->now(), 'admin', 'deletion_requested',
-                $rs->storeKey . ' purge_after=' . Ts::fmt($purgeAfter), $adminUser);
             $message = (string) __('AnswerEng will permanently delete "%1" on %2 UTC. You can cancel until then.',
                 $rs->storeKey, $purgeAfter->format('Y-m-d H:i'));
             return new ActionResult(true, $wasCurrent
@@ -121,6 +125,8 @@ class RemoteStoreActions
         }
         if ($r->code() === 'store_pending_deletion') {
             $this->registry->setStatus($rs->id, 'pending_deletion', $this->purgeAfter($r));
+        } elseif ($this->isUnknownStore($r)) {
+            $this->registry->setStatus($rs->id, 'deleted', null);
         }
         return new ActionResult(false, $this->refusal($r, $rs->storeKey));
     }
@@ -141,6 +147,9 @@ class RemoteStoreActions
             $this->log->append($storeId, $this->clock->now(), 'admin', 'deletion_cancelled', $rs->storeKey, $adminUser);
             return new ActionResult(true, (string) __('Deletion of "%1" cancelled. Re-enable syncing for this store view '
                 . 'when you are ready.', $rs->storeKey));
+        }
+        if ($this->isUnknownStore($r)) {
+            $this->registry->setStatus($rs->id, 'deleted', null);
         }
         return new ActionResult(false, $this->refusal($r, $rs->storeKey));
     }
@@ -189,7 +198,7 @@ class RemoteStoreActions
             $item = $remote[$rs->storeKey] ?? null;
             if ($item !== null) {
                 $pending = in_array($item['status'] ?? 'active', ['pending_deletion', 'purging'], true);
-                $purge = is_string($item['purge_after'] ?? null) ? new \DateTimeImmutable($item['purge_after']) : null;
+                $purge = $this->parseUtc($item['purge_after'] ?? null);
                 $this->registry->setStatus($rs->id, $pending ? 'pending_deletion' : 'active', $pending ? $purge : null);
             } elseif ($rs->remoteStatus === 'pending_deletion' && $rs->purgeAfter !== null && $rs->purgeAfter <= $now) {
                 $this->registry->setStatus($rs->id, 'deleted', null);
@@ -257,8 +266,24 @@ class RemoteStoreActions
 
     private function purgeAfter(EngineResult $r): ?\DateTimeImmutable
     {
-        $value = $r->purgeAfter();
-        return $value === null ? null : (new \DateTimeImmutable($value))->setTimezone(new \DateTimeZone('UTC'));
+        return $this->parseUtc($r->purgeAfter());
+    }
+
+    private function parseUtc(mixed $value): ?\DateTimeImmutable
+    {
+        if (!is_string($value) || $value === '') {
+            return null;
+        }
+        try {
+            return (new \DateTimeImmutable($value))->setTimezone(new \DateTimeZone('UTC'));
+        } catch (\Exception) {
+            return null;
+        }
+    }
+
+    private function isUnknownStore(EngineResult $r): bool
+    {
+        return $r->status === 404 && $r->code() === 'unknown_store';
     }
 
     private function refusal(EngineResult $r, string $storeKey = ''): string

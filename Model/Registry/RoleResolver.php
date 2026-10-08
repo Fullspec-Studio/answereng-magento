@@ -41,6 +41,25 @@ class RoleResolver
         return null;
     }
 
+    /**
+     * The identity Clear acts on: like currentFor but ignoring the enabled flag (spec §7).
+     */
+    public function clearTargetFor(int $storeId): ?RemoteStore
+    {
+        $s = $this->settings->forStore($storeId);
+        $state = $this->state->get($storeId);
+        foreach ($this->registry->forView($storeId) as $r) {
+            if ($s->storeKey === $r->storeKey
+                && $s->engineUrl === $r->engineUrl
+                && $state->accountKeyHash === $s->apiKeyHash()
+                && $state->accountId === $r->accountId
+            ) {
+                return $r;
+            }
+        }
+        return null;
+    }
+
     /** @return list<int> views for which this identity is current */
     public function activeUsers(int $identityId): array
     {
