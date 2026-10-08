@@ -30,8 +30,10 @@ class StoreKeyComment implements CommentInterface
         if ($synced === null) {
             return $default;
         }
-        return (string) __('This view has synced as "%1". Changing it registers a NEW store in AnswerEng that counts '
+        return (string) __(
+            'This view has synced as "%1". Changing it registers a NEW store in AnswerEng that counts '
             . 'against your plan; the old store keeps its data and its slot until you delete it (Danger zone).',
-            $this->escaper->escapeHtml($synced));
+            $this->escaper->escapeHtml($synced)
+        );
     }
 }

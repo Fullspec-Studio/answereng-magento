@@ -65,12 +65,26 @@ class SummaryProvider
     {
         $data = json_decode($json, true) ?: [];
         if (($data['latest_run'] ?? null) === null) {
-            return new SummaryView($state === SummaryView::STALE ? SummaryView::STALE : SummaryView::NO_RUN, $url,
-                null, null, null, null, $fetchedAt);
+            return new SummaryView(
+                $state === SummaryView::STALE ? SummaryView::STALE : SummaryView::NO_RUN,
+                $url,
+                null,
+                null,
+                null,
+                null,
+                $fetchedAt
+            );
         }
         $v = is_array($data['visibility'] ?? null) ? $data['visibility'] : [];
         $num = static fn ($x): ?float => is_numeric($x) ? (float) $x : null;
-        return new SummaryView($state, $url, $num($v['rate'] ?? null), $num($v['low'] ?? null), $num($v['high'] ?? null),
-            is_string($data['latest_run']['started_at'] ?? null) ? $data['latest_run']['started_at'] : null, $fetchedAt);
+        return new SummaryView(
+            $state,
+            $url,
+            $num($v['rate'] ?? null),
+            $num($v['low'] ?? null),
+            $num($v['high'] ?? null),
+            is_string($data['latest_run']['started_at'] ?? null) ? $data['latest_run']['started_at'] : null,
+            $fetchedAt
+        );
     }
 }

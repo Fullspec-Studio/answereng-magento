@@ -20,8 +20,8 @@ class StatusPanel extends Field
         Context $context,
         private readonly PanelViewModel $panel,
         private readonly SettingsProvider $settings,
-        array $data = [])
-    {
+        array $data = []
+    ) {
         parent::__construct($context, $data);
     }
 

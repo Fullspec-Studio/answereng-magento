@@ -65,8 +65,10 @@ class Syncer implements SyncRunner
         }
         $now = $this->clock->now();
         if ($manual && ($until = $this->state->throttledUntil($storeId, $now)) !== null) {
-            return new SyncResult(SyncResult::THROTTLED, (string) __('Rate limited by AnswerEng — try again after %1 UTC.',
-                $until->format('Y-m-d H:i')), $until);
+            return new SyncResult(SyncResult::THROTTLED, (string) __(
+                'Rate limited by AnswerEng — try again after %1 UTC.',
+                $until->format('Y-m-d H:i')
+            ), $until);
         }
 
         $startedAt = $now;
@@ -75,13 +77,23 @@ class Syncer implements SyncRunner
         } catch (\Throwable $e) {
             $this->logger->error('AnswerEng catalog export failed', ['store_id' => $storeId,
                 'exception' => get_class($e), 'message' => mb_substr($e->getMessage(), 0, 300)]);
-            $applied = $this->state->recordTransient($storeId, $revision, $this->clock->now(), null,
-                SyncStateRepository::CAUSE_EXPORT_FAILED);
+            $applied = $this->state->recordTransient(
+                $storeId,
+                $revision,
+                $this->clock->now(),
+                null,
+                SyncStateRepository::CAUSE_EXPORT_FAILED
+            );
             if (!$applied) {
                 return $this->superseded($storeId, $source);
             }
-            $this->log->append($storeId, $this->clock->now(), $source, SyncResult::FAILED,
-                'catalog export failed: ' . get_class($e));
+            $this->log->append(
+                $storeId,
+                $this->clock->now(),
+                $source,
+                SyncResult::FAILED,
+                'catalog export failed: ' . get_class($e)
+            );
             return new SyncResult(SyncResult::FAILED, $this->transientResult($storeId)->message);
         }
 
@@ -100,8 +112,15 @@ class Syncer implements SyncRunner
     private function clearEmpty(Settings $s, int $revision, \DateTimeImmutable $startedAt, string $source): SyncResult
     {
         if ($this->state->get($s->storeId)->syncedStoreKey === null) {
-            return $this->apply($s, $revision, $startedAt,
-                new Outcome(OutcomeKind::AlreadyClear, null, 'never synced'), 0, $source, 'catalog_cleared');
+            return $this->apply(
+                $s,
+                $revision,
+                $startedAt,
+                new Outcome(OutcomeKind::AlreadyClear, null, 'never synced'),
+                0,
+                $source,
+                'catalog_cleared'
+            );
         }
         $result = $this->engine->clearCatalog($s->connection(), $s->storeKey);
         $this->afterEngineCall($s, $result, false);
@@ -136,23 +155,36 @@ class Syncer implements SyncRunner
         switch ($o->kind) {
             case OutcomeKind::Success:
             case OutcomeKind::AlreadyClear:
-                $applied = $this->state->recordSuccess($id, $revision, $startedAt, $now, $count,
-                    $successReason === null ? $s->storeKey : null, $successReason);
+                $applied = $this->state->recordSuccess(
+                    $id,
+                    $revision,
+                    $startedAt,
+                    $now,
+                    $count,
+                    $successReason === null ? $s->storeKey : null,
+                    $successReason
+                );
                 $result = $successReason === null
                     ? new SyncResult(SyncResult::PUSHED, (string) __('Sent %1 products to AnswerEng.', $count))
                     : new SyncResult(SyncResult::CLEARED, StateMessage::cleared());
                 break;
             case OutcomeKind::Transient:
             case OutcomeKind::Throttled:
-                $applied = $this->state->recordTransient($id, $revision, $now,
+                $applied = $this->state->recordTransient(
+                    $id,
+                    $revision,
+                    $now,
                     $o->kind === OutcomeKind::Throttled ? $o->retryAfterSeconds : null,
-                    $o->reason === 'run_in_progress' ? SyncStateRepository::CAUSE_RUN_IN_PROGRESS : null);
+                    $o->reason === 'run_in_progress' ? SyncStateRepository::CAUSE_RUN_IN_PROGRESS : null
+                );
                 $result = $this->transientResult($id);
                 break;
             default:
                 $applied = $this->state->recordPaused($id, $revision, (string) $o->reason, $startedAt);
-                $result = new SyncResult(SyncResult::PAUSED,
-                    StateMessage::paused((string) $o->reason, $o->detail, $o->purgeAfter));
+                $result = new SyncResult(
+                    SyncResult::PAUSED,
+                    StateMessage::paused((string) $o->reason, $o->detail, $o->purgeAfter)
+                );
         }
         if (!$applied) {
             return $this->superseded($id, $source);
@@ -166,8 +198,13 @@ class Syncer implements SyncRunner
      */
     private function superseded(int $storeId, string $source): SyncResult
     {
-        $this->log->append($storeId, $this->clock->now(), $source, SyncResult::SUPERSEDED,
-            'superseded by a configuration change');
+        $this->log->append(
+            $storeId,
+            $this->clock->now(),
+            $source,
+            SyncResult::SUPERSEDED,
+            'superseded by a configuration change'
+        );
         return new SyncResult(SyncResult::SUPERSEDED, (string) __('The configuration changed during the sync; '
             . 'the new settings will sync shortly.'));
     }

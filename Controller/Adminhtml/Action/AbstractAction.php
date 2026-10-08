@@ -22,8 +22,10 @@ abstract class AbstractAction extends Action implements HttpPostActionInterface
     {
         if (!in_array($this->requestedStoreId(), $this->settingsProvider->allStoreIds(), true)) {
             $this->messageManager->addErrorMessage((string) __('Unknown store view. Choose a store view and try again.'));
-            return $this->resultRedirectFactory->create()->setPath('adminhtml/system_config/edit',
-                ['section' => 'answereng']);
+            return $this->resultRedirectFactory->create()->setPath(
+                'adminhtml/system_config/edit',
+                ['section' => 'answereng']
+            );
         }
         return $this->perform();
     }
@@ -51,8 +53,10 @@ abstract class AbstractAction extends Action implements HttpPostActionInterface
         } else {
             $this->messageManager->addSuccessMessage($result->message);
         }
-        return $this->resultRedirectFactory->create()->setPath('adminhtml/system_config/edit',
-            ['section' => 'answereng', 'store' => $this->storeId()]);
+        return $this->resultRedirectFactory->create()->setPath(
+            'adminhtml/system_config/edit',
+            ['section' => 'answereng', 'store' => $this->storeId()]
+        );
     }
 
     private function requestedStoreId(): int

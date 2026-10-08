@@ -43,13 +43,17 @@ class RemoteStoreActions
     {
         $s = $this->settings->forStore($storeId);
         if ($s->apiKey === '') {
-            return new ConnectionReport(ConnectionReport::NO_KEY,
-                (string) __('Enter an API key first. Nothing is sent to AnswerEng without one.'));
+            return new ConnectionReport(
+                ConnectionReport::NO_KEY,
+                (string) __('Enter an API key first. Nothing is sent to AnswerEng without one.')
+            );
         }
         $r = $this->engine->listStores($s->connection());
         if ($r->status === null || $r->status >= 500) {
-            return new ConnectionReport(ConnectionReport::UNREACHABLE,
-                (string) __('AnswerEng is unreachable (it may be waking up — try again in a minute).'));
+            return new ConnectionReport(
+                ConnectionReport::UNREACHABLE,
+                (string) __('AnswerEng is unreachable (it may be waking up — try again in a minute).')
+            );
         }
         if (!$r->isSuccess()) {
             return new ConnectionReport(ConnectionReport::REJECTED, $this->refusal($r));
@@ -64,11 +68,17 @@ class RemoteStoreActions
         }
         $summary = $this->engine->summary($s->connection(), $s->storeKey);
         if ($summary->isSuccess() && ($summary->json['latest_run'] ?? null) === null) {
-            return new ConnectionReport(ConnectionReport::WAITING_FIRST_RUN,
-                (string) __('Connected — waiting for the first analysis run.'), $keys);
+            return new ConnectionReport(
+                ConnectionReport::WAITING_FIRST_RUN,
+                (string) __('Connected — waiting for the first analysis run.'),
+                $keys
+            );
         }
-        return new ConnectionReport(ConnectionReport::FOUND,
-            (string) __('Connected — store "%1" found.', $s->storeKey), $keys);
+        return new ConnectionReport(
+            ConnectionReport::FOUND,
+            (string) __('Connected — store "%1" found.', $s->storeKey),
+            $keys
+        );
     }
 
     public function clear(int $storeId, string $adminUser): ActionResult
@@ -117,8 +127,10 @@ class RemoteStoreActions
             return new ActionResult(false, (string) __('Type the store key exactly and tick the box to confirm.'));
         }
         if ($rs->remoteStatus !== 'active') {
-            return new ActionResult(false, (string) __('"%1" is not active in AnswerEng, so it cannot be deleted.',
-                $rs->storeKey));
+            return new ActionResult(false, (string) __(
+                '"%1" is not active in AnswerEng, so it cannot be deleted.',
+                $rs->storeKey
+            ));
         }
         $s = $this->settings->forStore($storeId);
         if (($error = $this->guard($rs, $s) ?? $this->crossView($rs, $storeId)) !== null) {
@@ -129,13 +141,22 @@ class RemoteStoreActions
         if ($r->isSuccess()) {
             $purgeAfter = $this->purgeAfter($r) ?? $this->clock->now()->modify('+7 days');
             $this->registry->setStatus($rs->id, 'pending_deletion', $purgeAfter);
-            $this->log->append($storeId, $this->clock->now(), 'admin', 'deletion_requested',
-                $rs->storeKey . ' purge_after=' . Ts::fmt($purgeAfter), $adminUser);
+            $this->log->append(
+                $storeId,
+                $this->clock->now(),
+                'admin',
+                'deletion_requested',
+                $rs->storeKey . ' purge_after=' . Ts::fmt($purgeAfter),
+                $adminUser
+            );
             if ($wasCurrent) {
                 $this->disabler->disable($storeId);
             }
-            $message = (string) __('AnswerEng will permanently delete "%1" on %2 UTC. You can cancel until then.',
-                $rs->storeKey, $purgeAfter->format('Y-m-d H:i'));
+            $message = (string) __(
+                'AnswerEng will permanently delete "%1" on %2 UTC. You can cancel until then.',
+                $rs->storeKey,
+                $purgeAfter->format('Y-m-d H:i')
+            );
             return new ActionResult(true, $wasCurrent
                 ? $message . ' ' . __('Syncing for this store view is now disabled.') : $message);
         }
@@ -146,8 +167,14 @@ class RemoteStoreActions
             if ($wasCurrent) {
                 // The merchant asked for this store to be gone and it already is: stop syncing exactly as a
                 // successful delete does, or the next sync would re-create it.
-                $this->log->append($storeId, $this->clock->now(), 'admin', 'deletion_requested',
-                    $rs->storeKey . ' already gone (HTTP 404)', $adminUser);
+                $this->log->append(
+                    $storeId,
+                    $this->clock->now(),
+                    'admin',
+                    'deletion_requested',
+                    $rs->storeKey . ' already gone (HTTP 404)',
+                    $adminUser
+                );
                 $this->disabler->disable($storeId);
                 return new ActionResult(false, $this->refusal($r, $rs->storeKey) . ' '
                     . __('Syncing for this store view is now disabled.'));
@@ -173,8 +200,10 @@ class RemoteStoreActions
             $this->log->append($storeId, $this->clock->now(), 'admin', 'deletion_cancelled', $rs->storeKey, $adminUser);
             return new ActionResult(true, $s->enabled
                 ? (string) __('Deletion of "%1" cancelled. Syncing for this store view resumes shortly.', $rs->storeKey)
-                : (string) __('Deletion of "%1" cancelled. Re-enable syncing for this store view when you are ready.',
-                    $rs->storeKey));
+                : (string) __(
+                    'Deletion of "%1" cancelled. Re-enable syncing for this store view when you are ready.',
+                    $rs->storeKey
+                ));
         }
         if ($this->isUnknownStore($r)) {
             $this->registry->setStatus($rs->id, 'deleted', null);
@@ -207,8 +236,10 @@ class RemoteStoreActions
     public function refreshStatuses(int $storeId): ?array
     {
         $s = $this->settings->forStore($storeId);
-        $identities = array_filter($this->registry->forView($storeId),
-            static fn (RemoteStore $r) => $r->engineUrl === $s->engineUrl);
+        $identities = array_filter(
+            $this->registry->forView($storeId),
+            static fn (RemoteStore $r) => $r->engineUrl === $s->engineUrl
+        );
         if ($s->apiKey === '' || $identities === []) {
             return null;
         }
@@ -305,8 +336,11 @@ class RemoteStoreActions
      */
     private function resumeAfterCancel(string $storeKey): void
     {
-        $this->state->resumePaused($this->enabledViewsUsingKey($storeKey), 'store_pending_deletion',
-            $this->clock->now());
+        $this->state->resumePaused(
+            $this->enabledViewsUsingKey($storeKey),
+            'store_pending_deletion',
+            $this->clock->now()
+        );
     }
 
     /**
@@ -314,8 +348,10 @@ class RemoteStoreActions
      */
     private function enabledViewsUsingKey(string $storeKey): array
     {
-        return array_values(array_filter($this->settings->enabledStoreIds(),
-            fn (int $id) => $this->settings->forStore($id)->storeKey === $storeKey));
+        return array_values(array_filter(
+            $this->settings->enabledStoreIds(),
+            fn (int $id) => $this->settings->forStore($id)->storeKey === $storeKey
+        ));
     }
 
     /**

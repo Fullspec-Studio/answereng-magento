@@ -67,7 +67,9 @@ class RoleResolver
         if ($identity === null) {
             return [];
         }
-        return array_values(array_filter($this->registry->viewsOf($identityId),
-            fn (int $storeId) => $this->isCurrent($identity, $storeId)));
+        return array_values(array_filter(
+            $this->registry->viewsOf($identityId),
+            fn (int $storeId) => $this->isCurrent($identity, $storeId)
+        ));
     }
 }

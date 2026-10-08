@@ -25,7 +25,10 @@ class SyncResult
 
     public function isError(): bool
     {
-        return in_array($this->status,
-            [self::BLOCKED, self::PAUSED, self::RETRYING, self::EXHAUSTED, self::THROTTLED, self::FAILED], true);
+        return in_array(
+            $this->status,
+            [self::BLOCKED, self::PAUSED, self::RETRYING, self::EXHAUSTED, self::THROTTLED, self::FAILED],
+            true
+        );
     }
 }

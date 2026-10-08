@@ -106,8 +106,14 @@ class PanelViewModel
             'storeKey' => $s->storeKey,
             'state' => $state->state,
             'reason' => $state->reason,
-            'message' => $this->message($storeId, $state->state, $state->reason, $state->retryReason,
-                $pending['purgeAfter'] ?? null, $state->reason === 'store_limit' ? ($keys ?? []) : []),
+            'message' => $this->message(
+                $storeId,
+                $state->state,
+                $state->reason,
+                $state->retryReason,
+                $pending['purgeAfter'] ?? null,
+                $state->reason === 'store_limit' ? ($keys ?? []) : []
+            ),
             'lastSyncAt' => $state->lastSyncAt?->format('Y-m-d H:i'),
             'productCount' => $state->productCount,
             'log' => $this->log->recent($storeId),
