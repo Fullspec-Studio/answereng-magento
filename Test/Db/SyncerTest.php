@@ -228,6 +228,54 @@ final class SyncerTest extends DbTestCase
         self::assertSame([], $this->lock->held);
     }
 
+    public function testAThirdCatalogFailureReportsExhaustionAndLogsFailed(): void
+    {
+        for ($i = 11; $i <= 600; $i++) {
+            $this->catalog->add(1, $i);
+        }
+        $this->catalog->failOnChunk = new \RuntimeException('db gone');
+        $first = $this->syncer->sync(1, 'debounce');
+        self::assertSame([SyncResult::FAILED, 'Reading the catalog failed; nothing was sent. Retrying shortly.'],
+            [$first->status, $first->message]);
+        self::assertSame(['failed', 'catalog export failed: RuntimeException'],
+            [$this->log->recent(1)[0]['outcome'], $this->log->recent(1)[0]['detail']]);
+        $this->syncer->sync(1, 'debounce');
+        $third = $this->syncer->sync(1, 'debounce');
+        self::assertSame([SyncResult::FAILED,
+            'Reading the catalog failed 3 times; nothing was sent. The nightly sync will try again.'],
+            [$third->status, $third->message]);
+        self::assertSame(['exhausted', 'catalog_export_failed'],
+            [$this->state->get(1)->state, $this->state->get(1)->reason]);
+        self::assertSame([], $this->transport->requests);
+    }
+
+    public function testACatalogFailureRacingAConfigChangeIsSuperseded(): void
+    {
+        $this->catalog->failOnChunk = new \RuntimeException('db gone');
+        for ($i = 11; $i <= 600; $i++) {
+            $this->catalog->add(1, $i);
+        }
+        $this->catalog->onExport = function (): void {
+            $this->state->applySettingsHash(1, 'changed-mid-export', $this->clock->now());
+        };
+        self::assertSame(SyncResult::SUPERSEDED, $this->syncer->sync(1, 'debounce')->status);
+        self::assertSame(['ok', 0], [$this->state->get(1)->state, $this->state->get(1)->attempts]);
+        self::assertSame('superseded', $this->log->recent(1)[0]['outcome']);
+    }
+
+    public function testABlockRacingAConfigChangeIsSuperseded(): void
+    {
+        for ($i = 100; $i <= 5100; $i++) {
+            $this->catalog->add(1, $i);
+        }
+        $this->catalog->onExport = function (): void {
+            $this->state->applySettingsHash(1, 'changed-mid-export', $this->clock->now());
+        };
+        self::assertSame(SyncResult::SUPERSEDED, $this->syncer->sync(1, 'debounce')->status);
+        self::assertSame(['ok', null], [$this->state->get(1)->state, $this->state->get(1)->reason]);
+        self::assertSame('superseded', $this->log->recent(1)[0]['outcome']);
+    }
+
     public function testSuccessWithoutAnAccountHeaderSkipsTheRegistry(): void
     {
         $this->transport->enqueue(FakeTransport::json(200, ['store_id' => 1]));

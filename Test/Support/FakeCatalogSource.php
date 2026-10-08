@@ -15,6 +15,8 @@ final class FakeCatalogSource implements CatalogSource
     public ?\Throwable $failOnChunk = null;
     /** @var list<int> ids that vanish between id capture and chunk load */
     public array $deletedMidway = [];
+    /** Runs when an export starts (eligibleIds), e.g. to simulate a config save racing the export. */
+    public ?\Closure $onExport = null;
 
     public function add(int $storeId, int $entityId, ?ProductRecord $r = null): void
     {
@@ -24,6 +26,9 @@ final class FakeCatalogSource implements CatalogSource
 
     public function eligibleIds(int $storeId): array
     {
+        if ($this->onExport !== null) {
+            ($this->onExport)();
+        }
         return array_keys($this->products[$storeId] ?? []);
     }
 

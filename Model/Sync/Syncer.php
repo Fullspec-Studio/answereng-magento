@@ -75,10 +75,14 @@ class Syncer implements SyncRunner
         } catch (\Throwable $e) {
             $this->logger->error('AnswerEng catalog export failed', ['store_id' => $storeId,
                 'exception' => get_class($e), 'message' => mb_substr($e->getMessage(), 0, 300)]);
-            $this->state->recordTransient($storeId, $revision, $this->clock->now(), null,
+            $applied = $this->state->recordTransient($storeId, $revision, $this->clock->now(), null,
                 SyncStateRepository::CAUSE_EXPORT_FAILED);
-            $this->log->append($storeId, $this->clock->now(), $source, 'error', 'catalog export failed: ' . get_class($e));
-            return new SyncResult(SyncResult::FAILED, (string) __('Reading the catalog failed; nothing was sent. It will be retried.'));
+            if (!$applied) {
+                return $this->superseded($storeId, $source);
+            }
+            $this->log->append($storeId, $this->clock->now(), $source, SyncResult::FAILED,
+                'catalog export failed: ' . get_class($e));
+            return new SyncResult(SyncResult::FAILED, $this->transientResult($storeId)->message);
         }
 
         if ($export->kind === ExportResult::TOO_MANY) {
@@ -151,12 +155,21 @@ class Syncer implements SyncRunner
                     StateMessage::paused((string) $o->reason, $o->detail, $o->purgeAfter));
         }
         if (!$applied) {
-            $this->log->append($id, $now, $source, 'superseded', 'superseded by a configuration change');
-            return new SyncResult(SyncResult::SUPERSEDED, (string) __('The configuration changed during the sync; '
-                . 'the new settings will sync shortly.'));
+            return $this->superseded($id, $source);
         }
         $this->log->append($id, $now, $source, $result->status, $o->detail);
         return $result;
+    }
+
+    /**
+     * The outcome was discarded because the configuration changed meanwhile (revision guard).
+     */
+    private function superseded(int $storeId, string $source): SyncResult
+    {
+        $this->log->append($storeId, $this->clock->now(), $source, SyncResult::SUPERSEDED,
+            'superseded by a configuration change');
+        return new SyncResult(SyncResult::SUPERSEDED, (string) __('The configuration changed during the sync; '
+            . 'the new settings will sync shortly.'));
     }
 
     /**
@@ -173,7 +186,9 @@ class Syncer implements SyncRunner
 
     private function blocked(int $storeId, int $revision, string $source, string $reason, ?string $detail = null): SyncResult
     {
-        $this->state->recordBlocked($storeId, $revision, $reason);
+        if (!$this->state->recordBlocked($storeId, $revision, $reason)) {
+            return $this->superseded($storeId, $source);
+        }
         $this->log->append($storeId, $this->clock->now(), $source, 'blocked', $detail ?? $reason);
         return new SyncResult(SyncResult::BLOCKED, StateMessage::blocked($reason));
     }
