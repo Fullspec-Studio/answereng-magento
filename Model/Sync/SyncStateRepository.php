@@ -173,9 +173,28 @@ class SyncStateRepository
         return $this->applied($changed, $storeId, $revision);
     }
 
-    public function recordPaused(int $storeId, int $revision, string $reason): bool
+    /**
+     * Pause the view. For a catalog-dependent reason (validation_failed, product_limit) a catalog edit
+     * made at or after $startedAt already happened while the push ran — markDirty found nothing to
+     * unpause then — so the view stays `ok` (and dirty) and the next debounced run sends the fixed
+     * catalog instead of waiting for another edit.
+     */
+    public function recordPaused(int $storeId, int $revision, string $reason, \DateTimeImmutable $startedAt): bool
     {
-        return $this->setTerminal($storeId, $revision, self::PAUSED, $reason);
+        if (!in_array($reason, Classifier::CATALOG_DEPENDENT, true)) {
+            return $this->setTerminal($storeId, $revision, self::PAUSED, $reason);
+        }
+        $editedSince = 'last_change_at IS NOT NULL AND last_change_at >= ?';
+        $changed = $this->db->execute(
+            // Both conditions read last_change_at, which this UPDATE never assigns.
+            "UPDATE {$this->t()} SET
+                 state = IF($editedSince, 'ok', 'paused'),
+                 reason = IF($editedSince, NULL, ?),
+                 retry_reason = NULL, attempts = 0, next_attempt_at = NULL
+             WHERE store_id = ? AND config_revision = ?",
+            [Ts::fmt($startedAt), Ts::fmt($startedAt), $reason, $storeId, $revision]
+        );
+        return $this->applied($changed, $storeId, $revision);
     }
 
     public function recordBlocked(int $storeId, int $revision, string $reason): bool

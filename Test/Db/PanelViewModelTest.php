@@ -137,7 +137,7 @@ final class PanelViewModelTest extends DbTestCase
         $clock = new FixedClock();
         $state->ensure(1);
         $state->ensure(2);
-        $state->recordPaused(1, $state->get(1)->configRevision, 'store_limit');
+        $state->recordPaused(1, $state->get(1)->configRevision, 'store_limit', $clock->now());
         $log->append(1, $clock->now(), 'debounce', 'paused', 'HTTP 403 store_limit limit=3');
         $state->recordSuccess(2, $state->get(2)->configRevision, $clock->now(), $clock->now(), 0, null, 'catalog_cleared');
         $rows = $this->viewModel($settings, new FakeTransport())->forDefault();

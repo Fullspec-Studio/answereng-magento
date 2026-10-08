@@ -150,7 +150,7 @@ class Syncer implements SyncRunner
                         : (string) __('AnswerEng is waking up or unreachable; retrying shortly.'));
                 break;
             default:
-                $applied = $this->state->recordPaused($id, $revision, (string) $o->reason);
+                $applied = $this->state->recordPaused($id, $revision, (string) $o->reason, $startedAt);
                 $result = new SyncResult(SyncResult::PAUSED,
                     StateMessage::paused((string) $o->reason, $o->detail, $o->purgeAfter));
         }

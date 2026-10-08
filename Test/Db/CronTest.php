@@ -37,7 +37,7 @@ final class CronTest extends DbTestCase
         $state = new SyncStateRepository($this->db);
         $state->ensure(2);
         $rev = $state->get(2)->configRevision;
-        $state->recordPaused(2, $rev, 'invalid_key');
+        $state->recordPaused(2, $rev, 'invalid_key', (new FixedClock())->now());
         $runner = new FakeRunner();
         (new Reconcile($settings, $state, $runner, new FixedClock(), new NullLogger()))->execute();
         self::assertSame([[1, 'reconcile', false]], $runner->calls);

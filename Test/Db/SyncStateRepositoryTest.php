@@ -111,7 +111,7 @@ final class SyncStateRepositoryTest extends DbTestCase
         $rev = $this->repo->get(1)->configRevision;
         self::assertTrue($this->repo->applySettingsHash(1, 'new-hash', $this->now()));
         self::assertFalse($this->repo->recordSuccess(1, $rev, $this->now(), $this->now(), 1, 'k', null));
-        self::assertFalse($this->repo->recordPaused(1, $rev, 'invalid_key'));
+        self::assertFalse($this->repo->recordPaused(1, $rev, 'invalid_key', $this->now()));
         self::assertSame('ok', $this->repo->get(1)->state);
     }
 
@@ -155,11 +155,45 @@ final class SyncStateRepositoryTest extends DbTestCase
     {
         $this->set(1, ['state' => 'retrying', 'attempts' => 2, 'next_attempt_at' => '2026-10-07 12:15:00']);
         $rev = $this->repo->get(1)->configRevision;
-        $this->repo->recordPaused(1, $rev, 'store_limit');
+        $this->repo->recordPaused(1, $rev, 'store_limit', $this->now());
         $s = $this->repo->get(1);
         self::assertSame(['paused', 'store_limit', 0, null], [$s->state, $s->reason, $s->attempts, $s->nextAttemptAt]);
         $this->repo->recordBlocked(1, $rev, 'too_many_products');
         self::assertSame(['blocked', 'too_many_products'], [$this->repo->get(1)->state, $this->repo->get(1)->reason]);
+    }
+
+    public function testCatalogDependentPauseStaysOkWhenTheCatalogWasEditedDuringThePush(): void
+    {
+        $started = $this->now();
+        $this->repo->ensure(1);
+        $rev = $this->repo->get(1)->configRevision;
+        $this->clock->advance(10);
+        $this->repo->markDirty([1], $this->now());          // edit while the push runs (state ok: nothing to unpause)
+        $this->clock->advance(10);
+        self::assertTrue($this->repo->recordPaused(1, $rev, 'validation_failed', $started));
+        $s = $this->repo->get(1);
+        self::assertSame(['ok', null, true], [$s->state, $s->reason, $s->dirty]);
+        $this->clock->advance(Repo::DEBOUNCE_SECONDS);
+        self::assertSame([1], $this->repo->selectForDebounce([1], $this->now()));
+    }
+
+    public function testCatalogDependentPauseHoldsWhenTheEditPrecededThePush(): void
+    {
+        $this->repo->markDirty([1, 2], $this->now());        // the edit that triggered the push
+        $this->clock->advance(Repo::DEBOUNCE_SECONDS);
+        $started = $this->now();
+        $rev = $this->repo->get(1)->configRevision;
+        self::assertTrue($this->repo->recordPaused(1, $rev, 'product_limit', $started));
+        self::assertSame(['paused', 'product_limit'], [$this->repo->get(1)->state, $this->repo->get(1)->reason]);
+        // non-catalog reasons pause even after an edit during the push
+        $this->clock->advance(10);
+        $this->repo->markDirty([2], $this->now());
+        self::assertTrue($this->repo->recordPaused(2, $rev, 'store_limit', $started));
+        self::assertSame(['paused', 'store_limit'], [$this->repo->get(2)->state, $this->repo->get(2)->reason]);
+        // never-edited view
+        $this->repo->ensure(3);
+        self::assertTrue($this->repo->recordPaused(3, $rev, 'validation_failed', $started));
+        self::assertSame('paused', $this->repo->get(3)->state);
     }
 
     public function testSettingsHashBumpsOnlyOnChangeAndResetsTheView(): void

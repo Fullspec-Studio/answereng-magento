@@ -152,6 +152,20 @@ final class SyncerTest extends DbTestCase
         self::assertSame('HTTP 403 store_limit limit=1', $this->log->recent(1)[0]['detail']);
     }
 
+    public function testACatalogEditDuringARejectedPushLeavesTheViewToResync(): void
+    {
+        $this->transport->onSend = function (): void {
+            $this->state->markDirty([1], $this->clock->now());   // merchant fixes the product mid-push
+        };
+        $this->failWith(422, ['code' => 'validation_failed', 'errors' => [['loc' => ['body', 'products', 0, 'title'],
+            'type' => 'string_too_short']]]);
+        self::assertSame(SyncResult::PAUSED, $this->syncer->sync(1, 'debounce')->status);
+        $s = $this->state->get(1);
+        self::assertSame(['ok', null, true], [$s->state, $s->reason, $s->dirty]);
+        $this->clock->advance(SyncStateRepository::DEBOUNCE_SECONDS);
+        self::assertSame([1], $this->state->selectForDebounce([1], $this->clock->now()));
+    }
+
     public function testManualSyncHonoursAThrottleWindow(): void
     {
         $this->transport->enqueue(FakeTransport::json(429, ['code' => 'throttled'], ['Retry-After' => '600']));
