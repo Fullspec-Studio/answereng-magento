@@ -10,7 +10,8 @@ Views: **A** = `default` (Main Website, 180 eligible sample products, key `local
 **B** = `second_view` (website `second`, 32–33 eligible products, key `127.0.0.1`).
 API keys: `ae_test` (account `acct_e1e3811…`), `ae_other` (a second mock workspace).
 
-Driven over HTTP with an admin session (`magento-local/scripts/admin.py`: real config-form
+Driven over HTTP with an admin session (`dev/e2e/admin.py`, formerly `magento-local/scripts/`; all helpers are
+committed under `dev/e2e/`, see its README: real config-form
 saves and panel-action POSTs with the page's form key), through the real cron runner
 (`bin/magento cron:run --group=default`), product saves through `ProductRepository`,
 mass updates through `Product\Action::updateAttributes`, CSV imports through the

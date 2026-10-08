@@ -206,7 +206,7 @@ docker compose exec -T phpfpm bash -c '
   grep -l __set_state generated/metadata/*.php          # expect nothing
   bin/magento deploy:mode:set production --skip-compilation'
 # load http://localhost:8894/ and the AnswerEng section at default + store-view scope,
-# run scripts/cron.sh, check var/log/exception.log, then:
+# run dev/e2e/cron.sh, check var/log/exception.log, then:
 docker compose exec -T phpfpm bash -c '
   bin/magento deploy:mode:set developer
   rm -rf generated/code/* generated/metadata/* && bin/magento cache:flush'
@@ -243,7 +243,7 @@ Stores › Configuration › Catalog › AnswerEng:
 
 The second website (`second`, group `second_store`, view `second_view`, base
 URL `http://127.0.0.1:8894/`, 32 visible sample products also assigned to it)
-was created with `magento-local/scripts/create-second-website.php`
+was created with `dev/e2e/create-second-website.php`
 (StoreFactory/GroupFactory/WebsiteFactory + base URL config).
 
 ### Verification gates
@@ -260,7 +260,7 @@ docker compose exec -T phpfpm bin/magento cron:run                           # c
 No system crontab is installed, so nothing runs behind your back during
 tests. Run jobs with `bin/magento cron:run --group=default`. Magento drops a
 pending `cron_schedule` row whose time does not match the job's expression,
-so `magento-local/scripts/cron.sh` queues `answereng_sync_dirty` on its latest
+so `dev/e2e/cron.sh` queues `answereng_sync_dirty` on its latest
 `*/5` slot, and for `answereng_reconcile` temporarily overrides
 `crontab/default/jobs/answereng_reconcile/schedule/cron_expr` to `* * * * *`
 for that one run. To run cron continuously instead:
@@ -269,15 +269,20 @@ for that one run. To run cron continuously instead:
 while true; do docker compose exec -T phpfpm bin/magento cron:run; sleep 60; done
 ```
 
-### Helper scripts (in `magento-local/scripts/`, not committed)
+### Helper scripts (`dev/e2e/`)
 
-`admin.py` (admin session + config save + panel action POSTs over HTTP),
-`sql.sh`, `mage.sh`, `state.sh` (sync state, log, registry), `cron.sh`,
-`refresh-module.sh`, `archive-received.sh`, and PHP scripts copied to
-`src/var/scripts/`: `product.php` (save via ProductRepository),
-`mass-status.php` (Product\Action::updateAttributes, the admin mass update),
-`import.php` (ImportExport Import model), `acl-users.php` (limited roles
-`aesync` = config+sync, `aeconfig` = config only).
+The checklist helpers are committed under `dev/e2e/` (see its README; local
+only, no real keys): `admin.py` (admin session + config save + panel action
+POSTs over HTTP), `sql.sh`, `mage.sh`, `state.sh` (sync state, log,
+registry), `cron.sh`, `refresh-module.sh`, `archive-received.sh`, `row28.py`,
+and PHP scripts to copy into `src/var/scripts/`: `product.php` (save via
+ProductRepository), `mass-status.php` (Product\Action::updateAttributes, the
+admin mass update), `import.php` (ImportExport Import model),
+`acl-users.php` (limited roles `aesync` = config+sync, `aeconfig` = config
+only), `create-second-website.php`. The shell scripts locate this compose
+project through `MAGENTO_LOCAL` (default
+`/Volumes/Tukar/Code/answer-eng/magento-local`). They started life in
+`magento-local/scripts/`, where older notes refer to them.
 
 ## 4. Reset
 
