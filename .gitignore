@@ -4,3 +4,4 @@
 /dev/mock-engine/received/
 /dist/
 .DS_Store
+/.phpunit.result.cache
