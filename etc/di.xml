@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="Fullspec\AnswerEng\Model\Engine\Transport"
+                type="Fullspec\AnswerEng\Model\Engine\GuzzleTransport"/>
+    <preference for="Fullspec\AnswerEng\Model\Db\SqlExecutor"
+                type="Fullspec\AnswerEng\Model\Db\MagentoSqlExecutor"/>
+    <preference for="Fullspec\AnswerEng\Model\Support\Clock"
+                type="Fullspec\AnswerEng\Model\Support\SystemClock"/>
+    <preference for="Fullspec\AnswerEng\Model\Config\SettingsProvider"
+                type="Fullspec\AnswerEng\Model\Config\ConfigSettingsProvider"/>
+    <preference for="Fullspec\AnswerEng\Model\Catalog\CatalogSource"
+                type="Fullspec\AnswerEng\Model\Catalog\MagentoCatalogSource"/>
+    <preference for="Fullspec\AnswerEng\Model\Support\SyncLock"
+                type="Fullspec\AnswerEng\Model\Support\MagentoSyncLock"/>
+    <preference for="Fullspec\AnswerEng\Model\Sync\SyncRunner"
+                type="Fullspec\AnswerEng\Model\Sync\Syncer"/>
+    <preference for="Fullspec\AnswerEng\Model\Admin\KeyValueCache"
+                type="Fullspec\AnswerEng\Model\Admin\MagentoKeyValueCache"/>
+    <preference for="Fullspec\AnswerEng\Model\Config\ConfigDisabler"
+                type="Fullspec\AnswerEng\Model\Config\MagentoConfigDisabler"/>
+    <type name="Fullspec\AnswerEng\Model\Engine\GuzzleTransport">
+        <arguments>
+            <argument name="client" xsi:type="object">GuzzleHttp\Client</argument>
+        </arguments>
+    </type>
+
+    <virtualType name="Fullspec\AnswerEng\Logger\Handler" type="Magento\Framework\Logger\Handler\Base">
+        <arguments>
+            <argument name="fileName" xsi:type="string">/var/log/answereng.log</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="Fullspec\AnswerEng\Logger" type="Magento\Framework\Logger\Monolog">
+        <arguments>
+            <argument name="name" xsi:type="string">answereng</argument>
+            <argument name="handlers" xsi:type="array">
+                <item name="file" xsi:type="object">Fullspec\AnswerEng\Logger\Handler</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <type name="Fullspec\AnswerEng\Model\Engine\EngineClient">
+        <arguments>
+            <argument name="logger" xsi:type="object">Fullspec\AnswerEng\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Fullspec\AnswerEng\Model\Sync\Syncer">
+        <arguments>
+            <argument name="logger" xsi:type="object">Fullspec\AnswerEng\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Fullspec\AnswerEng\Model\Admin\PanelViewModel">
+        <arguments>
+            <argument name="logger" xsi:type="object">Fullspec\AnswerEng\Logger</argument>
+        </arguments>
+    </type>
+    <type name="Magento\Framework\Console\CommandListInterface">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="answereng_sync" xsi:type="object">Fullspec\AnswerEng\Console\Command\Sync</item>
+            </argument>
+        </arguments>
+    </type>
+</config>

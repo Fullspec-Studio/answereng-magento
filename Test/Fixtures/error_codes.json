@@ -1,0 +1,77 @@
+{
+  "gateway": {
+    "INVALID_API_KEY": {
+      "code": "invalid_key",
+      "error": "Forbidden"
+    },
+    "QUOTA_EXCEEDED": {
+      "code": "quota_exceeded",
+      "error": "Limit Exceeded"
+    },
+    "THROTTLED": {
+      "code": "throttled",
+      "error": "Too Many Requests"
+    }
+  },
+  "lambda": {
+    "confirmation_mismatch": {
+      "code": "confirmation_mismatch",
+      "error": "confirm_store_key must equal the store key in the path"
+    },
+    "invalid_key": {
+      "code": "invalid_key",
+      "error": "unknown or inactive key"
+    },
+    "invalid_request": {
+      "code": "invalid_request",
+      "error": "unknown resource"
+    },
+    "product_limit": {
+      "code": "product_limit",
+      "error": "push exceeds 5000-product cap",
+      "limit": 5000
+    },
+    "purge_in_progress": {
+      "code": "purge_in_progress",
+      "error": "store deletion is in progress and can no longer be cancelled"
+    },
+    "run_in_progress": {
+      "code": "run_in_progress",
+      "error": "an analysis run is in progress for this store"
+    },
+    "store_limit": {
+      "code": "store_limit",
+      "error": "plan allows 1 store(s)",
+      "limit": 1
+    },
+    "store_owned_elsewhere": {
+      "code": "store_owned_elsewhere",
+      "error": "store owned by another tenant"
+    },
+    "store_pending_deletion": {
+      "code": "store_pending_deletion",
+      "error": "store is scheduled for deletion",
+      "purge_after": "2026-10-14T06:00:00+00:00"
+    },
+    "unknown_store": {
+      "code": "unknown_store",
+      "error": "unknown store"
+    },
+    "validation_failed": {
+      "code": "validation_failed",
+      "error": "invalid catalog",
+      "errors": [
+        {
+          "input": {
+            "store_key": "demo-outdoor-store"
+          },
+          "loc": [
+            "products"
+          ],
+          "msg": "Field required",
+          "type": "missing"
+        }
+      ]
+    }
+  }
+}

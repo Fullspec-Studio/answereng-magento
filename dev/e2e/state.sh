@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Show AnswerEng sync state, recent log, registry
+"$(dirname "$0")/sql.sh" "select store_id s,dirty d,last_change_at,state,reason,retry_reason rr,attempts a,next_attempt_at,config_revision rev,last_sync_at,product_count n,synced_store_key sk, left(account_id,12) acct from answereng_sync_state; select log_id,store_id s,created_at,source,outcome,left(detail,110) detail,admin_user from answereng_sync_log order by log_id desc limit ${1:-6}; select r.remote_store_id id,r.engine_url,left(r.account_id,12) acct,r.store_key,r.remote_status,r.purge_after,group_concat(v.store_id) views from answereng_remote_store r left join answereng_remote_store_view v using(remote_store_id) group by r.remote_store_id"

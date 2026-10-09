@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="answereng" translate="label" sortOrder="900" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>AnswerEng</label>
+            <tab>catalog</tab>
+            <resource>Fullspec_AnswerEng::config</resource>
+            <group id="status" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Status</label>
+                <field id="panel" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>AnswerEng</label>
+                    <frontend_model>Fullspec\AnswerEng\Block\Adminhtml\System\Config\StatusPanel</frontend_model>
+                </field>
+            </group>
+            <group id="connection" translate="label comment" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>Connection</label>
+                <comment>One AnswerEng workspace key covers every store view. Catalog data (SKU, name, description, price, category, storefront attributes) is sent to the engine below.</comment>
+                <field id="engine_url" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Engine URL</label>
+                    <comment>Leave blank to use the hosted engine (https://api.answereng.io).</comment>
+                    <validate>validate-url</validate>
+                </field>
+                <field id="api_key" translate="label comment" type="obscure" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>API key</label>
+                    <comment>Get a key at https://answereng.io/signup. Stored encrypted.</comment>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                </field>
+            </group>
+            <group id="store" translate="label comment" sortOrder="30" showInDefault="0" showInWebsite="0" showInStore="1">
+                <label>This store view</label>
+                <comment>Each enabled store view is a separate AnswerEng store.</comment>
+                <field id="enabled" translate="label" type="select" sortOrder="10" showInDefault="0" showInWebsite="0" showInStore="1">
+                    <label>Enabled for AnswerEng</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="store_key" translate="label" type="text" sortOrder="20" showInDefault="0" showInWebsite="0" showInStore="1">
+                    <label>Store key</label>
+                    <backend_model>Fullspec\AnswerEng\Model\Config\Backend\StoreKey</backend_model>
+                    <comment>
+                        <model>Fullspec\AnswerEng\Model\Config\StoreKeyComment</model>
+                    </comment>
+                </field>
+            </group>
+            <group id="brand" translate="label comment" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Brand</label>
+                <comment>One name per line. Store views inherit these from the website or default scope unless overridden.</comment>
+                <field id="brand_names" translate="label" type="textarea" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Brand names</label>
+                </field>
+                <field id="competitors" translate="label" type="textarea" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Competitors</label>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

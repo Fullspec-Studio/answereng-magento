@@ -1,0 +1,8 @@
+/vendor/
+/composer.lock.bak
+/.phpunit.cache/
+/dev/mock-engine/received/
+/dist/
+.DS_Store
+/.phpunit.result.cache
+/dev/e2e/.jars/
