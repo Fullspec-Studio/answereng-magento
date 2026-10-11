@@ -1,0 +1,62 @@
+{
+  "store_key": "demo-outdoor-store",
+  "latest_run": null,
+  "visibility": null,
+  "share_of_voice": {},
+  "engine_breakdown": {},
+  "visibility_trend": [],
+  "preview": {
+    "state": "complete",
+    "engine": "perplexity",
+    "finished_at": "2026-10-11T18:04:12+00:00",
+    "questions": 5,
+    "answers": 15,
+    "answers_recommended": 4,
+    "range": [
+      0.10899,
+      0.51955
+    ],
+    "per_question": [
+      {
+        "text": "best ultralight tent under $300",
+        "answers": 3,
+        "recommended": 1,
+        "competitors_named": [
+          "Big Agnes",
+          "REI"
+        ]
+      },
+      {
+        "text": "waterproof hiking boots for wide feet",
+        "answers": 3,
+        "recommended": 2,
+        "competitors_named": [
+          "Merrell"
+        ]
+      },
+      {
+        "text": "lightest camp stove for backpacking",
+        "answers": 3,
+        "recommended": 0,
+        "competitors_named": [
+          "MSR",
+          "Jetboil"
+        ]
+      },
+      {
+        "text": "best sleeping pad for side sleepers",
+        "answers": 3,
+        "recommended": 1,
+        "competitors_named": []
+      },
+      {
+        "text": "best trekking poles for beginners",
+        "answers": 3,
+        "recommended": 0,
+        "competitors_named": [
+          "Black Diamond"
+        ]
+      }
+    ]
+  }
+}

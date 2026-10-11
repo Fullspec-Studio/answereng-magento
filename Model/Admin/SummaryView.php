@@ -12,6 +12,8 @@ class SummaryView
     public const NOT_SYNCED = 'not_synced';
     public const NO_RUN = 'no_run';
     public const PENDING_DELETION = 'pending_deletion';
+    public const PREVIEW_RUNNING = 'preview_running';
+    public const PREVIEW_COMPLETE = 'preview_complete';
 
     /**
      * Constructor.
@@ -23,6 +25,7 @@ class SummaryView
      * @param float|null $high
      * @param string|null $runStartedAt
      * @param \DateTimeImmutable|null $fetchedAt
+     * @param array<string,mixed>|null $preview
      */
     public function __construct(
         public readonly string $state,
@@ -31,7 +34,8 @@ class SummaryView
         public readonly ?float $low = null,
         public readonly ?float $high = null,
         public readonly ?string $runStartedAt = null,
-        public readonly ?\DateTimeImmutable $fetchedAt = null
+        public readonly ?\DateTimeImmutable $fetchedAt = null,
+        public readonly ?array $preview = null
     ) {
     }
 }

@@ -104,6 +104,12 @@ class MockEngineTest(unittest.TestCase):
         status, body, _ = self.call("GET", "/stores/shop.example.com/summary")
         self.assertEqual((200, "shop.example.com"), (status, body["store_key"]))
         self.assertIsNotNone(body["latest_run"])
+        self.mode("preview-running")
+        self.assertEqual("running", self.call("GET", "/stores/shop.example.com/summary")[1]["preview"]["state"])
+        self.mode("preview-complete")
+        status, body, _ = self.call("GET", "/stores/shop.example.com/summary")
+        self.assertEqual((200, "complete", None), (status, body["preview"]["state"], body["latest_run"]))
+        self.mode("normal")
         status, body, _ = self.call("GET", "/stores/unknown.example.com/summary")
         self.assertEqual((404, "unknown_store"), (status, body["code"]))
 

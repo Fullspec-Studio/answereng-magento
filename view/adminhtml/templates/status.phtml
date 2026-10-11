@@ -91,6 +91,46 @@ $pct = static fn (?float $x): string => $x === null ? '–' : number_format($x *
             <?= $escaper->escapeHtml(
                 __('Not synced yet (last checked %1 UTC)', $summary->fetchedAt?->format('Y-m-d H:i') ?? '')
             ) ?>
+        <?php elseif ($summary->state === 'preview_running'): ?>
+            <?= $escaper->escapeHtml(__('Your first AI read is running. It\'s usually ready in a few minutes.')) ?>
+            <button type="button" class="action-secondary"
+                    data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['refreshSummary']) ?>"
+                    data-fields='<?= $escaper->escapeHtmlAttr(json_encode(['store' => $storeId])) ?>'>
+                <?= $escaper->escapeHtml(__('Check again')) ?></button>
+        <?php elseif ($summary->state === 'preview_complete' && $summary->preview !== null): ?>
+            <?php $p = $summary->preview; ?>
+            <strong><?= $escaper->escapeHtml(__(
+                'Perplexity recommended your store in %1 of %2 answers',
+                (int) $p['answers_recommended'],
+                (int) $p['answers']
+            )) ?></strong>
+            <br><?= $escaper->escapeHtml(__(
+                'Quick preview: %1 questions, one engine. The range is wide (%2–%3%).',
+                (int) $p['questions'],
+                (int) round(((float) ($p['range'][0] ?? 0)) * 100),
+                (int) round(((float) ($p['range'][1] ?? 0)) * 100)
+            )) ?>
+            <ul>
+                <?php foreach ((array) ($p['per_question'] ?? []) as $q): ?>
+                    <li><?= $escaper->escapeHtml((string) $q['text']) ?> —
+                        <?= (int) $q['answers'] === 0
+                            ? $escaper->escapeHtml(__('No readable answers'))
+                            : $escaper->escapeHtml(__(
+                                'recommended in %1 of %2 answers',
+                                (int) $q['recommended'],
+                                (int) $q['answers']
+                            )) ?>
+                        <?php if (!empty($q['competitors_named'])): ?>
+                            · <?= $escaper->escapeHtml(__(
+                                'Recommended instead: %1',
+                                implode(', ', array_map('strval', $q['competitors_named']))
+                            )) ?>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+            <a href="https://answereng.io/#pricing" target="_blank" rel="noopener">
+                <?= $escaper->escapeHtml(__('Free checks 4 engines monthly. Starter checks weekly →')) ?></a>
         <?php else: ?>
             <?= $escaper->escapeHtml(match ($summary->state) {
                 'not_synced' => __('Not synced yet.'),

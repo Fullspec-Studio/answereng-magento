@@ -16,6 +16,7 @@ use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 class SummaryProvider
 {
     public const CACHE_SECONDS = 900;
+    public const NO_RUN_CACHE_SECONDS = 60;
     public const CACHE_PREFIX = 'answereng_summary_';
     public const DASHBOARD = 'https://app.answereng.io/stores/';
 
@@ -58,8 +59,11 @@ class SummaryProvider
         $r = $this->engine->summary($s->connection(), $s->storeKey);
         if ($r->isSuccess() && $r->json !== null) {
             $json = json_encode($r->json, JSON_THROW_ON_ERROR);
-            $this->cache->save($key, $json, self::CACHE_SECONDS);
-            $this->state->saveSnapshot($storeId, $s->fingerprint(), $json, $this->clock->now());
+            $noRun = ($r->json['latest_run'] ?? null) === null;
+            $this->cache->save($key, $json, $noRun ? self::NO_RUN_CACHE_SECONDS : self::CACHE_SECONDS);
+            if (!$noRun) {
+                $this->state->saveSnapshot($storeId, $s->fingerprint(), $json, $this->clock->now());
+            }
             return $this->fromJson($json, SummaryView::FRESH, $url, null);
         }
         if ($r->status === 404) {
@@ -77,6 +81,17 @@ class SummaryProvider
     }
 
     /**
+     * Drop the cached summary so the next view refetches ("Check again").
+     *
+     * @param int $storeId
+     * @return void
+     */
+    public function forget(int $storeId): void
+    {
+        $this->cache->remove(self::CACHE_PREFIX . $this->settings->forStore($storeId)->fingerprint());
+    }
+
+    /**
      * From json.
      *
      * @param string $json
@@ -89,6 +104,15 @@ class SummaryProvider
     {
         $data = json_decode($json, true) ?: [];
         if (($data['latest_run'] ?? null) === null) {
+            $preview = is_array($data['preview'] ?? null) ? $data['preview'] : null;
+            $previewState = match ($preview['state'] ?? null) {
+                'running' => SummaryView::PREVIEW_RUNNING,
+                'complete' => SummaryView::PREVIEW_COMPLETE,
+                default => null,
+            };
+            if ($state !== SummaryView::STALE && $previewState !== null) {
+                return new SummaryView($previewState, $url, null, null, null, null, $fetchedAt, $preview);
+            }
             return new SummaryView(
                 $state === SummaryView::STALE ? SummaryView::STALE : SummaryView::NO_RUN,
                 $url,

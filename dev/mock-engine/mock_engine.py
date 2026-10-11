@@ -21,7 +21,7 @@ FIXTURES = ROOT / "Test" / "Fixtures"
 RECEIVED = pathlib.Path(__file__).resolve().parent / "received"
 ERRORS = json.loads((FIXTURES / "error_codes.json").read_text())
 MODES = {"normal", "cold-504", "slow", "throttle-429", "invalid-key", "store-limit", "product-limit",
-         "ownership", "run-in-progress", "missing-code", "purging"}
+         "ownership", "run-in-progress", "missing-code", "purging", "preview-running", "preview-complete"}
 
 
 def account_for(key):
@@ -111,6 +111,8 @@ def make_server(address, store_cap=1):
                     if store["status"] != "active":
                         return self._send(409, err("store_pending_deletion", purge_after=store["purge_after"]), acct)
                     name = "summary.json" if store["products"] else "summary_no_runs.json"
+                    if mode in ("preview-running", "preview-complete") and store["products"]:
+                        name = f"summary_{mode.replace('-', '_')}.json"
                     summary = json.loads((FIXTURES / "read_api" / name).read_text())
                     summary["store_key"] = store_key
                     return self._send(200, summary, acct)

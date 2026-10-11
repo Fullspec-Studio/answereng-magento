@@ -142,6 +142,7 @@ class PanelViewModel
             'canDelete' => $this->authorization->isAllowed('Fullspec_AnswerEng::delete_store'),
             'urls' => [
                 'syncNow' => $this->url->getUrl('answereng/action/syncnow'),
+                'refreshSummary' => $this->url->getUrl('answereng/action/refreshsummary'),
                 'testConnection' => $this->url->getUrl('answereng/action/testconnection'),
                 'clear' => $this->url->getUrl('answereng/action/clear'),
                 'delete' => $this->url->getUrl('answereng/action/delete'),

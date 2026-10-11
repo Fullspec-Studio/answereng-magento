@@ -93,4 +93,42 @@ final class SummaryProviderTest extends DbTestCase
         $this->settings->put(1, ['enabled' => false]);
         self::assertSame(SummaryView::DISABLED, $this->provider->forView(1)->state);
     }
+
+    public function testRunningPreviewIsShortCachedAndNotSnapshotted(): void
+    {
+        $this->transport->enqueue(FakeTransport::json(200, $this->fixture('summary_preview_running.json')));
+        $view = $this->provider->forView(1);
+        self::assertSame(SummaryView::PREVIEW_RUNNING, $view->state);
+        self::assertSame([SummaryProvider::NO_RUN_CACHE_SECONDS], array_values($this->cache->ttls));
+        self::assertNull($this->state->get(1)->snapshotJson);
+    }
+
+    public function testCompletePreviewCarriesItsData(): void
+    {
+        $this->transport->enqueue(FakeTransport::json(200, $this->fixture('summary_preview_complete.json')));
+        $view = $this->provider->forView(1);
+        self::assertSame(SummaryView::PREVIEW_COMPLETE, $view->state);
+        self::assertSame(4, $view->preview['answers_recommended']);
+        self::assertSame(15, $view->preview['answers']);
+    }
+
+    public function testFailedPreviewIsNoRunAndARealRunKeepsTheLongCache(): void
+    {
+        $failed = $this->fixture('summary_no_runs.json');
+        $failed['preview'] = ['state' => 'failed'];
+        $this->transport->enqueue(FakeTransport::json(200, $failed));
+        self::assertSame(SummaryView::NO_RUN, $this->provider->forView(1)->state);
+        $this->provider->forget(1);
+        $this->transport->enqueue(FakeTransport::json(200, $this->fixture('summary.json')));
+        $this->provider->forView(1);
+        self::assertContains(SummaryProvider::CACHE_SECONDS, $this->cache->ttls);
+    }
+
+    public function testForgetDropsTheCachedSummary(): void
+    {
+        $this->transport->enqueue(FakeTransport::json(200, $this->fixture('summary_preview_running.json')));
+        $this->provider->forView(1);
+        $this->provider->forget(1);
+        self::assertSame([], $this->cache->items);
+    }
 }
