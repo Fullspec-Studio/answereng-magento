@@ -12,7 +12,8 @@ Implements the connector API the module uses, from the frozen contract in
 
 Modes: normal, cold-504, slow (35 s), throttle-429 (Retry-After 60),
 invalid-key, store-limit, product-limit, ownership, run-in-progress,
-missing-code, purging. Received catalogs land in `received/` (git-ignored).
+missing-code, purging, preview-running and preview-complete (the summary of a
+store with products carries the instant-first-read `preview` block and no `latest_run`). Received catalogs land in `received/` (git-ignored).
 Purges are not simulated.
 
 Tests: `cd dev/mock-engine && python3 -m unittest test_mock_engine.py -v`
