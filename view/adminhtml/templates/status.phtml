@@ -3,38 +3,61 @@
  * @var \Fullspec\AnswerEng\Block\Adminhtml\System\Config\StatusPanel $block
  * @var \Magento\Framework\Escaper $escaper
  */
+use Fullspec\AnswerEng\Model\Admin\PanelLabels;
+
 $storeId = $block->getStoreId();
 $panel = $block->getPanel();
 $pct = static fn (?float $x): string => $x === null ? '–' : number_format($x * 100, 1) . '%';
+$pill = static fn (array $l): string => '<span class="ae-pill ae-pill--' . $escaper->escapeHtmlAttr($l['tone']) . '">'
+    . $escaper->escapeHtml($l['label']) . '</span>';
+$logShown = 5;
 ?>
 <div class="answereng-panel" data-mage-init='{"Fullspec_AnswerEng/js/panel-actions": {}}'>
+    <div class="ae-head">
+        <svg class="ae-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+            <rect width="32" height="32" rx="8"/><path d="M8 22V10m16 12V10M8 16h16"/><circle cx="19" cy="16" r="4"/>
+        </svg>
+        <div class="ae-head-text">
+            <span class="ae-title"><?= $escaper->escapeHtml(__('AnswerEng')) ?></span>
+            <?php if ($storeId > 0 && (string) ($panel['storeKey'] ?? '') !== ''): ?>
+                <span class="ae-subtitle"><?= $escaper->escapeHtml(__('Store key')) ?>
+                    <code><?= $escaper->escapeHtml($panel['storeKey']) ?></code></span>
+            <?php endif; ?>
+        </div>
+        <?php if ($storeId > 0): ?>
+            <?= /* @noEscape */ $pill(PanelLabels::state($panel['state'], $panel['reason'], $panel['lastSyncAt'])) ?>
+        <?php endif; ?>
+    </div>
+
 <?php if ($storeId <= 0): ?>
-    <p><?= $escaper->escapeHtml(__('Choose a store view (scope switcher, top left) to sync, test the connection '
-        . 'or manage AnswerEng stores.')) ?></p>
+    <p class="ae-intro"><?= $escaper->escapeHtml(__('Choose a store view (scope switcher, top left) to sync, test the '
+        . 'connection or manage AnswerEng stores.')) ?></p>
     <?php if ($panel === []): ?>
-        <p><?= $escaper->escapeHtml(__('No store view is enabled for AnswerEng yet.')) ?></p>
+        <p class="ae-empty"><?= $escaper->escapeHtml(__('No store view is enabled for AnswerEng yet. Choose a store '
+            . 'view, set "Enabled for AnswerEng" to Yes, and save.')) ?></p>
     <?php else: ?>
-        <table class="data-grid">
+        <table class="data-grid ae-grid">
             <thead><tr>
                 <th><?= $escaper->escapeHtml(__('Store view')) ?></th>
                 <th><?= $escaper->escapeHtml(__('Store key')) ?></th>
                 <th><?= $escaper->escapeHtml(__('Status')) ?></th>
                 <th><?= $escaper->escapeHtml(__('Last sync (UTC)')) ?></th>
-                <th><?= $escaper->escapeHtml(__('Products')) ?></th>
-                <th><?= $escaper->escapeHtml(__('Action')) ?></th>
+                <th class="ae-num"><?= $escaper->escapeHtml(__('Products')) ?></th>
+                <th><span class="ae-visually-hidden"><?= $escaper->escapeHtml(__('Action')) ?></span></th>
             </tr></thead>
             <tbody>
             <?php foreach ($panel as $row): ?>
                 <tr>
                     <td><?= $escaper->escapeHtml($row['name']) ?></td>
-                    <td><?= $escaper->escapeHtml($row['storeKey']) ?></td>
-                    <td><?= $escaper->escapeHtml($row['state'] . ($row['reason'] ? ' (' . $row['reason'] . ')' : '')) ?>
+                    <td><code><?= $escaper->escapeHtml($row['storeKey']) ?></code></td>
+                    <?php $rowState = PanelLabels::state($row['state'], $row['reason'], $row['lastSyncAt']); ?>
+                    <td><?= /* @noEscape */ $pill($rowState) ?>
                         <?php if ($row['message'] !== null): ?>
-                            <br><small><?= $escaper->escapeHtml($row['message']) ?></small>
+                            <span class="ae-row-note"><?= $escaper->escapeHtml($row['message']) ?></span>
                         <?php endif; ?></td>
-                    <td><?= $escaper->escapeHtml($row['lastSyncAt'] ?? '–') ?></td>
-                    <td><?= $escaper->escapeHtml((string) ($row['productCount'] ?? '–')) ?></td>
-                    <td>
+                    <td><?= $escaper->escapeHtml(PanelLabels::when($row['lastSyncAt'])) ?></td>
+                    <td class="ae-num"><?= $escaper->escapeHtml((string) ($row['productCount'] ?? '–')) ?></td>
+                    <td class="ae-cell-action">
                         <?php if ($row['canSync']): ?>
                             <?php $rowFields = json_encode(['store' => $row['storeId']]); ?>
                             <button type="button" class="action-secondary"
@@ -52,10 +75,15 @@ $pct = static fn (?float $x): string => $x === null ? '–' : number_format($x *
     <?php $summary = $panel['summary']; ?>
     <?php if ($panel['pendingDeletion'] !== null): ?>
         <?php $pd = $panel['pendingDeletion']; ?>
-        <div class="message message-warning">
-            <?= $escaper->escapeHtml($pd['purgeAfter'] !== null
-                ? __('AnswerEng store "%1" is scheduled for deletion on %2 UTC.', $pd['storeKey'], $pd['purgeAfter'])
-                : __('AnswerEng store "%1" is scheduled for deletion.', $pd['storeKey'])) ?>
+        <div class="message message-warning ae-message">
+            <?php $pdText = $pd['purgeAfter'] !== null
+                ? __(
+                    'AnswerEng store "%1" is scheduled for deletion on %2 UTC.',
+                    $pd['storeKey'],
+                    PanelLabels::when($pd['purgeAfter'])
+                )
+                : __('AnswerEng store "%1" is scheduled for deletion.', $pd['storeKey']); ?>
+            <span><?= $escaper->escapeHtml($pdText) ?></span>
             <?php if ($panel['canDelete']): ?>
                 <?php $cancelFields = json_encode(['store' => $storeId, 'identity_id' => $pd['id']]); ?>
                 <button type="button" class="action-secondary"
@@ -65,97 +93,116 @@ $pct = static fn (?float $x): string => $x === null ? '–' : number_format($x *
             <?php endif; ?>
         </div>
     <?php endif; ?>
-    <p>
-        <strong><?= $escaper->escapeHtml(__('Sync status:')) ?></strong>
-        <?= $escaper->escapeHtml($panel['state'] . ($panel['reason'] ? ' (' . $panel['reason'] . ')' : '')) ?>
-        · <?= $escaper->escapeHtml(__('Last sync (UTC): %1', $panel['lastSyncAt'] ?? '–')) ?>
-        · <?= $escaper->escapeHtml(__('Products: %1', (string) ($panel['productCount'] ?? '–'))) ?>
-    </p>
+
+    <dl class="ae-facts">
+        <div><dt><?= $escaper->escapeHtml(__('Last sync')) ?></dt>
+            <dd><?= $escaper->escapeHtml(PanelLabels::when($panel['lastSyncAt'])) ?>
+                <?php if ($panel['lastSyncAt'] !== null): ?><span class="ae-unit">UTC</span><?php endif; ?></dd></div>
+        <div><dt><?= $escaper->escapeHtml(__('Products sent')) ?></dt>
+            <dd><?= $escaper->escapeHtml((string) ($panel['productCount'] ?? '–')) ?></dd></div>
+    </dl>
     <?php if ($panel['message'] !== null): ?>
-        <p class="answereng-state-message"><?= $escaper->escapeHtml($panel['message']) ?></p>
+        <p class="ae-state-message answereng-state-message"><?= $escaper->escapeHtml($panel['message']) ?></p>
     <?php endif; ?>
-    <p>
-        <strong><?= $escaper->escapeHtml(__('AI visibility:')) ?></strong>
+
+    <section class="ae-visibility" aria-labelledby="ae-visibility-<?= (int) $storeId ?>">
+        <h3 class="ae-section-title" id="ae-visibility-<?= (int) $storeId ?>">
+            <?= $escaper->escapeHtml(__('AI visibility')) ?></h3>
         <?php if (in_array($summary->state, ['fresh', 'stale'], true) && $summary->rate !== null): ?>
-            <?= $escaper->escapeHtml(
-                $pct($summary->rate) . ' (' . $pct($summary->low) . '–' . $pct($summary->high) . ')'
-            ) ?>
-            <?php if ($summary->runStartedAt !== null): ?>
-                <?= $escaper->escapeHtml(__('· latest run %1', $summary->runStartedAt)) ?>
-            <?php endif; ?>
+            <p class="ae-figure"><?= $escaper->escapeHtml($pct($summary->rate)) ?>
+                <span class="ae-range"><?= $escaper->escapeHtml(__(
+                    'likely %1–%2',
+                    $pct($summary->low),
+                    $pct($summary->high)
+                )) ?></span></p>
+            <p class="ae-meta">
+                <?= $escaper->escapeHtml(__('Share of AI answers that recommend your store.')) ?>
+                <?php if ($summary->runStartedAt !== null): ?>
+                    <?= $escaper->escapeHtml(__('Latest run %1 UTC.', PanelLabels::when($summary->runStartedAt))) ?>
+                <?php endif; ?>
+            </p>
             <?php if ($summary->state === 'stale'): ?>
-                <?php $fetchedAt = $summary->fetchedAt?->format('Y-m-d H:i') ?? ''; ?>
-                <em><?= $escaper->escapeHtml(__('Stale — last fetched %1 UTC', $fetchedAt)) ?></em>
+                <?php $fetchedAt = $summary->fetchedAt?->format('Y-m-d H:i'); ?>
+                <p class="ae-meta ae-meta--warn"><?= $escaper->escapeHtml(__(
+                    'Could not refresh from AnswerEng. Showing results fetched %1 UTC.',
+                    PanelLabels::when($fetchedAt)
+                )) ?></p>
             <?php endif; ?>
         <?php elseif ($summary->state === 'stale'): ?>
-            <?= $escaper->escapeHtml(
-                __('Not synced yet (last checked %1 UTC)', $summary->fetchedAt?->format('Y-m-d H:i') ?? '')
-            ) ?>
+            <p class="ae-meta"><?= $escaper->escapeHtml(__(
+                'Not synced yet (last checked %1 UTC).',
+                PanelLabels::when($summary->fetchedAt?->format('Y-m-d H:i'))
+            )) ?></p>
         <?php elseif ($summary->state === 'preview_running'): ?>
-            <?= $escaper->escapeHtml(__('Your first AI read is running. It\'s usually ready in a few minutes.')) ?>
-            <button type="button" class="action-secondary"
-                    data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['refreshSummary']) ?>"
-                    data-fields='<?= $escaper->escapeHtmlAttr(json_encode(['store' => $storeId])) ?>'>
-                <?= $escaper->escapeHtml(__('Check again')) ?></button>
+            <div class="ae-inline">
+                <?php $running = __('Your first AI read is running. It\'s usually ready in a few minutes.'); ?>
+                <p class="ae-meta"><?= $escaper->escapeHtml($running) ?></p>
+                <button type="button" class="action-secondary"
+                        data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['refreshSummary']) ?>"
+                        data-fields='<?= $escaper->escapeHtmlAttr(json_encode(['store' => $storeId])) ?>'>
+                    <?= $escaper->escapeHtml(__('Check again')) ?></button>
+            </div>
         <?php elseif ($summary->state === 'preview_complete' && $summary->preview !== null): ?>
             <?php $p = $summary->preview; ?>
-            <strong><?= $escaper->escapeHtml(__(
+            <p class="ae-figure ae-figure--sentence"><?= $escaper->escapeHtml(__(
                 'Perplexity recommended your store in %1 of %2 answers',
                 (int) $p['answers_recommended'],
                 (int) $p['answers']
-            )) ?></strong>
-            <br><?= $escaper->escapeHtml(__(
+            )) ?></p>
+            <p class="ae-meta"><?= $escaper->escapeHtml(__(
                 'Quick preview: %1 questions, one engine. The range is wide (%2–%3%).',
                 (int) $p['questions'],
                 (int) round(((float) ($p['range'][0] ?? 0)) * 100),
                 (int) round(((float) ($p['range'][1] ?? 0)) * 100)
-            )) ?>
-            <ul>
+            )) ?></p>
+            <ul class="ae-questions">
                 <?php foreach ((array) ($p['per_question'] ?? []) as $q): ?>
-                    <li><?= $escaper->escapeHtml((string) $q['text']) ?> —
-                        <?= (int) $q['answers'] === 0
+                    <li>
+                        <span class="ae-question"><?= $escaper->escapeHtml((string) $q['text']) ?></span>
+                        <span class="ae-answer"><?= (int) $q['answers'] === 0
                             ? $escaper->escapeHtml(__('No readable answers'))
                             : $escaper->escapeHtml(__(
-                                'recommended in %1 of %2 answers',
+                                'Recommended in %1 of %2 answers',
                                 (int) $q['recommended'],
                                 (int) $q['answers']
-                            )) ?>
-                        <?php if (!empty($q['competitors_named'])): ?>
-                            · <?= $escaper->escapeHtml(__(
+                            )) ?><?php if (!empty($q['competitors_named'])): ?>.
+                            <?= $escaper->escapeHtml(__(
                                 'Recommended instead: %1',
                                 implode(', ', array_map('strval', $q['competitors_named']))
-                            )) ?>
-                        <?php endif; ?>
+                            )) ?><?php endif; ?></span>
                     </li>
                 <?php endforeach; ?>
             </ul>
-            <a href="https://answereng.io/#pricing" target="_blank" rel="noopener">
-                <?= $escaper->escapeHtml(__('Free checks 4 engines monthly. Starter checks weekly →')) ?></a>
+            <p class="ae-meta"><a href="https://answereng.io/#pricing" target="_blank" rel="noopener">
+                <?= $escaper->escapeHtml(__('Free checks 4 engines monthly. Starter checks weekly →')) ?></a></p>
         <?php else: ?>
-            <?= $escaper->escapeHtml(match ($summary->state) {
+            <?php $stateText = match ($summary->state) {
                 'not_synced' => __('Not synced yet.'),
-                'no_run' => __('Connected — waiting for the first analysis run.'),
+                'no_run' => __('Connected. Waiting for the first analysis run.'),
                 'pending_deletion' => __('This store is scheduled for deletion.'),
                 'disabled' => __('Enable this store view and enter an API key to see results.'),
-                default => __('Results unavailable — engine unreachable.'),
-            }) ?>
+                default => __('Results unavailable: AnswerEng could not be reached.'),
+            }; ?>
+            <p class="ae-meta"><?= $escaper->escapeHtml($stateText) ?></p>
         <?php endif; ?>
-        <a href="<?= $escaper->escapeUrl($summary->dashboardUrl) ?>" target="_blank" rel="noopener">
-            <?= $escaper->escapeHtml(__('Open full results in AnswerEng →')) ?></a>
-    </p>
-    <p>
+        <a class="ae-results-link" href="<?= $escaper->escapeUrl($summary->dashboardUrl) ?>" target="_blank"
+           rel="noopener"><?= $escaper->escapeHtml(__('Open full results in AnswerEng')) ?>
+            <span aria-hidden="true">→</span></a>
+    </section>
+
+    <div class="ae-actions">
         <?php if ($panel['canSync']): ?>
             <button type="button" class="action-secondary"
                     data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['syncNow']) ?>"
                     data-fields='<?= $escaper->escapeHtmlAttr(json_encode(['store' => $storeId])) ?>'>
                 <?= $escaper->escapeHtml(__('Sync now')) ?></button>
         <?php endif; ?>
-        <button type="button" class="action-secondary"
+        <button type="button" class="action-default"
                 data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['testConnection']) ?>"
                 data-fields='<?= $escaper->escapeHtmlAttr(json_encode(['store' => $storeId])) ?>'>
             <?= $escaper->escapeHtml(__('Test connection')) ?></button>
         <?php if ($panel['canSync'] && $panel['canClear']): ?>
-            <button type="button" class="action-secondary"
+            <button type="button" class="ae-quiet-action"
                     data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['clear']) ?>"
                     data-confirm-text="<?= $escaper->escapeHtmlAttr(__(
                         'Remove all products from AnswerEng store "%1" and pause weekly analysis? History and '
@@ -166,49 +213,78 @@ $pct = static fn (?float $x): string => $x === null ? '–' : number_format($x *
                     data-fields='<?= $escaper->escapeHtmlAttr(json_encode(['store' => $storeId])) ?>'>
                 <?= $escaper->escapeHtml(__('Clear AnswerEng catalog')) ?></button>
         <?php endif; ?>
-    </p>
+    </div>
+
     <?php if ($panel['log'] !== []): ?>
-        <table class="data-grid">
-            <thead><tr>
-                <th><?= $escaper->escapeHtml(__('When (UTC)')) ?></th>
-                <th><?= $escaper->escapeHtml(__('Source')) ?></th>
-                <th><?= $escaper->escapeHtml(__('Outcome')) ?></th>
-                <th><?= $escaper->escapeHtml(__('Detail')) ?></th>
-            </tr></thead>
-            <tbody>
-            <?php foreach ($panel['log'] as $entry): ?>
-                <?php $by = $entry['admin_user'] ? ' (' . $entry['admin_user'] . ')' : ''; ?>
-                <tr>
-                    <td><?= $escaper->escapeHtml((string) $entry['created_at']) ?></td>
-                    <td><?= $escaper->escapeHtml($entry['source'] . $by) ?></td>
-                    <td><?= $escaper->escapeHtml((string) $entry['outcome']) ?></td>
-                    <td><?= $escaper->escapeHtml((string) ($entry['detail'] ?? '')) ?></td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
+        <section class="ae-activity" aria-labelledby="ae-activity-<?= (int) $storeId ?>" data-answereng-log>
+            <div class="ae-section-head">
+                <h3 class="ae-section-title" id="ae-activity-<?= (int) $storeId ?>">
+                    <?= $escaper->escapeHtml(__('Recent activity')) ?></h3>
+                <?php if (count($panel['log']) > $logShown): ?>
+                    <?php $showAll = __('Show all %1', count($panel['log'])); ?>
+                    <button type="button" class="ae-quiet-action" data-answereng-toggle-log aria-expanded="false"
+                            data-label-more="<?= $escaper->escapeHtmlAttr($showAll) ?>"
+                            data-label-less="<?= $escaper->escapeHtmlAttr(__('Show fewer')) ?>">
+                        <?= $escaper->escapeHtml($showAll) ?></button>
+                <?php endif; ?>
+            </div>
+            <table class="data-grid ae-grid">
+                <thead><tr>
+                    <th><?= $escaper->escapeHtml(__('When (UTC)')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Outcome')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Started by')) ?></th>
+                    <th><?= $escaper->escapeHtml(__('Detail')) ?></th>
+                </tr></thead>
+                <tbody>
+                <?php foreach ($panel['log'] as $i => $entry): ?>
+                    <tr<?= $i >= $logShown ? ' class="ae-log-more" hidden' : '' ?>>
+                        <?php $at = PanelLabels::when((string) $entry['created_at']); ?>
+                        <td class="ae-nowrap"><?= $escaper->escapeHtml($at) ?></td>
+                        <td><?= /* @noEscape */ $pill(PanelLabels::outcome((string) $entry['outcome'])) ?></td>
+                        <?php $by = PanelLabels::source(
+                            (string) $entry['source'],
+                            $entry['admin_user'] !== null ? (string) $entry['admin_user'] : null
+                        ); ?>
+                        <td><?= $escaper->escapeHtml($by) ?></td>
+                        <?php $detail = PanelLabels::detail($entry['detail'] ?? null); ?>
+                        <td class="ae-detail"><?= $escaper->escapeHtml($detail) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </section>
     <?php endif; ?>
 
     <?php if ($panel['canDelete'] && $panel['identities'] !== []): ?>
-        <details class="answereng-danger-zone">
-            <summary><strong><?= $escaper->escapeHtml(__('Danger zone')) ?></strong></summary>
+        <details class="answereng-danger-zone ae-danger">
+            <summary><?= $escaper->escapeHtml(__('Danger zone')) ?></summary>
             <?php foreach ($panel['identities'] as $identity): ?>
-                <div class="answereng-identity" data-answereng-identity
+                <div class="answereng-identity ae-identity" data-answereng-identity
                      data-store-key="<?= $escaper->escapeHtmlAttr($identity['storeKey']) ?>">
-                    <p>
-                        <strong><?= $escaper->escapeHtml($identity['storeKey']) ?></strong>
-                        (<?= $escaper->escapeHtml($identity['role']) ?>, <?=
-                        $escaper->escapeHtml($identity['status']) ?><?=
-                        $identity['purgeAfter']
-                            ? $escaper->escapeHtml(', ' . __('purge %1 UTC', $identity['purgeAfter']))
-                            : '' ?>)
-                        <?php if ($identity['usedBy'] !== []): ?>
-                            — <?= $escaper->escapeHtml(__('also active for %1', implode(', ', $identity['usedBy']))) ?>
-                        <?php endif; ?>
+                    <?php
+                    $meta = [
+                        $identity['role'] === 'current' ? __('Current store') : __('Previous store'),
+                        match ($identity['status']) {
+                            'active' => __('Active'),
+                            'pending_deletion' => __('Scheduled for deletion'),
+                            'deleted' => __('Deleted'),
+                            default => (string) $identity['status'],
+                        },
+                    ];
+                    if ($identity['purgeAfter']) {
+                        $meta[] = __('deletes %1 UTC', PanelLabels::when($identity['purgeAfter']));
+                    }
+                    if ($identity['usedBy'] !== []) {
+                        $meta[] = __('also used by %1', implode(', ', $identity['usedBy']));
+                    }
+                    ?>
+                    <p class="ae-identity-head">
+                        <code><?= $escaper->escapeHtml($identity['storeKey']) ?></code>
+                        <span class="ae-identity-meta"><?= $escaper->escapeHtml(implode(' · ', $meta)) ?></span>
                     </p>
                     <?php $fields = ['store' => $storeId, 'identity_id' => $identity['id']]; ?>
                     <?php if ($identity['status'] === 'active'): ?>
-                        <p class="message message-error"><?= $escaper->escapeHtml(__(
+                        <p class="ae-danger-copy"><?= $escaper->escapeHtml(__(
                             'Deleting %1 schedules permanent removal of everything AnswerEng holds for this store: '
                             . 'its catalog, questions, every analysis run and raw AI answer, diagnoses and drafted '
                             . 'fixes, and its dashboard project with its reviewers and invitations. You have 7 days '
@@ -216,29 +292,38 @@ $pct = static fn (?float $x): string => $x === null ? '–' : number_format($x *
                             . 'Results already shown in the dashboard will disappear.',
                             $identity['storeKey']
                         )) ?></p>
-                        <label><?= $escaper->escapeHtml(__('Type the store key to confirm')) ?>
-                            <input type="text" data-confirm-key autocomplete="off"></label>
-                        <label><input type="checkbox" data-confirm-ack>
-                            <?= $escaper->escapeHtml(__('I understand this cannot be undone after 7 days')) ?></label>
-                        <button type="button" class="action-secondary" disabled data-confirm-delete
-                                data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['delete']) ?>"
-                                data-fields='<?= $escaper->escapeHtmlAttr(json_encode($fields)) ?>'>
-                            <?= $escaper->escapeHtml(__('Delete store from AnswerEng')) ?></button>
+                        <div class="ae-confirm">
+                            <label class="ae-field">
+                                <span><?= $escaper->escapeHtml(__('Type the store key to confirm')) ?></span>
+                                <input type="text" class="admin__control-text" data-confirm-key autocomplete="off"
+                                       spellcheck="false"></label>
+                            <?php $ack = __('I understand this cannot be undone after 7 days'); ?>
+                            <label class="ae-check"><input type="checkbox" data-confirm-ack>
+                                <span><?= $escaper->escapeHtml($ack) ?></span></label>
+                            <button type="button" class="action-secondary ae-delete" disabled data-confirm-delete
+                                    data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['delete']) ?>"
+                                    data-fields='<?= $escaper->escapeHtmlAttr(json_encode($fields)) ?>'>
+                                <?= $escaper->escapeHtml(__('Delete store from AnswerEng')) ?></button>
+                        </div>
                     <?php elseif ($identity['status'] === 'pending_deletion'): ?>
-                        <button type="button" class="action-secondary"
-                                data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['cancel']) ?>"
-                                data-fields='<?= $escaper->escapeHtmlAttr(json_encode($fields)) ?>'>
-                            <?= $escaper->escapeHtml(__('Cancel deletion')) ?></button>
+                        <div class="ae-actions">
+                            <button type="button" class="action-secondary"
+                                    data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['cancel']) ?>"
+                                    data-fields='<?= $escaper->escapeHtmlAttr(json_encode($fields)) ?>'>
+                                <?= $escaper->escapeHtml(__('Cancel deletion')) ?></button>
+                        </div>
                     <?php endif; ?>
                     <?php if ($identity['role'] === 'previous'): ?>
-                        <button type="button" class="action-secondary"
-                                data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['forget']) ?>"
-                                data-confirm-text="<?= $escaper->escapeHtmlAttr(__(
-                                    'Forget this store here? Nothing changes in AnswerEng: the store and its plan '
-                                    . 'slot stay.'
-                                )) ?>"
-                                data-fields='<?= $escaper->escapeHtmlAttr(json_encode($fields)) ?>'>
-                            <?= $escaper->escapeHtml(__('Forget')) ?></button>
+                        <div class="ae-actions">
+                            <button type="button" class="action-default"
+                                    data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['forget']) ?>"
+                                    data-confirm-text="<?= $escaper->escapeHtmlAttr(__(
+                                        'Forget this store here? Nothing changes in AnswerEng: the store and its plan '
+                                        . 'slot stay.'
+                                    )) ?>"
+                                    data-fields='<?= $escaper->escapeHtmlAttr(json_encode($fields)) ?>'>
+                                <?= $escaper->escapeHtml(__('Forget')) ?></button>
+                        </div>
                     <?php endif; ?>
                 </div>
             <?php endforeach; ?>

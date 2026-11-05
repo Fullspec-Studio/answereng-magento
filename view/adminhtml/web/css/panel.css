@@ -1,0 +1,472 @@
+/*
+ * AnswerEng status panel (Stores > Configuration > Catalog > AnswerEng > Status).
+ * Native admin controls and type; the brand shows only in the header mark and
+ * the visibility figure. Colors come from answereng.io (green #294c3b, lime #e7edb6).
+ */
+.answereng-panel {
+    --ae-green: #294c3b;
+    --ae-lime: #e7edb6;
+    --ae-ink: #303030;
+    --ae-muted: #6b6b6b;
+    --ae-line: #e3e3e3;
+    --ae-soft: #f8f8f6;
+    max-width: 1080px;
+    padding: 4px 0 8px;
+    color: var(--ae-ink);
+    line-height: 1.5;
+}
+
+.answereng-panel code {
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: #f1f1ef;
+    color: var(--ae-ink);
+    font-size: 0.92em;
+}
+
+/* Header */
+.answereng-panel .ae-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--ae-line);
+}
+
+.answereng-panel .ae-mark {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.answereng-panel .ae-mark rect { fill: var(--ae-green); }
+.answereng-panel .ae-mark path { fill: none; stroke: var(--ae-lime); stroke-width: 2; }
+.answereng-panel .ae-mark circle { fill: var(--ae-lime); }
+
+.answereng-panel .ae-head-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.answereng-panel .ae-title {
+    font-size: 1.6rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.answereng-panel .ae-subtitle {
+    color: var(--ae-muted);
+    font-size: 1.2rem;
+}
+
+.answereng-panel .ae-head > .ae-pill {
+    margin-left: auto;
+}
+
+/* Status pills */
+.answereng-panel .ae-pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.6;
+    white-space: nowrap;
+}
+
+.answereng-panel .ae-pill--good { background: #e8f0e1; border-color: #cfdcbc; color: #2f5a34; }
+.answereng-panel .ae-pill--warn { background: #fdf3d8; border-color: #f1dc9e; color: #7a5300; }
+.answereng-panel .ae-pill--bad { background: #fbe7e5; border-color: #f0c4bf; color: #a4271c; }
+.answereng-panel .ae-pill--neutral { background: #f1f1ef; border-color: #dededa; color: #4d4d4d; }
+
+/* Intro and empty state (default scope) */
+.answereng-panel .ae-intro {
+    margin: 0 0 16px;
+    color: var(--ae-muted);
+}
+
+.answereng-panel .ae-empty {
+    margin: 0;
+    padding: 20px;
+    background: var(--ae-soft);
+    border: 1px dashed #d4d4d0;
+    border-radius: 4px;
+}
+
+/* Key facts */
+.answereng-panel .ae-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 48px;
+    margin: 0 0 16px;
+}
+
+.answereng-panel .ae-facts dt {
+    margin: 0 0 2px;
+    color: var(--ae-muted);
+    font-size: 1.2rem;
+    font-weight: 400;
+}
+
+.answereng-panel .ae-facts dd {
+    display: block; /* the config page hides dd elements */
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.answereng-panel .ae-unit {
+    margin-left: 4px;
+    color: var(--ae-muted);
+    font-size: 1.2rem;
+    font-weight: 400;
+}
+
+.answereng-panel .ae-state-message {
+    max-width: 72ch;
+    margin: 0 0 20px;
+    padding: 12px 16px;
+    background: #fdf8ea;
+    border: 1px solid #f1e3b8;
+    border-radius: 4px;
+}
+
+/* AI visibility */
+.answereng-panel .ae-visibility {
+    margin: 0 0 24px;
+    padding: 20px 24px;
+    background: var(--ae-soft);
+    border: 1px solid var(--ae-line);
+    border-radius: 6px;
+}
+
+.answereng-panel .ae-section-title {
+    margin: 0 0 8px;
+    color: var(--ae-muted);
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.answereng-panel .ae-figure {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 14px;
+    margin: 0 0 6px;
+    color: var(--ae-green);
+    font-size: 3.6rem;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.answereng-panel .ae-figure--sentence {
+    font-size: 2rem;
+    letter-spacing: -0.01em;
+}
+
+.answereng-panel .ae-range {
+    color: var(--ae-muted);
+    font-size: 1.4rem;
+    font-weight: 400;
+    letter-spacing: 0;
+}
+
+.answereng-panel .ae-meta {
+    max-width: 72ch;
+    margin: 0 0 12px;
+    color: var(--ae-muted);
+}
+
+.answereng-panel .ae-meta--warn {
+    color: #7a5300;
+}
+
+.answereng-panel .ae-inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+    margin-bottom: 12px;
+}
+
+.answereng-panel .ae-inline .ae-meta {
+    margin: 0;
+}
+
+.answereng-panel .ae-questions {
+    margin: 4px 0 16px;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--ae-line);
+}
+
+.answereng-panel .ae-questions li {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 24px;
+    margin: 0;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--ae-line);
+}
+
+.answereng-panel .ae-question {
+    font-weight: 600;
+}
+
+.answereng-panel .ae-answer {
+    color: var(--ae-muted);
+}
+
+.answereng-panel .ae-results-link {
+    display: inline-flex;
+    gap: 6px;
+    font-weight: 600;
+}
+
+/* Actions */
+.answereng-panel .ae-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 32px;
+}
+
+.answereng-panel .ae-quiet-action {
+    padding: 6px 4px;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    color: #007bdb;
+    font-size: 1.3rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.answereng-panel .ae-actions .ae-quiet-action {
+    margin-left: 8px;
+    color: #a4271c;
+}
+
+.answereng-panel .ae-quiet-action:hover {
+    text-decoration: underline;
+}
+
+.answereng-panel .ae-quiet-action:focus-visible {
+    outline: 2px solid #007bdb;
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* Tables */
+.answereng-panel .ae-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.answereng-panel .ae-activity {
+    margin: 0 0 32px;
+}
+
+.answereng-panel .ae-grid {
+    width: 100%;
+    margin: 0;
+}
+
+/*
+ * The config form zeroes cell padding (".accordion .form-inline .config td"),
+ * so columns hugged their dividers. Same scope plus the panel class outranks it.
+ */
+.accordion .form-inline .config .answereng-panel .ae-grid th,
+.accordion .form-inline .config .answereng-panel .ae-grid td,
+.answereng-panel table.ae-grid > thead > tr > th,
+.answereng-panel table.ae-grid > tbody > tr > td {
+    padding: 10px 16px;
+    vertical-align: middle;
+}
+
+.accordion .form-inline .config .answereng-panel .ae-grid th,
+.answereng-panel table.ae-grid > thead > tr > th {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.answereng-panel table.ae-grid {
+    border: 1px solid var(--ae-line);
+}
+
+.answereng-panel .ae-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.answereng-panel .ae-nowrap {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.answereng-panel .ae-detail {
+    color: var(--ae-muted);
+    word-break: break-word;
+}
+
+.answereng-panel .ae-cell-action {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.answereng-panel .ae-row-note {
+    display: block;
+    max-width: 48ch;
+    margin-top: 6px;
+    color: var(--ae-muted);
+    font-size: 1.2rem;
+}
+
+.answereng-panel .ae-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* Messages */
+.answereng-panel .ae-message {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+    margin: 0 0 20px;
+}
+
+/* Danger zone */
+.answereng-panel .ae-danger {
+    border: 1px solid #f0c4bf;
+    border-radius: 6px;
+}
+
+.answereng-panel .ae-danger > summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    color: #a4271c;
+    font-weight: 600;
+    list-style: none;
+    cursor: pointer;
+}
+
+.answereng-panel .ae-danger > summary::-webkit-details-marker {
+    display: none;
+}
+
+.answereng-panel .ae-danger > summary::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.answereng-panel .ae-danger[open] > summary::before {
+    transform: rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .answereng-panel .ae-danger > summary::before { transition: none; }
+}
+
+.answereng-panel .ae-danger > summary:focus-visible {
+    outline: 2px solid #007bdb;
+    outline-offset: -2px;
+}
+
+.answereng-panel .ae-danger[open] > summary {
+    border-bottom: 1px solid #f0c4bf;
+}
+
+.answereng-panel .ae-identity {
+    padding: 16px;
+}
+
+.answereng-panel .ae-identity + .ae-identity {
+    border-top: 1px solid var(--ae-line);
+}
+
+.answereng-panel .ae-identity-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+    margin: 0 0 12px;
+}
+
+.answereng-panel .ae-identity-meta {
+    color: var(--ae-muted);
+}
+
+.answereng-panel .ae-danger-copy {
+    max-width: 72ch;
+    margin: 0 0 16px;
+    padding: 12px 16px;
+    background: #fdf1ef;
+    border-radius: 4px;
+    color: #6e1d15;
+}
+
+.answereng-panel .ae-confirm {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px 20px;
+}
+
+.answereng-panel .ae-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-weight: 600;
+}
+
+.answereng-panel .ae-field input {
+    width: 260px;
+    max-width: 100%;
+}
+
+.answereng-panel .ae-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 33px;
+}
+
+.answereng-panel .ae-identity .ae-actions {
+    margin: 12px 0 0;
+}
+
+.answereng-panel .ae-delete:not([disabled]) {
+    border-color: #a4271c;
+    background: #a4271c;
+}
+
+@media (max-width: 767px) {
+    .answereng-panel .ae-visibility { padding: 16px; }
+    .answereng-panel .ae-figure { font-size: 2.8rem; }
+    .answereng-panel .ae-grid { display: block; overflow-x: auto; }
+}
