@@ -104,6 +104,28 @@ fix wave; rows 34–35 added by it), ❌ 0, ⚠️ 0, 🔎 0.
   stores: localhost) if that is the store you meant…"; the default-scope row keeps "(Test connection
   lists them)".
 
+## 2026-11-05 — status panel moved to Catalog › AnswerEng
+
+The panel moved from the config section to its own page
+(`answereng/status/index`); the config Status group now links to it. Re-run on
+local Magento 2.4.8 (developer mode):
+- Page under Catalog › AnswerEng › Status & AI Visibility; "All Store Views"
+  shows the overview table (view names link to each view); a store view shows
+  the full panel. No console errors.
+- Actions return to the page: Test connection on store 1 redirected to
+  `answereng/status/index/store/1/` with "Connected — store "localhost" found…".
+- Rows 17 and 29 (ACL), re-run with `dev/e2e/acl-users.php`: admin sees
+  everything; `aesync` (status + sync) no Danger zone; `aeconfig` (status
+  only) Test connection only; new `aesettings` (settings, no status) is denied
+  the page and sees no menu item or config link.
+- Row 28 (GET and form key) unchanged: every action route GET 404, POST
+  without or with a bad form key 302 to the dashboard.
+- Row 34: `setup:di:compile` passes. (It first failed on a stale `vendor/`
+  left inside the local copy at `src/vendor/fullspec/module-answereng/`;
+  `refresh-module.sh` excludes `vendor/` from the copy but never removes one
+  that a Composer reinstall put there.)
+- `?store=999` on the page falls back to the overview (unknown ids map to 0).
+
 ## Other observations (not checklist rows)
 
 - ~~Spec §4/§6 persistent admin system messages for `too_many_products` and `exhausted` are

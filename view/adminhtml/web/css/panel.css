@@ -62,8 +62,24 @@
     font-size: 1.2rem;
 }
 
-.answereng-panel .ae-head > .ae-pill {
+.answereng-panel .ae-head-end {
+    display: flex;
+    align-items: center;
+    gap: 16px;
     margin-left: auto;
+}
+
+.answereng-panel .ae-settings-link {
+    font-weight: 600;
+}
+
+/* Settings page pointer */
+.answereng-status-link {
+    padding: 4px 0;
+}
+
+.answereng-status-link .ae-meta {
+    margin-bottom: 8px;
 }
 
 /* Status pills */

@@ -11,7 +11,7 @@ use Magento\Framework\Controller\Result\Redirect;
 
 class RefreshSummary extends AbstractAction
 {
-    public const ADMIN_RESOURCE = 'Fullspec_AnswerEng::config';
+    public const ADMIN_RESOURCE = 'Fullspec_AnswerEng::status';
 
     /**
      * Constructor.

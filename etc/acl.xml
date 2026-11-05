@@ -4,13 +4,16 @@
     <acl>
         <resources>
             <resource id="Magento_Backend::admin">
+                <resource id="Magento_Catalog::catalog">
+                    <resource id="Fullspec_AnswerEng::status" title="AnswerEng: status and AI visibility" translate="title" sortOrder="200">
+                        <resource id="Fullspec_AnswerEng::sync" title="AnswerEng: sync now and clear catalog" translate="title" sortOrder="10"/>
+                        <resource id="Fullspec_AnswerEng::delete_store" title="AnswerEng: delete stores (Danger zone)" translate="title" sortOrder="20"/>
+                    </resource>
+                </resource>
                 <resource id="Magento_Backend::stores">
                     <resource id="Magento_Backend::stores_settings">
                         <resource id="Magento_Config::config">
-                            <resource id="Fullspec_AnswerEng::config" title="AnswerEng" translate="title" sortOrder="200">
-                                <resource id="Fullspec_AnswerEng::sync" title="AnswerEng: sync now and clear catalog" translate="title" sortOrder="10"/>
-                                <resource id="Fullspec_AnswerEng::delete_store" title="AnswerEng: delete stores (Danger zone)" translate="title" sortOrder="20"/>
-                            </resource>
+                            <resource id="Fullspec_AnswerEng::config" title="AnswerEng settings" translate="title" sortOrder="200"/>
                         </resource>
                     </resource>
                 </resource>

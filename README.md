@@ -24,7 +24,9 @@ Design: docs/2026-10-05-magento-connector-design.md.
     bin/magento module:enable Fullspec_AnswerEng && bin/magento setup:upgrade
 
 Then Stores › Configuration › Catalog › AnswerEng: paste the API key, enable
-each store view you want analysed, and set brand names.
+each store view you want analysed, and set brand names. Sync status, AI
+visibility and store actions are under Catalog › AnswerEng › Status & AI
+Visibility (permission `Fullspec_AnswerEng::status`).
 
 ## Behaviour notes
 

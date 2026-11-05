@@ -10,7 +10,7 @@ use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\Controller\Result\Redirect;
 
-/** POST-only, form-key protected (backend default), ACL via ADMIN_RESOURCE; redirects back to the section. */
+/** POST-only, form-key protected (backend default), ACL via ADMIN_RESOURCE; redirects back to the status page. */
 abstract class AbstractAction extends Action implements HttpPostActionInterface
 {
     /**
@@ -33,10 +33,7 @@ abstract class AbstractAction extends Action implements HttpPostActionInterface
             $this->messageManager->addErrorMessage(
                 (string) __('Unknown store view. Choose a store view and try again.')
             );
-            return $this->resultRedirectFactory->create()->setPath(
-                'adminhtml/system_config/edit',
-                ['section' => 'answereng']
-            );
+            return $this->resultRedirectFactory->create()->setPath('answereng/status/index');
         }
         return $this->perform();
     }
@@ -71,7 +68,7 @@ abstract class AbstractAction extends Action implements HttpPostActionInterface
     }
 
     /**
-     * Flash the result and redirect back to the AnswerEng section.
+     * Flash the result and redirect back to the status page.
      *
      * @param ActionResult $result
      * @param bool $notice
@@ -87,8 +84,8 @@ abstract class AbstractAction extends Action implements HttpPostActionInterface
             $this->messageManager->addSuccessMessage($result->message);
         }
         return $this->resultRedirectFactory->create()->setPath(
-            'adminhtml/system_config/edit',
-            ['section' => 'answereng', 'store' => $this->storeId()]
+            'answereng/status/index',
+            ['store' => $this->storeId()]
         );
     }
 

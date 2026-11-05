@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Fullspec_AnswerEng::answereng" title="AnswerEng" translate="title" module="Fullspec_AnswerEng"
+             sortOrder="100" parent="Magento_Catalog::catalog" resource="Fullspec_AnswerEng::status"/>
+        <add id="Fullspec_AnswerEng::status_page" title="Status &amp; AI Visibility" translate="title"
+             module="Fullspec_AnswerEng" sortOrder="10" parent="Fullspec_AnswerEng::answereng"
+             action="answereng/status/index" resource="Fullspec_AnswerEng::status"/>
+    </menu>
+</config>

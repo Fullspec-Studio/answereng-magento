@@ -1,0 +1,15 @@
+<?php
+/**
+ * @var \Fullspec\AnswerEng\Block\Adminhtml\System\Config\StatusLink $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+?>
+<div class="answereng-panel answereng-status-link">
+    <p class="ae-meta">
+        <?= $escaper->escapeHtml(__('Sync status, AI visibility and store actions are under Catalog › AnswerEng.')) ?>
+    </p>
+    <?php if ($block->canViewStatus()): ?>
+        <a class="ae-results-link" href="<?= $escaper->escapeUrl($block->getStatusUrl()) ?>">
+            <?= $escaper->escapeHtml(__('Open AnswerEng status')) ?> <span aria-hidden="true">→</span></a>
+    <?php endif; ?>
+</div>

@@ -42,7 +42,8 @@ class StoreKeyComment implements CommentInterface
         }
         return (string) __(
             'This view has synced as "%1". Changing it registers a NEW store in AnswerEng that counts '
-            . 'against your plan; the old store keeps its data and its slot until you delete it (Danger zone).',
+            . 'against your plan; the old store keeps its data and its slot until you delete it '
+            . '(Catalog › AnswerEng, Danger zone).',
             $this->escaper->escapeHtml($synced)
         );
     }

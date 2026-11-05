@@ -1,6 +1,6 @@
 <?php
 /**
- * @var \Fullspec\AnswerEng\Block\Adminhtml\System\Config\StatusPanel $block
+ * @var \Fullspec\AnswerEng\Block\Adminhtml\Status\Panel $block
  * @var \Magento\Framework\Escaper $escaper
  */
 use Fullspec\AnswerEng\Model\Admin\PanelLabels;
@@ -24,17 +24,24 @@ $logShown = 5;
                     <code><?= $escaper->escapeHtml($panel['storeKey']) ?></code></span>
             <?php endif; ?>
         </div>
-        <?php if ($storeId > 0): ?>
-            <?= /* @noEscape */ $pill(PanelLabels::state($panel['state'], $panel['reason'], $panel['lastSyncAt'])) ?>
-        <?php endif; ?>
+        <div class="ae-head-end">
+            <?php if ($storeId > 0): ?>
+                <?php $viewState = PanelLabels::state($panel['state'], $panel['reason'], $panel['lastSyncAt']); ?>
+                <?= /* @noEscape */ $pill($viewState) ?>
+            <?php endif; ?>
+            <a class="ae-settings-link" href="<?= $escaper->escapeUrl($block->getSettingsUrl()) ?>">
+                <?= $escaper->escapeHtml(__('Settings')) ?></a>
+        </div>
     </div>
 
 <?php if ($storeId <= 0): ?>
-    <p class="ae-intro"><?= $escaper->escapeHtml(__('Choose a store view (scope switcher, top left) to sync, test the '
-        . 'connection or manage AnswerEng stores.')) ?></p>
+    <p class="ae-intro"><?= $escaper->escapeHtml(__('Choose a store view above, or open one below, to see its AI '
+        . 'visibility, test the connection or manage its AnswerEng store.')) ?></p>
     <?php if ($panel === []): ?>
-        <p class="ae-empty"><?= $escaper->escapeHtml(__('No store view is enabled for AnswerEng yet. Choose a store '
-            . 'view, set "Enabled for AnswerEng" to Yes, and save.')) ?></p>
+        <p class="ae-empty"><?= $escaper->escapeHtml(__('No store view is enabled for AnswerEng yet. In Settings, '
+            . 'choose a store view, set "Enabled for AnswerEng" to Yes, and save.')) ?>
+            <a href="<?= $escaper->escapeUrl($block->getSettingsUrl()) ?>">
+                <?= $escaper->escapeHtml(__('Open settings')) ?></a></p>
     <?php else: ?>
         <table class="data-grid ae-grid">
             <thead><tr>
@@ -48,7 +55,9 @@ $logShown = 5;
             <tbody>
             <?php foreach ($panel as $row): ?>
                 <tr>
-                    <td><?= $escaper->escapeHtml($row['name']) ?></td>
+                    <?php $viewUrl = $block->getUrl('answereng/status/index', ['store' => $row['storeId']]); ?>
+                    <td><a href="<?= $escaper->escapeUrl($viewUrl) ?>">
+                        <?= $escaper->escapeHtml($row['name']) ?></a></td>
                     <td><code><?= $escaper->escapeHtml($row['storeKey']) ?></code></td>
                     <?php $rowState = PanelLabels::state($row['state'], $row['reason'], $row['lastSyncAt']); ?>
                     <td><?= /* @noEscape */ $pill($rowState) ?>
@@ -331,3 +340,4 @@ $logShown = 5;
     <?php endif; ?>
 <?php endif; ?>
 </div>
+<!-- /answereng-panel -->

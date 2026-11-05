@@ -88,6 +88,17 @@ class Admin:
         self.last_code = code
         return text
 
+    def status(self, store=None, extra=''):
+        path = '/admin/answereng/status/index/'
+        if store is not None:
+            path += 'store/%s/' % store
+        code, text, _ = self._req(path + extra)
+        if 'login[username]' in text:
+            self.login()
+            code, text, _ = self._req(path + extra)
+        self.last_code = code
+        return text
+
     def save_config(self, groups, store=None, website=None, page=None):
         page = page or self.config(store=store, website=website)
         action = htmllib.unescape(re.search(r'<form[^>]+action="([^"]+)"[^>]+id="config-edit-form"', page).group(1))
@@ -127,7 +138,7 @@ def messages(text):
 
 
 def panel_text(page):
-    m = re.search(r'<div class="answereng-panel".*?(?=<tr id="row_answereng_status_panel_after|</fieldset>)', page, re.S)
+    m = re.search(r'<div class="answereng-panel".*?(?=<!-- /answereng-panel -->)', page, re.S)
     chunk = m.group(0) if m else ''
     chunk = re.sub(r'<script.*?</script>', '', chunk, flags=re.S)
     chunk = re.sub(r'<(br|p|tr|div|summary|details)[^>]*>', '\n', chunk)

@@ -14,11 +14,14 @@ scheduled store deletion; §11) and **B — the Magento module** (§2–§10).
 - **Distribution (v1): direct.** Private Composer package / GitHub release zip
   for pilot merchants. Built to Adobe Commerce Marketplace (EQP) quality from
   the first commit, but not submitted in v1.
-- **Admin surface: sync + status panel.** Configuration, sync status/log,
-  "Sync now", "Test connection", and ONE headline visibility number with its
-  interval, linking to the dashboard (`https://app.answereng.io/stores/{key}`)
-  for everything else. No native results page (the dashboard, which accepts
-  API-key sign-in, owns results).
+- **Admin surface: sync + status panel.** Settings stay in Stores ›
+  Configuration › Catalog › AnswerEng. Sync status/log, "Sync now", "Test
+  connection" and ONE headline visibility number with its interval live on
+  Catalog › AnswerEng › Status & AI Visibility (moved there 2026-11-05:
+  configuration holds settings, the page holds what merchants check), linking
+  to the dashboard (`https://app.answereng.io/stores/{key}`) for everything
+  else. No native results page (the dashboard, which accepts API-key sign-in,
+  owns results).
 - **Additive engine changes (§11):** a stable `code` field on every error
   response; `DELETE /stores/{store_key}/catalog` (clears a store's products;
   store, history and plan slot remain); and scheduled, cancellable store
@@ -61,7 +64,7 @@ Model/Syncer.php             lock -> guard -> build -> push -> record, one view
 Cron/SyncDirty.php, Cron/Reconcile.php
 Observer/MarkDirty.php
 Console/Command/Sync.php     bin/magento answereng:sync [--store=<code>]
-Block/Adminhtml/StatusPanel.php + template
+Block/Adminhtml/Status/Panel.php + template (status page; config shows a link)
 Controller/Adminhtml/Sync/Now.php, Controller/Adminhtml/Connection/Test.php
 Setup/Uninstall.php          drops tables + config rows on module:uninstall
 tests/Unit/…
@@ -292,8 +295,11 @@ log or sync-log row (unit-tested by asserting on captured log output).
 
 ## 7. Admin status panel
 
-Rendered at the top of the AnswerEng config section (block template, all
-output via `$escaper`).
+Rendered on Catalog › AnswerEng › Status & AI Visibility
+(`answereng/status/index`, ACL `Fullspec_AnswerEng::status`, with `::sync` and
+`::delete_store` beneath it) with a store-view switcher; "All Store Views" is
+the default scope below. The config section's Status group links to it. All
+output via `$escaper`.
 
 - **Default scope:** one table, a row per enabled view — store key, last sync
   time + outcome, product count, "Sync now".

@@ -97,7 +97,8 @@ class StoreKey extends Value
         if ($this->isValueChanged() && $synced !== null && $synced !== (string) $this->getValue()) {
             $this->messages->addWarningMessage(__(
                 'This store view had synced to AnswerEng as "%1". The new key registers a NEW AnswerEng store that '
-                . 'counts against your plan; "%1" keeps its data and its slot until you delete it in the Danger zone.',
+                . 'counts against your plan; "%1" keeps its data and its slot until you delete it '
+                . '(Catalog › AnswerEng, Danger zone).',
                 $synced
             ));
         }
