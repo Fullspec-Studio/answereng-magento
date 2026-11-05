@@ -2,6 +2,7 @@
  * AnswerEng panel actions. The config page is one big <form>, so each action
  * builds its own POST form outside it. The delete button only enables when
  * the typed key matches and the box is ticked; the server re-validates both.
+ * The activity log shows its first rows and toggles the rest.
  */
 define([], function () {
     'use strict';
@@ -29,6 +30,17 @@ define([], function () {
         root.addEventListener('input', refresh);
         root.addEventListener('change', refresh);
         root.addEventListener('click', function (event) {
+            var toggle = event.target.closest('[data-answereng-toggle-log]');
+            if (toggle) {
+                event.preventDefault();
+                var open = toggle.getAttribute('aria-expanded') !== 'true';
+                toggle.closest('[data-answereng-log]').querySelectorAll('.ae-log-more').forEach(function (row) {
+                    row.hidden = !open;
+                });
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                toggle.textContent = toggle.getAttribute(open ? 'data-label-less' : 'data-label-more');
+                return;
+            }
             var button = event.target.closest('[data-answereng-action]');
             if (!button || button.disabled) {
                 return;
