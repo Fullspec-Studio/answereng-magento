@@ -285,10 +285,26 @@
     margin: 0;
 }
 
-.answereng-panel .ae-grid td {
-    padding-top: 10px;
-    padding-bottom: 10px;
+/*
+ * The config form zeroes cell padding (".accordion .form-inline .config td"),
+ * so columns hugged their dividers. Same scope plus the panel class outranks it.
+ */
+.accordion .form-inline .config .answereng-panel .ae-grid th,
+.accordion .form-inline .config .answereng-panel .ae-grid td,
+.answereng-panel table.ae-grid > thead > tr > th,
+.answereng-panel table.ae-grid > tbody > tr > td {
+    padding: 10px 16px;
     vertical-align: middle;
+}
+
+.accordion .form-inline .config .answereng-panel .ae-grid th,
+.answereng-panel table.ae-grid > thead > tr > th {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.answereng-panel table.ae-grid {
+    border: 1px solid var(--ae-line);
 }
 
 .answereng-panel .ae-num {
