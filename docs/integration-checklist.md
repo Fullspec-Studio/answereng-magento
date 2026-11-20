@@ -126,6 +126,32 @@ local Magento 2.4.8 (developer mode):
   that a Composer reinstall put there.)
 - `?store=999` on the page falls back to the overview (unknown ids map to 0).
 
+## 2026-11-20 — results parity
+
+The store-view page now shows the WooCommerce plugin's results (design §7.2). Run on local
+Magento 2.4.8 (developer mode, http://localhost:8894), store view 1, mock engine on 8895, module
+as of 792538b (branch `feat/results-parity`). Screenshots: `.superpowers/sdd/2026-11-20-magento-results-parity/task-8-*.png`.
+
+| # | Scenario | Steps | Expected | Result |
+|---|---|---|---|---|
+| R1 | Sections in order | `refresh-module.sh`, `setup:upgrade --keep-generated` (new snapshot columns), open the store-view page | Jump link, AI visibility, per-engine presence + share of voice, drafted fixes, Sync (collapsed when healthy), Recent activity, Danger zone | ✅ all in that order at 1280 px; 0 console errors (4 core warnings) |
+| R2 | Narrow screen | Same page at a 390 px viewport | Stacked layout | ✅ stacked rules apply; Magento's admin itself keeps a 1024 px minimum width (same before this change) |
+| R3 | Copy draft | Click Copy draft; then with `navigator.clipboard` removed | Draft on the clipboard, button reads "Copied" for 2 s; without the API the draft text is selected | ✅ both |
+| R4 | Mark and undo | Mark as applied, then Undo | "Marked as applied." fix moves to Applied (1), jump link count drops; Undo: "Moved back to drafted fixes." | ✅ |
+| R5 | Slow engine (mock `slow`) | Load the page with every read hanging | Page returns within the 20 s shared budget with the stale snapshot and banner | ✅ 20.7 s, "Could not refresh from AnswerEng. Showing results fetched 20 Nov 2026, 22:45 UTC." above the snapshot results and both fixes. Before the budget was shared across reads: 50.6 s |
+| R6 | Lost response on mark (mock `lost-response`) | Mark a fix | "Couldn't confirm that change. AnswerEng didn't respond in time. Refresh in a moment to see whether it was applied."; lists dropped | ✅ after the mock went back to `normal`, a reload showed the fix under Applied (1); undone afterwards |
+| R7 | Role without `::fixes` | `acl-users.php` re-run; open the page as `aeconfig` | Fixes and Copy draft visible; no Mark/Undo buttons, no `fixapplied` URL in the page | ✅ |
+| R8 | Settings disclosure | Stores > Configuration > Catalog > AnswerEng, default scope | "What data leaves this site" group collapsed, opens, lists sent / not sent and the engine URL; API key note links answereng.io | ✅ "Product data goes to http://host.docker.internal:8895, …" |
+| R9 | Auto-sync off | Db tests (`SyncDirty`, selector) | Dirty-and-quiet views skipped; retries still run; reconcile unchanged | ✅ `testAutoSyncOffSkipsDirtyViewsButReconcileStillRuns`, `testManualViewsOnlyRetry` |
+| R10 | `fixapplied` route, GET (row 28 pattern) | `cd dev/e2e && /usr/bin/python3 row28.py` | GET 404 | ✅ `fixapplied GET 404` |
+| R11 | `fixapplied`, no or bad form key | Same run, POST without and with `form_key=wrongkey123` | 302 to the dashboard | ✅ both 302 `http://localhost:8894/admin/admin/dashboard/` (the other six actions identical) |
+| R12 | `fixapplied` ACL | Same run: valid-form-key POST (`fix_id=999999`, `op=mark`) as `aeconfig` and as `aesync` | `aeconfig` (no `::fixes`) denied; `aesync` allowed | ✅ `aeconfig` 403 admin denied page; `aesync` 302 back to `answereng/status/index/store/1/` (the unknown fix id is answered by the engine, no change made) |
+| R13 | Production-mode compile | `refresh-module.sh`, `setup:di:compile`, grep `__set_state` in `generated/metadata`, then `rm -rf generated/code/* generated/metadata/*`, `cache:flush` | Compile succeeds; no `__set_state`; store left in developer mode | ✅ "Generated code and dependency injection configuration successfully." (about 35 s; no stale `vendor/` in the module copy); no `__set_state`; `deploy:mode:show` → developer; page still 200 afterwards (compile run in developer mode, mode not switched to production) |
+
+Suites at 792538b: Unit 118 tests (641 assertions) OK, Db 124 tests (447 assertions) OK.
+
+Tally: ✅ 13, ❌ 0, ⚠️ 0, 🔎 0.
+
 ## Other observations (not checklist rows)
 
 - ~~Spec §4/§6 persistent admin system messages for `too_many_products` and `exhausted` are

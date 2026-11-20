@@ -21,7 +21,7 @@ from their own location.
 | `refresh-module.sh` | Re-copy the repo into the copy-mode install (`src/vendor/fullspec/module-answereng`) and flush generated code + cache. |
 | `archive-received.sh <label>` | Move the mock engine's received payloads to `$MAGENTO_LOCAL/received-archive/<label>/`. |
 | `admin.py` | Python admin HTTP client: login, config page at a scope, real config-form saves, panel action POSTs with the page's form key (`from admin import Admin`). Cookie jars go to `dev/e2e/.jars/` (git-ignored). |
-| `row28.py` | Checklist row 28: GET and form-key-less POSTs to every `answereng/action/*` route. |
+| `row28.py` | Checklist row 28: GET and form-key-less POSTs to every `answereng/action/*` route (including `fixapplied`), plus the `fixapplied` ACL check as `aeconfig` (denied) and `aesync` (allowed). Run `acl-users.php` first if the roles are stale. |
 
 PHP scripts run inside the container; copy them first:
 
