@@ -92,27 +92,99 @@ class EngineClient
      *
      * @param Connection $c
      * @param string $storeKey
+     * @param ReadBudget|null $budget
      * @return EngineResult
      */
-    public function summary(Connection $c, string $storeKey): EngineResult
+    public function summary(Connection $c, string $storeKey, ?ReadBudget $budget = null): EngineResult
     {
-        return $this->read($c, '/stores/' . rawurlencode($storeKey) . '/summary');
+        return $this->read($c, '/stores/' . rawurlencode($storeKey) . '/summary', $budget);
     }
 
     /**
-     * A GET, retried once on a transient failure.
+     * Fixes with the given status.
+     *
+     * @param Connection $c
+     * @param string $storeKey
+     * @param string $status
+     * @param ReadBudget|null $budget
+     * @return EngineResult
+     */
+    public function fixes(Connection $c, string $storeKey, string $status, ?ReadBudget $budget = null): EngineResult
+    {
+        return $this->read(
+            $c,
+            '/stores/' . rawurlencode($storeKey) . '/fixes?status=' . rawurlencode($status),
+            $budget
+        );
+    }
+
+    /**
+     * Mark a fix applied (sent once).
+     *
+     * @param Connection $c
+     * @param string $storeKey
+     * @param int $fixId
+     * @return EngineResult
+     */
+    public function markApplied(Connection $c, string $storeKey, int $fixId): EngineResult
+    {
+        return $this->once('POST', $c, $this->appliedPath($storeKey, $fixId), null, self::WRITE_TIMEOUT);
+    }
+
+    /**
+     * Unmark a fix applied (sent once).
+     *
+     * @param Connection $c
+     * @param string $storeKey
+     * @param int $fixId
+     * @return EngineResult
+     */
+    public function unmarkApplied(Connection $c, string $storeKey, int $fixId): EngineResult
+    {
+        return $this->once('DELETE', $c, $this->appliedPath($storeKey, $fixId), null, self::WRITE_TIMEOUT);
+    }
+
+    /**
+     * Applied-marker path.
+     *
+     * @param string $storeKey
+     * @param int $fixId
+     * @return string
+     */
+    private function appliedPath(string $storeKey, int $fixId): string
+    {
+        return '/stores/' . rawurlencode($storeKey) . '/fixes/' . $fixId . '/applied';
+    }
+
+    /**
+     * A GET, retried once on a transient failure. With a budget the attempts share it: each is capped by
+     * the budget, a retry needs enough time left, and a transient outcome stops the budget's remaining reads.
      *
      * @param Connection $c
      * @param string $path
+     * @param ReadBudget|null $budget
      * @return EngineResult
      */
-    private function read(Connection $c, string $path): EngineResult
+    private function read(Connection $c, string $path, ?ReadBudget $budget = null): EngineResult
     {
-        $first = $this->once('GET', $c, $path, null, self::READ_TIMEOUT);
-        if ($first->status !== null && $first->status < 500) {
-            return $first;
+        if ($budget === null) {
+            $first = $this->once('GET', $c, $path, null, self::READ_TIMEOUT);
+            if ($first->status !== null && $first->status < 500) {
+                return $first;
+            }
+            return $this->once('GET', $c, $path, null, self::READ_TIMEOUT);
         }
-        return $this->once('GET', $c, $path, null, self::READ_TIMEOUT);
+        if ($budget->stopped()) {
+            return EngineResult::transportFailure('read budget exhausted');
+        }
+        $result = $this->once('GET', $c, $path, null, $budget->attemptTimeout());
+        if ($result->isTransient() && $budget->allowsRetry()) {
+            $result = $this->once('GET', $c, $path, null, $budget->attemptTimeout());
+        }
+        if ($result->isTransient()) {
+            $budget->stop();
+        }
+        return $result;
     }
 
     /**
