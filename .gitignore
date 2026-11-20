@@ -8,3 +8,4 @@
 .DS_Store
 /.phpunit.result.cache
 /dev/e2e/.jars/
+/.superpowers/
