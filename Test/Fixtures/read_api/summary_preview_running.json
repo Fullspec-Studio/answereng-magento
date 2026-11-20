@@ -8,5 +8,6 @@
   "preview": {
     "state": "running",
     "engine": "perplexity"
-  }
+  },
+  "rating_eligible": false
 }
