@@ -6,6 +6,7 @@ namespace Fullspec\AnswerEng\Test\Db;
 use Fullspec\AnswerEng\Model\Admin\SummaryProvider;
 use Fullspec\AnswerEng\Model\Admin\SummaryView;
 use Fullspec\AnswerEng\Model\Engine\EngineClient;
+use Fullspec\AnswerEng\Model\Engine\ReadBudget;
 use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 use Fullspec\AnswerEng\Test\Support\ArrayCache;
 use Fullspec\AnswerEng\Test\Support\FakeSettings;
@@ -157,5 +158,18 @@ final class SummaryProviderTest extends DbTestCase
         $this->provider->forView(1);
         $this->provider->forget(1);
         self::assertSame([], $this->cache->items);
+    }
+
+    public function testATransientFailureStopsTheBudget(): void
+    {
+        $budget = new ReadBudget(new FixedClock());
+        $this->transport->enqueue(FakeTransport::json(200, $this->fixture('summary.json')));
+        self::assertSame(SummaryView::FRESH, $this->provider->forView(1, $budget)->state);
+        self::assertFalse($budget->stopped());
+        $this->cache->items = [];
+        $this->transport->enqueue(FakeTransport::json(504, null))->enqueue(FakeTransport::json(504, null));
+        self::assertSame(SummaryView::STALE, $this->provider->forView(1, $budget)->state);
+        self::assertTrue($budget->stopped());
+        self::assertSame(15, $this->transport->requests[1]['timeout']);
     }
 }

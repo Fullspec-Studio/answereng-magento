@@ -5,6 +5,7 @@ namespace Fullspec\AnswerEng\Model\Admin;
 
 use Fullspec\AnswerEng\Model\Config\SettingsProvider;
 use Fullspec\AnswerEng\Model\Engine\EngineClient;
+use Fullspec\AnswerEng\Model\Engine\ReadBudget;
 use Fullspec\AnswerEng\Model\Support\Clock;
 use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 
@@ -41,10 +42,14 @@ class SummaryProvider
     /**
      * For view.
      *
+     * With a budget the summary read shares it with the page's other reads; a transient failure stops it,
+     * so callers can tell from $budget->stopped() that the remaining reads must not be sent.
+     *
      * @param int $storeId
+     * @param ReadBudget|null $budget
      * @return SummaryView
      */
-    public function forView(int $storeId): SummaryView
+    public function forView(int $storeId, ?ReadBudget $budget = null): SummaryView
     {
         $s = $this->settings->forStore($storeId);
         // A test or staging engine's stores are not on app.answereng.io, so there is nothing to link to.
@@ -57,7 +62,7 @@ class SummaryProvider
         if ($cached !== null) {
             return $this->fromJson($cached, SummaryView::FRESH, $url, null);
         }
-        $r = $this->engine->summary($s->connection(), $s->storeKey);
+        $r = $this->engine->summary($s->connection(), $s->storeKey, $budget);
         if ($r->isSuccess() && $r->json !== null) {
             $json = json_encode($r->json, JSON_THROW_ON_ERROR);
             $noRun = ($r->json['latest_run'] ?? null) === null;
@@ -75,9 +80,8 @@ class SummaryProvider
         if ($r->status === 409 && $r->code() === 'store_pending_deletion') {
             return new SummaryView(SummaryView::PENDING_DELETION, $url);
         }
-        $transient = $r->status === null || $r->status >= 500 || $r->status === 429;
         $state = $this->state->get($storeId);
-        if ($transient && $state->snapshotJson !== null && $state->snapshotFingerprint === $s->fingerprint()) {
+        if ($r->isTransient() && $state->snapshotJson !== null && $state->snapshotFingerprint === $s->fingerprint()) {
             return $this->fromJson($state->snapshotJson, SummaryView::STALE, $url, $state->snapshotFetchedAt);
         }
         return new SummaryView(SummaryView::UNAVAILABLE, $url);

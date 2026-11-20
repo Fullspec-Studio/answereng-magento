@@ -225,4 +225,27 @@ final class SyncStateRepositoryTest extends DbTestCase
         self::assertSame(['acct_x', 'keyhash', 'fp', '{"a":1}'],
             [$s->accountId, $s->accountKeyHash, $s->snapshotFingerprint, $s->snapshotJson]);
     }
+
+    public function testFixesSnapshotFollowsTheSummarySnapshotFingerprint(): void
+    {
+        $this->repo->saveFixesSnapshot(1, 'fp', '[1]', '[2]');
+        self::assertNull($this->repo->get(1)->snapshotFixesJson);
+        $this->repo->saveSnapshot(1, 'fp', '{"a":1}', $this->now());
+        $this->repo->saveFixesSnapshot(1, 'other', '[1]', '[2]');
+        self::assertNull($this->repo->get(1)->snapshotFixesJson);
+        $this->repo->saveFixesSnapshot(1, 'fp', '[1]', '[2]');
+        $s = $this->repo->get(1);
+        self::assertSame(['[1]', '[2]'], [$s->snapshotFixesJson, $s->snapshotAppliedJson]);
+        // A newer summary for the same connection keeps the lists; another connection drops them.
+        $this->repo->saveSnapshot(1, 'fp', '{"a":2}', $this->now());
+        self::assertSame('[1]', $this->repo->get(1)->snapshotFixesJson);
+        $this->repo->saveSnapshot(1, 'fp2', '{"a":3}', $this->now());
+        $s = $this->repo->get(1);
+        self::assertSame([null, null], [$s->snapshotFixesJson, $s->snapshotAppliedJson]);
+        $this->repo->saveSnapshot(1, 'fp', '{"a":1}', $this->now());
+        $this->repo->saveFixesSnapshot(1, 'fp', '[1]', null);
+        $this->repo->clearSnapshot(1);
+        $s = $this->repo->get(1);
+        self::assertSame([null, null, null], [$s->snapshotJson, $s->snapshotFixesJson, $s->snapshotAppliedJson]);
+    }
 }

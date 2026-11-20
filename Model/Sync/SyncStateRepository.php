@@ -373,6 +373,9 @@ class SyncStateRepository
     /**
      * Save snapshot.
      *
+     * Fix lists saved for another connection are dropped; for the same connection they stay until
+     * saveFixesSnapshot replaces them.
+     *
      * @param int $storeId
      * @param string $fingerprint
      * @param string $json
@@ -383,21 +386,44 @@ class SyncStateRepository
     {
         $this->ensure($storeId);
         $this->db->execute(
-            "UPDATE {$this->t()} SET snapshot_fingerprint = ?, snapshot_json = ?, snapshot_fetched_at = ?
+            // The fix columns read the OLD snapshot_fingerprint, so they are assigned before it.
+            "UPDATE {$this->t()} SET
+                 snapshot_fixes_json = IF(snapshot_fingerprint <=> ?, snapshot_fixes_json, NULL),
+                 snapshot_applied_json = IF(snapshot_fingerprint <=> ?, snapshot_applied_json, NULL),
+                 snapshot_fingerprint = ?, snapshot_json = ?, snapshot_fetched_at = ?
              WHERE store_id = ?",
-            [$fingerprint, $json, Ts::fmt($now), $storeId]
+            [$fingerprint, $fingerprint, $fingerprint, $json, Ts::fmt($now), $storeId]
         );
     }
 
     /**
-     * Forget the fallback summary snapshot (its connection fingerprint no longer applies).
+     * Save the fix lists beside the summary snapshot, only when that snapshot is for this connection.
+     *
+     * @param int $storeId
+     * @param string $fingerprint
+     * @param string $fixesJson
+     * @param string|null $appliedJson
+     * @return void
+     */
+    public function saveFixesSnapshot(int $storeId, string $fingerprint, string $fixesJson, ?string $appliedJson): void
+    {
+        $this->db->execute(
+            "UPDATE {$this->t()} SET snapshot_fixes_json = ?, snapshot_applied_json = ?
+             WHERE store_id = ? AND snapshot_fingerprint = ?",
+            [$fixesJson, $appliedJson, $storeId, $fingerprint]
+        );
+    }
+
+    /**
+     * Forget the fallback snapshot, fix lists included (its connection fingerprint no longer applies).
      *
      * @param int $storeId
      */
     public function clearSnapshot(int $storeId): void
     {
         $this->db->execute(
-            "UPDATE {$this->t()} SET snapshot_fingerprint = NULL, snapshot_json = NULL, snapshot_fetched_at = NULL
+            "UPDATE {$this->t()} SET snapshot_fingerprint = NULL, snapshot_json = NULL, snapshot_fetched_at = NULL,
+                 snapshot_fixes_json = NULL, snapshot_applied_json = NULL
              WHERE store_id = ?",
             [$storeId]
         );

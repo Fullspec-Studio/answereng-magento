@@ -4,7 +4,8 @@
             "retry_reason": true, "attempts": true, "next_attempt_at": true, "config_revision": true,
             "settings_hash": true, "last_sync_at": true, "product_count": true, "synced_store_key": true,
             "account_id": true, "account_key_hash": true, "snapshot_json": true,
-            "snapshot_fingerprint": true, "snapshot_fetched_at": true},
+            "snapshot_fingerprint": true, "snapshot_fetched_at": true, "snapshot_fixes_json": true,
+            "snapshot_applied_json": true},
         "constraint": {"PRIMARY": true, "ANSWERENG_SYNC_STATE_STORE_ID_STORE_STORE_ID": true}
     },
     "answereng_sync_log": {

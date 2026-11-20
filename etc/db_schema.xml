@@ -17,9 +17,11 @@
         <column xsi:type="varchar" name="synced_store_key" length="255" nullable="true" comment="Store key of the last successful push"/>
         <column xsi:type="varchar" name="account_id" length="64" nullable="true" comment="Account last seen for account_key_hash"/>
         <column xsi:type="varchar" name="account_key_hash" length="64" nullable="true" comment="sha256 of the API key that account was seen with"/>
-        <column xsi:type="text" name="snapshot_json" nullable="true" comment="Last summary response"/>
+        <column xsi:type="mediumtext" name="snapshot_json" nullable="true" comment="Last summary response"/>
         <column xsi:type="varchar" name="snapshot_fingerprint" length="64" nullable="true" comment="Connection fingerprint of the snapshot"/>
         <column xsi:type="datetime" name="snapshot_fetched_at" nullable="true" comment="When the snapshot was fetched (UTC)"/>
+        <column xsi:type="mediumtext" name="snapshot_fixes_json" nullable="true" comment="Suggested fixes fetched with the snapshot"/>
+        <column xsi:type="mediumtext" name="snapshot_applied_json" nullable="true" comment="Applied fixes fetched with the snapshot"/>
         <constraint xsi:type="primary" referenceId="PRIMARY">
             <column name="store_id"/>
         </constraint>
