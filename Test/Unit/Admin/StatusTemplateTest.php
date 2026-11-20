@@ -220,7 +220,8 @@ final class StatusTemplateTest extends TestCase
     public function testResultSectionsShowTheEngineLabelsTrendAndShareOfVoice(): void
     {
         $html = $this->render(self::panel());
-        self::assertStringContainsString('Perplexity', $html);
+        self::assertStringContainsString('<span class="ae-bar-name">Perplexity Sonar</span>', $html);
+        self::assertStringContainsString('<span class="ae-fix-engine">Perplexity Sonar</span>', $html);
         self::assertStringContainsString('Your store (you)', $html);
         self::assertStringContainsString('Merrell', $html);
         self::assertStringContainsString('▲ +8.0 vs last run', $html);

@@ -20,8 +20,8 @@ class PanelLabels
         'claude' => ['Claude', '#C15F3C'],
         'mistral' => ['Mistral', '#6C4FD8'],
         'llama' => ['Llama', '#0E7A6C'],
-        'sonar' => ['Perplexity', '#1D4ED8'],
-        'perplexity' => ['Perplexity', '#1D4ED8'],
+        'sonar' => ['Perplexity Sonar', '#1D4ED8'],
+        'perplexity' => ['Perplexity Sonar', '#1D4ED8'],
     ];
 
     /** Color for an engine nobody named yet (WooCommerce fallback). */

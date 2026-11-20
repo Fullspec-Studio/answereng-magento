@@ -70,8 +70,8 @@ final class PanelLabelsTest extends TestCase
 
     public function testEngineLabels(): void
     {
-        self::assertSame(['label' => 'Perplexity', 'color' => '#1D4ED8'], PanelLabels::engine('perplexity:sonar'));
-        self::assertSame('Perplexity', PanelLabels::engine('perplexity')['label']);
+        self::assertSame(['label' => 'Perplexity Sonar', 'color' => '#1D4ED8'], PanelLabels::engine('perplexity:sonar'));
+        self::assertSame('Perplexity Sonar', PanelLabels::engine('perplexity')['label']);
         self::assertSame(
             ['label' => 'Claude', 'color' => '#C15F3C'],
             PanelLabels::engine('bedrock:us.anthropic.claude-haiku-4-5-20251001-v1:0')
