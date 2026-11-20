@@ -61,8 +61,12 @@ class DataDisclosure extends Field
                 'Product SKU, name and short description '
                 . '(or the full description, cleaned, when there is no short description)'
             ),
-            (string) __('Price, category and the attributes you choose'),
+            (string) __(
+                'Price, the product\'s category (its URL key), and product attributes set to '
+                . '"Visible on Catalog Pages on Storefront"'
+            ),
             (string) __('Your brand and competitor names'),
+            (string) __('Your store key (an identifier for this store view, not personal data)'),
         ];
     }
 

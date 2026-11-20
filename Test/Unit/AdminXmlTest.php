@@ -105,7 +105,7 @@ final class AdminXmlTest extends TestCase
         $xml = simplexml_load_file(self::ROOT . '/etc/adminhtml/system.xml');
         self::assertNotFalse($xml);
         $comment = (string) $xml->xpath('//group[@id="connection"]/field[@id="api_key"]/comment')[0];
-        self::assertStringContainsString('Paste the API key from your AnswerEng welcome email.', $comment);
+        self::assertStringContainsString('Paste the API key from your AnswerEng welcome email. Stored encrypted.', $comment);
         self::assertStringContainsString(
             'No API key yet? Get one at <a href="https://answereng.io"',
             $comment
