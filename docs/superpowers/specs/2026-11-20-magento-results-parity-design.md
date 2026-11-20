@@ -111,10 +111,35 @@ on the plugin screen.
   fallback snapshot stores fixes and applied fixes alongside the summary, and the stale banner
   covers all of them. A failed applied-list fetch never blocks the page; the Applied section is
   then hidden (WooCommerce behavior).
-- **Mark/undo** use `POST` and `DELETE /stores/{store_key}/fixes/{fix_id}/applied`. On success,
-  drop the fixes cache for the view and redirect back to the page with a success message. On
-  failure show WooCommerce's message ("Couldn't update that fix — the engine didn't respond.
-  Nothing was changed; please try again.") and change nothing.
+- **Bounded wait before stale results.** Today each GET may take two 15-second attempts
+  (`EngineClient::READ_TIMEOUT`, one retry), so three sequential reads could hold the page about
+  90 seconds before falling back, past many hosts' request timeouts. Instead, the page's engine
+  reads share one budget of 20 seconds total:
+  - Reads run in order: summary, then suggested fixes, then applied fixes.
+  - Each attempt's timeout is the smaller of 15 seconds and the budget left; the retry runs only
+    if at least 5 seconds remain.
+  - A transient failure (no response, timeout, 5xx, 429) on any read stops the remaining reads
+    for that page view. The page then renders from the snapshot (stale banner) for everything
+    the snapshot holds, or the existing "Results unavailable" state if there is none.
+  - The budget applies to page rendering only. Sync, clear and delete keep their own timeouts.
+  - Test against a *hanging* engine (the mock's `slow` mode, which sleeps 35 seconds), not just a
+    stopped mock: the page must finish within the budget plus rendering time and show the stale
+    results.
+- **Mark/undo** use `POST` and `DELETE /stores/{store_key}/fixes/{fix_id}/applied` (idempotent
+  on the engine, so trying again is always safe). After any attempt, the outcome decides the
+  message:
+  - **Success:** drop the cached suggested and applied lists for the view, and redirect back
+    with a success message.
+  - **The engine answered with an error** (a 4xx with a `code`): the engine refused the change,
+    so nothing changed. Show a message for that code, and keep the caches.
+  - **No confirmation** (transport failure, timeout or 5xx): the engine may have committed the
+    change before the response was lost, so never claim nothing changed. Say "Couldn't confirm
+    that change. AnswerEng didn't respond in time. Refresh in a moment to see whether it was
+    applied." Drop the cached suggested and applied lists for the view, so the next successful
+    read shows the real state. The fallback snapshot stays (it is labeled stale if used).
+  - Test a committed write followed by a lost response: add a mock mode that applies the change
+    and then closes the connection without answering. The next page load after the engine
+    recovers must show the fix as applied.
 - **Fix counts** in the jump link and the Applied header come from the fetched lists.
 - **Engine labels and colors** follow WooCommerce's `ENGINE_META` (e.g. Perplexity, Claude,
   Llama, Mistral), with the same fallback for unknown engines. A fix's `engine` field is the
