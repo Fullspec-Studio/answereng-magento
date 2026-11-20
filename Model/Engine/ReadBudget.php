@@ -15,7 +15,9 @@ class ReadBudget
     public const ATTEMPT_MAX = 15;
     public const RETRY_MIN = 5;
 
+    /** @var int */
     private readonly int $startedAt;
+    /** @var bool */
     private bool $stopped = false;
 
     /**

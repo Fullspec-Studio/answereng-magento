@@ -157,8 +157,10 @@ class EngineClient
     }
 
     /**
-     * A GET, retried once on a transient failure. With a budget the attempts share it: each is capped by
-     * the budget, a retry needs enough time left, and a transient outcome stops the budget's remaining reads.
+     * A GET, retried once on a transient failure.
+     *
+     * With a budget the attempts share it: each is capped by the budget, a retry needs enough time left,
+     * and a transient outcome stops the budget's remaining reads.
      *
      * @param Connection $c
      * @param string $path
@@ -174,17 +176,32 @@ class EngineClient
             }
             return $this->once('GET', $c, $path, null, self::READ_TIMEOUT);
         }
-        if ($budget->stopped()) {
-            return EngineResult::transportFailure('read budget exhausted');
-        }
-        $result = $this->once('GET', $c, $path, null, $budget->attemptTimeout());
+        $result = $this->budgetedAttempt($c, $path, $budget);
         if ($result->isTransient() && $budget->allowsRetry()) {
-            $result = $this->once('GET', $c, $path, null, $budget->attemptTimeout());
+            $result = $this->budgetedAttempt($c, $path, $budget);
         }
         if ($result->isTransient()) {
             $budget->stop();
         }
         return $result;
+    }
+
+    /**
+     * One budgeted GET; the budget is read once, and a timeout under 1 s is never sent.
+     *
+     * @param Connection $c
+     * @param string $path
+     * @param ReadBudget $budget
+     * @return EngineResult
+     */
+    private function budgetedAttempt(Connection $c, string $path, ReadBudget $budget): EngineResult
+    {
+        $timeout = $budget->stopped() ? 0 : $budget->attemptTimeout();
+        if ($timeout < 1) {
+            $budget->stop();
+            return EngineResult::transportFailure('read budget exhausted');
+        }
+        return $this->once('GET', $c, $path, null, $timeout);
     }
 
     /**

@@ -7,6 +7,7 @@ use Fullspec\AnswerEng\Model\Engine\Connection;
 use Fullspec\AnswerEng\Model\Engine\EngineClient;
 use Fullspec\AnswerEng\Model\Engine\ReadBudget;
 use Fullspec\AnswerEng\Model\Engine\TransportException;
+use Fullspec\AnswerEng\Model\Support\Clock;
 use Fullspec\AnswerEng\Test\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -185,5 +186,35 @@ final class EngineClientTest extends TestCase
                 $this->transport->requests[0]['timeout']]);
         self::assertSame(['DELETE', 'https://engine.test/stores/shop.example.com/fixes/118/applied'],
             [$this->transport->requests[1]['method'], $this->transport->requests[1]['url']]);
+    }
+
+    public function testNothingIsSentWhenTheBudgetIsSpentAtSendTime(): void
+    {
+        $clock = new FixedClock();
+        $budget = new ReadBudget($clock);
+        $clock->advance(20);
+        $r = $this->client->summary($this->conn, 's', $budget);
+        self::assertTrue($r->isTransient());
+        self::assertSame([], $this->transport->requests);
+        self::assertTrue($budget->stopped());
+    }
+
+    public function testNoZeroTimeoutReachesTheTransportWhenTheSecondTicksOver(): void
+    {
+        // stopped() sees 1 s left, attemptTimeout() then sees 0: the attempt must not be sent.
+        $clock = new class implements Clock {
+            private int $reads = 0;
+            public function now(): \DateTimeImmutable
+            {
+                $this->reads++;
+                // construction, stopped(): the start; attemptTimeout(): 20 s later
+                return (new \DateTimeImmutable('2026-10-07 12:00:00', new \DateTimeZone('UTC')))
+                    ->modify($this->reads > 2 ? '+20 seconds' : '+0 seconds');
+            }
+        };
+        $budget = new ReadBudget($clock);
+        $r = $this->client->summary($this->conn, 's', $budget);
+        self::assertTrue($r->isTransient());
+        self::assertSame([], $this->transport->requests);
     }
 }
