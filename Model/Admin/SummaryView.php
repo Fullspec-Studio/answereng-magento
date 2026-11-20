@@ -10,6 +10,8 @@ class SummaryView
     public const STALE = 'stale';
     public const UNAVAILABLE = 'unavailable';
     public const NOT_SYNCED = 'not_synced';
+    /** The engine has no store under this key and API key, but this view synced with this key before. */
+    public const OUT_OF_SYNC = 'out_of_sync';
     public const NO_RUN = 'no_run';
     public const PENDING_DELETION = 'pending_deletion';
     public const PREVIEW_RUNNING = 'preview_running';

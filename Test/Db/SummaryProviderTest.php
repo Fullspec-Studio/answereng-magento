@@ -81,6 +81,26 @@ final class SummaryProviderTest extends DbTestCase
         self::assertSame(SummaryView::NOT_SYNCED, $this->provider->forView(1)->state);
     }
 
+    public function testUnknownStoreAfterASyncWithThisKeyIsOutOfSync(): void
+    {
+        $this->state->ensure(1);
+        $rev = $this->state->get(1)->configRevision;
+        $at = new \DateTimeImmutable('2026-11-05 21:59:00');
+        $this->state->recordSuccess(1, $rev, $at, $at, 181, 'demo-outdoor-store', null);
+        $this->transport->enqueue(FakeTransport::json(404, ['code' => 'unknown_store']));
+        self::assertSame(SummaryView::OUT_OF_SYNC, $this->provider->forView(1)->state);
+    }
+
+    public function testUnknownStoreAfterASyncWithAnotherKeyIsNotSynced(): void
+    {
+        $this->state->ensure(1);
+        $rev = $this->state->get(1)->configRevision;
+        $at = new \DateTimeImmutable('2026-11-05 21:59:00');
+        $this->state->recordSuccess(1, $rev, $at, $at, 181, 'old-key', null);
+        $this->transport->enqueue(FakeTransport::json(404, ['code' => 'unknown_store']));
+        self::assertSame(SummaryView::NOT_SYNCED, $this->provider->forView(1)->state);
+    }
+
     public function testNotSyncedNoRunPendingAndDisabled(): void
     {
         $this->transport->enqueue(FakeTransport::json(404, ['code' => 'unknown_store']));

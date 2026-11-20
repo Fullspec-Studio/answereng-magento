@@ -67,7 +67,9 @@ class SummaryProvider
             return $this->fromJson($json, SummaryView::FRESH, $url, null);
         }
         if ($r->status === 404) {
-            return new SummaryView(SummaryView::NOT_SYNCED, $url);
+            // Synced before with this key: the store was deleted in AnswerEng or the API key changed.
+            $syncedBefore = $this->state->get($storeId)->syncedStoreKey === $s->storeKey;
+            return new SummaryView($syncedBefore ? SummaryView::OUT_OF_SYNC : SummaryView::NOT_SYNCED, $url);
         }
         if ($r->status === 409 && $r->code() === 'store_pending_deletion') {
             return new SummaryView(SummaryView::PENDING_DELETION, $url);

@@ -26,7 +26,12 @@ $logShown = 5;
         </div>
         <div class="ae-head-end">
             <?php if ($storeId > 0): ?>
-                <?php $viewState = PanelLabels::state($panel['state'], $panel['reason'], $panel['lastSyncAt']); ?>
+                <?php $viewState = PanelLabels::state(
+                    $panel['state'],
+                    $panel['reason'],
+                    $panel['lastSyncAt'],
+                    $panel['summary']->state
+                ); ?>
                 <?= /* @noEscape */ $pill($viewState) ?>
             <?php endif; ?>
             <a class="ae-settings-link" href="<?= $escaper->escapeUrl($block->getSettingsUrl()) ?>">
@@ -187,6 +192,7 @@ $logShown = 5;
         <?php else: ?>
             <?php $stateText = match ($summary->state) {
                 'not_synced' => __('Not synced yet.'),
+                'out_of_sync' => __('Out of sync with AnswerEng. Sync now to see results.'),
                 'no_run' => __('Connected. Waiting for the first analysis run.'),
                 'pending_deletion' => __('This store is scheduled for deletion.'),
                 'disabled' => __('Enable this store view and enter an API key to see results.'),

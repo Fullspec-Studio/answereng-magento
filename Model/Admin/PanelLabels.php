@@ -18,10 +18,18 @@ class PanelLabels
      * @param string $state
      * @param string|null $reason
      * @param string|null $lastSyncAt
+     * @param string|null $summaryState SummaryView state; "out_of_sync" turns a Synced view amber
      * @return array{label: string, tone: string}
      */
-    public static function state(string $state, ?string $reason, ?string $lastSyncAt): array
-    {
+    public static function state(
+        string $state,
+        ?string $reason,
+        ?string $lastSyncAt,
+        ?string $summaryState = null
+    ): array {
+        if ($state === SyncStateRepository::OK && $summaryState === SummaryView::OUT_OF_SYNC) {
+            return ['label' => (string) __('Out of sync'), 'tone' => 'warn'];
+        }
         if ($state === SyncStateRepository::OK && $reason === 'catalog_cleared') {
             return ['label' => (string) __('Catalog cleared'), 'tone' => 'neutral'];
         }

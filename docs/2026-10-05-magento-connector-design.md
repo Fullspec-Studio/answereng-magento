@@ -430,7 +430,12 @@ is current for the acting view alone, or for no view.
   (store `<key>` will be created on first sync; it uses 1 of your plan's
   stores)". Existing workspace store keys are listed for reference.
 - A `/summary` 404 anywhere in the panel is rendered as "not synced yet",
-  never as a credential failure.
+  never as a credential failure. Exception: when the view's recorded
+  `synced_store_key` equals its current store key (it synced before with this
+  key, so the store was deleted in AnswerEng or the API key changed), the
+  visibility section says "Out of sync with AnswerEng. Sync now to see
+  results." and a `Synced` header pill becomes an amber "Out of sync". Other
+  sync states (Retrying, Sync failed, …) keep their own pill.
 
 **Snapshot and cache identity.** Both the 15-minute cache entry and the
 persisted fallback snapshot are keyed by a connection fingerprint:
