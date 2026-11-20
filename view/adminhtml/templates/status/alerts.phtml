@@ -1,0 +1,69 @@
+<?php
+/**
+ * Anything that needs action, directly under the header: stale results, pending deletion,
+ * the sync state message, and "Out of sync" / "Not synced yet".
+ *
+ * @var \Fullspec\AnswerEng\Block\Adminhtml\Status\Panel $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+use Fullspec\AnswerEng\Model\Admin\PanelLabels;
+use Fullspec\AnswerEng\Model\Admin\SummaryView;
+
+$storeId = $block->getStoreId();
+$panel = $block->getPanel();
+$results = $panel['results'];
+$summary = $results->summary;
+$hasResults = $summary->rate !== null && in_array($summary->state, [SummaryView::FRESH, SummaryView::STALE], true);
+?>
+<?php if ($hasResults && $summary->state === SummaryView::STALE): ?>
+    <div class="message message-warning ae-message" data-answereng-stale>
+        <span><?= $escaper->escapeHtml(__(
+            'Could not refresh from AnswerEng. Showing results fetched %1 UTC.',
+            PanelLabels::when($summary->fetchedAt?->format('Y-m-d H:i'))
+        )) ?></span>
+    </div>
+<?php elseif ($hasResults && $results->fixesStale && $results->fixes !== null): ?>
+    <div class="message message-warning ae-message" data-answereng-stale>
+        <span><?= $escaper->escapeHtml(__(
+            'Could not refresh drafted fixes from AnswerEng. Showing the last list fetched.'
+        )) ?></span>
+    </div>
+<?php endif; ?>
+
+<?php if ($panel['pendingDeletion'] !== null): ?>
+    <?php $pd = $panel['pendingDeletion']; ?>
+    <div class="message message-warning ae-message">
+        <?php $pdText = $pd['purgeAfter'] !== null
+            ? __(
+                'AnswerEng store "%1" is scheduled for deletion on %2 UTC.',
+                $pd['storeKey'],
+                PanelLabels::when($pd['purgeAfter'])
+            )
+            : __('AnswerEng store "%1" is scheduled for deletion.', $pd['storeKey']); ?>
+        <span><?= $escaper->escapeHtml($pdText) ?></span>
+        <?php if ($panel['canDelete']): ?>
+            <?php $cancelFields = json_encode(['store' => $storeId, 'identity_id' => $pd['id']]); ?>
+            <button type="button" class="action-secondary"
+                    data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['cancel']) ?>"
+                    data-fields='<?= $escaper->escapeHtmlAttr($cancelFields) ?>'>
+                <?= $escaper->escapeHtml(__('Cancel deletion')) ?></button>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
+
+<?php if ($panel['message'] !== null): ?>
+    <p class="ae-state-message answereng-state-message"><?= $escaper->escapeHtml($panel['message']) ?></p>
+<?php endif; ?>
+
+<?php $syncText = match (true) {
+    $summary->state === SummaryView::NOT_SYNCED => __('Not synced yet.'),
+    $summary->state === SummaryView::OUT_OF_SYNC => __('Out of sync with AnswerEng. Sync now to see results.'),
+    $summary->state === SummaryView::STALE && !$hasResults => __(
+        'Not synced yet (last checked %1 UTC).',
+        PanelLabels::when($summary->fetchedAt?->format('Y-m-d H:i'))
+    ),
+    default => null,
+}; ?>
+<?php if ($syncText !== null): ?>
+    <p class="ae-state-message"><?= $escaper->escapeHtml($syncText) ?></p>
+<?php endif; ?>

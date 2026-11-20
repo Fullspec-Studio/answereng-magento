@@ -80,11 +80,12 @@ class EngineClient
      * List stores.
      *
      * @param Connection $c
+     * @param ReadBudget|null $budget the page's shared read budget, when rendering
      * @return EngineResult
      */
-    public function listStores(Connection $c): EngineResult
+    public function listStores(Connection $c, ?ReadBudget $budget = null): EngineResult
     {
-        return $this->read($c, '/stores');
+        return $this->read($c, '/stores', $budget);
     }
 
     /**

@@ -13,6 +13,88 @@ use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 class PanelLabels
 {
     /**
+     * Engine display names and series colors (WooCommerce `ENGINE_META`), matched by substring
+     * against the raw engine or model id, in this order.
+     */
+    private const ENGINES = [
+        'claude' => ['Claude', '#C15F3C'],
+        'mistral' => ['Mistral', '#6C4FD8'],
+        'llama' => ['Llama', '#0E7A6C'],
+        'sonar' => ['Perplexity', '#1D4ED8'],
+        'perplexity' => ['Perplexity', '#1D4ED8'],
+    ];
+
+    /** Color for an engine nobody named yet (WooCommerce fallback). */
+    private const OTHER_ENGINE = '#B0367A';
+
+    /**
+     * Display name and series color for a raw engine id ("perplexity:sonar", "bedrock:…claude…").
+     *
+     * A fix's `engine` is the provider; `bedrock` alone is "Amazon Bedrock". Unknown ids show as given.
+     *
+     * @param string $key
+     * @return array{label: string, color: string}
+     */
+    public static function engine(string $key): array
+    {
+        $normalized = strtolower(trim($key));
+        foreach (self::ENGINES as $needle => [$label, $color]) {
+            if (str_contains($normalized, $needle)) {
+                return ['label' => $label, 'color' => $color];
+            }
+        }
+        if ($normalized === 'bedrock') {
+            return ['label' => 'Amazon Bedrock', 'color' => self::OTHER_ENGINE];
+        }
+        return ['label' => $key, 'color' => self::OTHER_ENGINE];
+    }
+
+    /**
+     * Change in percentage points between the last two trend rates; null with fewer than two points.
+     *
+     * @param array<int,array<string,mixed>> $trend
+     * @return float|null
+     */
+    public static function delta(array $trend): ?float
+    {
+        $rates = [];
+        foreach ($trend as $point) {
+            if (is_numeric($point['rate'] ?? null)) {
+                $rates[] = (float) $point['rate'];
+            }
+        }
+        $n = count($rates);
+        return $n < 2 ? null : ($rates[$n - 1] - $rates[$n - 2]) * 100;
+    }
+
+    /**
+     * "▲ +4.0 vs last run", "▼ −2.5 vs last run", or "— no change vs last run" under 0.05 points.
+     *
+     * @param float $delta
+     * @return string
+     */
+    public static function deltaText(float $delta): string
+    {
+        if (abs($delta) < 0.05) {
+            return (string) __('— no change vs last run');
+        }
+        $points = ($delta > 0 ? '+' : '−') . number_format(abs($delta), 1);
+        return ($delta > 0 ? '▲ ' : '▼ ') . (string) __('%1 vs last run', $points);
+    }
+
+    /**
+     * A rate as a bare percentage: one decimal under 10%, whole above (WooCommerce `pct`).
+     *
+     * @param float $rate
+     * @return string
+     */
+    public static function percent(float $rate): string
+    {
+        $value = $rate * 100;
+        return number_format($value, $value < 10 ? 1 : 0);
+    }
+
+    /**
      * The label and tone for a view's sync state.
      *
      * @param string $state

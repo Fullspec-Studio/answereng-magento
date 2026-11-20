@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace Fullspec\AnswerEng\Model\Admin;
 
 use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Engine\ReadBudget;
 use Fullspec\AnswerEng\Model\Registry\RemoteStoreRegistry;
 use Fullspec\AnswerEng\Model\Registry\RoleResolver;
+use Fullspec\AnswerEng\Model\Support\Clock;
 use Fullspec\AnswerEng\Model\Sync\StateMessage;
 use Fullspec\AnswerEng\Model\Sync\SyncLog;
 use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
@@ -22,25 +24,27 @@ class PanelViewModel
      * @param SettingsProvider $settings
      * @param SyncStateRepository $state
      * @param SyncLog $log
-     * @param SummaryProvider $summaries
+     * @param ResultsProvider $results
      * @param RemoteStoreActions $actions
      * @param RemoteStoreRegistry $registry
      * @param RoleResolver $roles
      * @param AuthorizationInterface $authorization
      * @param UrlInterface $url
      * @param LoggerInterface $logger
+     * @param Clock $clock
      */
     public function __construct(
         private readonly SettingsProvider $settings,
         private readonly SyncStateRepository $state,
         private readonly SyncLog $log,
-        private readonly SummaryProvider $summaries,
+        private readonly ResultsProvider $results,
         private readonly RemoteStoreActions $actions,
         private readonly RemoteStoreRegistry $registry,
         private readonly RoleResolver $roles,
         private readonly AuthorizationInterface $authorization,
         private readonly UrlInterface $url,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
+        private readonly Clock $clock
     ) {
     }
 
@@ -83,9 +87,11 @@ class PanelViewModel
      */
     public function forView(int $storeId): array
     {
+        // One budget for every engine read behind this page (spec: bounded wait before stale results).
+        $budget = new ReadBudget($this->clock);
         $keys = null;
         try {
-            $keys = $this->actions->refreshStatuses($storeId);
+            $keys = $this->actions->refreshStatuses($storeId, $budget);
         } catch (\Throwable $e) {
             $this->logger->warning('AnswerEng status refresh failed', ['exception' => get_class($e)]);
         }
@@ -93,7 +99,7 @@ class PanelViewModel
         $state = $this->state->get($storeId);
         if ($keys === null && $state->state === SyncStateRepository::PAUSED && $state->reason === 'store_limit') {
             try {
-                $keys = $this->actions->existingStoreKeys($storeId);   // store_limit lists them (spec §6)
+                $keys = $this->actions->existingStoreKeys($storeId, $budget);   // store_limit lists them (spec §6)
             } catch (\Throwable $e) {
                 $this->logger->warning('AnswerEng store list failed', ['exception' => get_class($e)]);
             }
@@ -117,6 +123,12 @@ class PanelViewModel
                 $pending = ['id' => $i['id'], 'storeKey' => $i['storeKey'], 'purgeAfter' => $i['purgeAfter']];
             }
         }
+        $results = $this->results->forView($storeId, $budget);
+        $summary = $results->summary;
+        $lastSyncAt = $state->lastSyncAt?->format('Y-m-d H:i');
+        $tone = PanelLabels::state($state->state, $state->reason, $lastSyncAt, $summary->state)['tone'];
+        $hasResults = in_array($summary->state, [SummaryView::FRESH, SummaryView::STALE], true)
+            && $summary->rate !== null;
         return [
             'pendingDeletion' => $pending,
             'storeId' => $storeId,
@@ -133,14 +145,17 @@ class PanelViewModel
                 $pending['purgeAfter'] ?? null,
                 $state->reason === 'store_limit' ? ($keys ?? []) : []
             ),
-            'lastSyncAt' => $state->lastSyncAt?->format('Y-m-d H:i'),
+            'lastSyncAt' => $lastSyncAt,
             'productCount' => $state->productCount,
             'log' => $this->log->recent($storeId),
-            'summary' => $this->summaries->forView($storeId),
+            'results' => $results,
             'identities' => $identities,
             'canClear' => $this->roles->clearTargetFor($storeId) !== null,
             'canSync' => $this->authorization->isAllowed('Fullspec_AnswerEng::sync'),
             'canDelete' => $this->authorization->isAllowed('Fullspec_AnswerEng::delete_store'),
+            'canApplyFixes' => $this->authorization->isAllowed('Fullspec_AnswerEng::fixes'),
+            'autoSync' => $s->autoSync,
+            'healthy' => $tone === 'good' && $hasResults,
             'urls' => [
                 'syncNow' => $this->url->getUrl('answereng/action/syncnow'),
                 'refreshSummary' => $this->url->getUrl('answereng/action/refreshsummary'),
@@ -149,6 +164,7 @@ class PanelViewModel
                 'delete' => $this->url->getUrl('answereng/action/delete'),
                 'cancel' => $this->url->getUrl('answereng/action/cancel'),
                 'forget' => $this->url->getUrl('answereng/action/forget'),
+                'fixApplied' => $this->url->getUrl('answereng/action/fixapplied'),
             ],
         ];
     }

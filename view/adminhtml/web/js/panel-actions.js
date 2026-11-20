@@ -2,7 +2,8 @@
  * AnswerEng panel actions. The config page is one big <form>, so each action
  * builds its own POST form outside it. The delete button only enables when
  * the typed key matches and the box is ticked; the server re-validates both.
- * The activity log shows its first rows and toggles the rest.
+ * The activity log shows its first rows and toggles the rest. Copy draft puts a
+ * fix's text on the clipboard; without the Clipboard API it selects the draft.
  */
 define([], function () {
     'use strict';
@@ -22,6 +23,43 @@ define([], function () {
                 && scope.querySelector('[data-confirm-ack]').checked);
         }
 
+        function selectDraft(button) {
+            var fix = button.closest('[data-answereng-fix]');
+            var draft = fix && fix.querySelector('pre');
+            if (!draft || !window.getSelection) {
+                return;
+            }
+            var range = document.createRange();
+            range.selectNodeContents(draft);
+            var selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+
+        function copied(button) {
+            if (!button.hasAttribute('data-label-default')) {
+                button.setAttribute('data-label-default', button.textContent.trim());
+            }
+            button.textContent = button.getAttribute('data-label-copied');
+            window.clearTimeout(button.aeCopyTimer);
+            button.aeCopyTimer = window.setTimeout(function () {
+                button.textContent = button.getAttribute('data-label-default');
+            }, 2000);
+        }
+
+        function copyDraft(button) {
+            var text = button.getAttribute('data-answereng-copy');
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(function () {
+                    copied(button);
+                }, function () {
+                    selectDraft(button);
+                });
+                return;
+            }
+            selectDraft(button);
+        }
+
         root.addEventListener('keydown', function (event) {
             if (event.key === 'Enter' && event.target.hasAttribute && event.target.hasAttribute('data-confirm-key')) {
                 event.preventDefault();
@@ -39,6 +77,12 @@ define([], function () {
                 });
                 toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
                 toggle.textContent = toggle.getAttribute(open ? 'data-label-less' : 'data-label-more');
+                return;
+            }
+            var copy = event.target.closest('[data-answereng-copy]');
+            if (copy) {
+                event.preventDefault();
+                copyDraft(copy);
                 return;
             }
             var button = event.target.closest('[data-answereng-action]');

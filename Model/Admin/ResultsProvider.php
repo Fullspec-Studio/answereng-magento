@@ -45,11 +45,12 @@ class ResultsProvider
      * Results for the status page.
      *
      * @param int $storeId
+     * @param ReadBudget|null $budget shared with the page's other engine reads; a new one when null
      * @return ResultsView
      */
-    public function forView(int $storeId): ResultsView
+    public function forView(int $storeId, ?ReadBudget $budget = null): ResultsView
     {
-        $budget = new ReadBudget($this->clock);
+        $budget ??= new ReadBudget($this->clock);
         $summary = $this->summaries->forView($storeId, $budget);
         $s = $this->settings->forStore($storeId);
         if ($summary->state === SummaryView::STALE) {
