@@ -14,11 +14,14 @@ scheduled store deletion; §11) and **B — the Magento module** (§2–§10).
 - **Distribution (v1): direct.** Private Composer package / GitHub release zip
   for pilot merchants. Built to Adobe Commerce Marketplace (EQP) quality from
   the first commit, but not submitted in v1.
-- **Admin surface: sync + status panel.** Configuration, sync status/log,
-  "Sync now", "Test connection", and ONE headline visibility number with its
-  interval, linking to the dashboard (`https://app.answereng.io/stores/{key}`)
-  for everything else. No native results page (the dashboard, which accepts
-  API-key sign-in, owns results).
+- **Admin surface: sync + status panel.** Settings stay in Stores ›
+  Configuration › Catalog › AnswerEng. Sync status/log, "Sync now", "Test
+  connection" and ONE headline visibility number with its interval live on
+  Catalog › AnswerEng › Status & AI Visibility (moved there 2026-11-05:
+  configuration holds settings, the page holds what merchants check), linking
+  to the dashboard (`https://app.answereng.io/stores/{key}`) for everything
+  else. No native results page (the dashboard, which accepts API-key sign-in,
+  owns results).
 - **Additive engine changes (§11):** a stable `code` field on every error
   response; `DELETE /stores/{store_key}/catalog` (clears a store's products;
   store, history and plan slot remain); and scheduled, cancellable store
@@ -61,7 +64,7 @@ Model/Syncer.php             lock -> guard -> build -> push -> record, one view
 Cron/SyncDirty.php, Cron/Reconcile.php
 Observer/MarkDirty.php
 Console/Command/Sync.php     bin/magento answereng:sync [--store=<code>]
-Block/Adminhtml/StatusPanel.php + template
+Block/Adminhtml/Status/Panel.php + template (status page; config shows a link)
 Controller/Adminhtml/Sync/Now.php, Controller/Adminhtml/Connection/Test.php
 Setup/Uninstall.php          drops tables + config rows on module:uninstall
 tests/Unit/…
@@ -96,6 +99,14 @@ unrelated setting such as the base URL.
 views. Config save fails validation with "store key must be unique" when two
 enabled views resolve to the same key; the syncer also refuses a view whose
 key collides (defense in depth). Never auto-suffix.
+
+**Local-looking store keys:** saving a store key that looks local
+(`localhost`, an IP address, or a `.test`, `.local`, `.localhost`,
+`.internal`, `.example`, `.invalid`, `.lan` or `home.arpa` name) shows a
+warning — never an error — when the view is enabled and uses the production
+engine: "Store key "{key}" looks like a local address, which AnswerEng can't
+reach. Set it to your shop's public domain." Against a test engine a local
+key is normal, so no warning.
 
 **Changing a synced store key.** Each store key the engine has seen occupies
 one of the workspace's plan store slots until it is deleted (§11.3: 7-day
@@ -292,8 +303,11 @@ log or sync-log row (unit-tested by asserting on captured log output).
 
 ## 7. Admin status panel
 
-Rendered at the top of the AnswerEng config section (block template, all
-output via `$escaper`).
+Rendered on Catalog › AnswerEng › Status & AI Visibility
+(`answereng/status/index`, ACL `Fullspec_AnswerEng::status`, with `::sync` and
+`::delete_store` beneath it) with a store-view switcher; "All Store Views" is
+the default scope below. The config section's Status group links to it. All
+output via `$escaper`.
 
 - **Default scope:** one table, a row per enabled view — store key, last sync
   time + outcome, product count, "Sync now".
@@ -301,8 +315,12 @@ output via `$escaper`).
   and **Test connection** (admin AJAX controllers; form key + ACL),
   **headline visibility** rate with interval and latest run date from
   `GET /stores/{key}/summary` (GETs retry once on 5xx/transport), and **"Open full results in AnswerEng →"** to
-  `https://app.answereng.io/stores/{key}`. `latest_run: null` renders a
-  "no completed run yet" state.
+  `https://app.answereng.io/stores/{key}`, with the hint "Sign in there with
+  this store view's API key." The link appears only when the engine URL is
+  the production `https://api.answereng.io`; with any other engine the panel
+  says "Connected to a test engine at {host:port}. Full results on
+  app.answereng.io are only for stores that sync to AnswerEng." instead.
+  `latest_run: null` renders a "no completed run yet" state.
 - **Clear AnswerEng catalog** (the view's `current` remote store, enabled or
   not; ACL `Fullspec_AnswerEng::sync`; confirm dialog naming the store key):
   calls `DELETE /stores/{store_key}/catalog` only after the connection
@@ -424,7 +442,12 @@ is current for the acting view alone, or for no view.
   (store `<key>` will be created on first sync; it uses 1 of your plan's
   stores)". Existing workspace store keys are listed for reference.
 - A `/summary` 404 anywhere in the panel is rendered as "not synced yet",
-  never as a credential failure.
+  never as a credential failure. Exception: when the view's recorded
+  `synced_store_key` equals its current store key (it synced before with this
+  key, so the store was deleted in AnswerEng or the API key changed), the
+  visibility section says "Out of sync with AnswerEng. Sync now to see
+  results." and a `Synced` header pill becomes an amber "Out of sync". Other
+  sync states (Retrying, Sync failed, …) keep their own pill.
 
 **Snapshot and cache identity.** Both the 15-minute cache entry and the
 persisted fallback snapshot are keyed by a connection fingerprint:

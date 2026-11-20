@@ -30,4 +30,15 @@ final class StoreKeyPolicyTest extends TestCase
             self::assertSame(3, $e->storeId);
         }
     }
+
+    public function testLocalAddressesLookLocal(): void
+    {
+        foreach (['localhost', 'shop.localhost', '127.0.0.1', '192.168.1.20', '::1', 'magento.test', 'shop.local',
+            'host.docker.internal', ''] as $key) {
+            self::assertTrue(StoreKeyPolicy::looksLocal($key), $key);
+        }
+        foreach (['shop.example.com', 'www.acme-outdoor.co.uk', 'demo-outdoor-store', 'testshop.com'] as $key) {
+            self::assertFalse(StoreKeyPolicy::looksLocal($key), $key);
+        }
+    }
 }

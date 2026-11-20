@@ -47,7 +47,8 @@ class SummaryProvider
     public function forView(int $storeId): SummaryView
     {
         $s = $this->settings->forStore($storeId);
-        $url = self::DASHBOARD . rawurlencode($s->storeKey);
+        // A test or staging engine's stores are not on app.answereng.io, so there is nothing to link to.
+        $url = $s->usesProductionEngine() ? self::DASHBOARD . rawurlencode($s->storeKey) : null;
         if (!$s->enabled || $s->apiKey === '' || $s->storeKey === '') {
             return new SummaryView(SummaryView::DISABLED, $url);
         }
@@ -67,7 +68,9 @@ class SummaryProvider
             return $this->fromJson($json, SummaryView::FRESH, $url, null);
         }
         if ($r->status === 404) {
-            return new SummaryView(SummaryView::NOT_SYNCED, $url);
+            // Synced before with this key: the store was deleted in AnswerEng or the API key changed.
+            $syncedBefore = $this->state->get($storeId)->syncedStoreKey === $s->storeKey;
+            return new SummaryView($syncedBefore ? SummaryView::OUT_OF_SYNC : SummaryView::NOT_SYNCED, $url);
         }
         if ($r->status === 409 && $r->code() === 'store_pending_deletion') {
             return new SummaryView(SummaryView::PENDING_DELETION, $url);
@@ -96,11 +99,11 @@ class SummaryProvider
      *
      * @param string $json
      * @param string $state
-     * @param string $url
+     * @param string|null $url
      * @param \DateTimeImmutable|null $fetchedAt
      * @return SummaryView
      */
-    private function fromJson(string $json, string $state, string $url, ?\DateTimeImmutable $fetchedAt): SummaryView
+    private function fromJson(string $json, string $state, ?string $url, ?\DateTimeImmutable $fetchedAt): SummaryView
     {
         $data = json_decode($json, true) ?: [];
         if (($data['latest_run'] ?? null) === null) {

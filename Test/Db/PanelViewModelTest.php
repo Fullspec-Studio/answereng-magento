@@ -55,6 +55,7 @@ final class PanelViewModelTest extends DbTestCase
         self::assertSame($old, $data['identities'][1]['id']);
         self::assertSame([true, false], [$data['canSync'], $data['canDelete']]);
         self::assertSame('not_synced', $data['summary']->state);
+        self::assertSame('engine.test', $data['testEngine']);
         self::assertSame('/admin/answereng/action/delete', $data['urls']['delete']);
         self::assertTrue($data['canClear']);
         self::assertNull($data['pendingDeletion']);

@@ -1,15 +1,18 @@
 <?php
 // Limited admin roles/users for the ACL checks:
-//   aesync   / Sync1234!local  -> AnswerEng config + sync          (no delete_store)
-//   aeconfig / Conf1234!local  -> AnswerEng config only            (no sync, no delete_store)
+//   aesync     / Sync1234!local  -> settings + status page + sync   (no delete_store)
+//   aeconfig   / Conf1234!local  -> settings + status page          (no sync, no delete_store)
+//   aesettings / Sett1234!local  -> settings only                   (no status page)
 require '/var/www/html/app/bootstrap.php';
 $om = \Magento\Framework\App\Bootstrap::create(BP, $_SERVER)->getObjectManager();
 $om->get(\Magento\Framework\App\State::class)->setAreaCode('adminhtml');
 $base = ['Magento_Backend::admin', 'Magento_Backend::dashboard', 'Magento_Backend::stores',
     'Magento_Backend::stores_settings', 'Magento_Config::config', 'Fullspec_AnswerEng::config'];
+$status = array_merge($base, ['Magento_Catalog::catalog', 'Fullspec_AnswerEng::status']);
 $defs = [
-    ['AnswerEng sync (no delete)', 'aesync', 'Sync1234!local', array_merge($base, ['Fullspec_AnswerEng::sync'])],
-    ['AnswerEng config only', 'aeconfig', 'Conf1234!local', $base],
+    ['AnswerEng sync (no delete)', 'aesync', 'Sync1234!local', array_merge($status, ['Fullspec_AnswerEng::sync'])],
+    ['AnswerEng config only', 'aeconfig', 'Conf1234!local', $status],
+    ['AnswerEng settings only', 'aesettings', 'Sett1234!local', $base],
 ];
 foreach ($defs as [$roleName, $username, $password, $resources]) {
     $role = $om->create(\Magento\Authorization\Model\Role::class)->load($roleName, 'role_name');

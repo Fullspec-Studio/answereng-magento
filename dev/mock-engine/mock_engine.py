@@ -5,13 +5,15 @@ error_codes.json and summaries from read_api/. Each API key maps to a stable
 fake account (acct_ + sha256(key)[:32]), so two keys simulate two
 workspaces. Failure modes are switched with POST /__mode {"mode": "..."}.
 
-Run:  python3 dev/mock-engine/mock_engine.py --port 8895 --store-cap 1
+Run:  python3 dev/mock-engine/mock_engine.py --port 8895 --store-cap 1  [--fresh]
 """
 import argparse
 import datetime
 import hashlib
 import json
+import os
 import pathlib
+import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import unquote
@@ -19,6 +21,7 @@ from urllib.parse import unquote
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "Test" / "Fixtures"
 RECEIVED = pathlib.Path(__file__).resolve().parent / "received"
+DEFAULT_STATE_FILE = pathlib.Path(__file__).resolve().parent / "state.json"
 ERRORS = json.loads((FIXTURES / "error_codes.json").read_text())
 MODES = {"normal", "cold-504", "slow", "throttle-429", "invalid-key", "store-limit", "product-limit",
          "ownership", "run-in-progress", "missing-code", "purging", "preview-running", "preview-complete"}
@@ -35,15 +38,30 @@ def err(code, **extra):
 
 
 class State:
-    def __init__(self, store_cap):
+    """Stores and ids; with a state file they are loaded at start and saved after every change."""
+
+    def __init__(self, store_cap, state_file=None):
         self.store_cap = store_cap
         self.mode = "normal"
         self.stores = {}   # key -> {"owner", "products", "status", "purge_after", "id"}
         self.next_id = 1
+        self.state_file = pathlib.Path(state_file) if state_file else None
+        self.lock = threading.Lock()
+        if self.state_file and self.state_file.exists():
+            saved = json.loads(self.state_file.read_text())
+            self.stores, self.next_id = saved["stores"], saved["next_id"]
+
+    def save(self):
+        if not self.state_file:
+            return
+        with self.lock:
+            tmp = self.state_file.with_suffix(".tmp")
+            tmp.write_text(json.dumps({"stores": self.stores, "next_id": self.next_id}))
+            os.replace(tmp, self.state_file)
 
 
-def make_server(address, store_cap=1):
-    state = State(store_cap)
+def make_server(address, store_cap=1, state_file=None):
+    state = State(store_cap, state_file)
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, fmt, *args):  # keep test output quiet
@@ -51,6 +69,8 @@ def make_server(address, store_cap=1):
 
         def _send(self, status, body, account=None, headers=None):
             raw = b"" if body is None else json.dumps(body).encode()
+            if self.command in ("POST", "DELETE"):
+                state.save()  # before answering, so a client that restarts us next sees the change
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(raw)))
@@ -219,7 +239,13 @@ if __name__ == "__main__":
     parser.add_argument("--host", default="127.0.0.1", help="bind address; use 0.0.0.0 so Docker (host.docker.internal) can reach it")
     parser.add_argument("--port", type=int, default=8895)
     parser.add_argument("--store-cap", type=int, default=1)
+    parser.add_argument("--state-file", default=str(DEFAULT_STATE_FILE),
+                        help="where stores are kept across restarts; pass an empty string to keep them in memory only")
+    parser.add_argument("--fresh", action="store_true", help="start with no stores (deletes the state file)")
     args = parser.parse_args()
-    server = make_server((args.host, args.port), store_cap=args.store_cap)
-    print(f"mock engine on http://{args.host}:{args.port} (store cap {args.store_cap})")
+    if args.fresh and args.state_file:
+        pathlib.Path(args.state_file).unlink(missing_ok=True)
+    server = make_server((args.host, args.port), store_cap=args.store_cap, state_file=args.state_file or None)
+    print(f"mock engine on http://{args.host}:{args.port} (store cap {args.store_cap}, "
+          f"state {args.state_file or 'in memory'})")
     server.serve_forever()

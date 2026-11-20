@@ -10,7 +10,7 @@
                 <label>Status</label>
                 <field id="panel" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>AnswerEng</label>
-                    <frontend_model>Fullspec\AnswerEng\Block\Adminhtml\System\Config\StatusPanel</frontend_model>
+                    <frontend_model>Fullspec\AnswerEng\Block\Adminhtml\System\Config\StatusLink</frontend_model>
                 </field>
             </group>
             <group id="connection" translate="label comment" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">

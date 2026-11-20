@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 
-namespace Fullspec\AnswerEng\Block\Adminhtml\System\Config;
+namespace Fullspec\AnswerEng\Block\Adminhtml\Status;
 
 use Fullspec\AnswerEng\Model\Admin\PanelViewModel;
 use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Magento\Backend\Block\Template;
 use Magento\Backend\Block\Template\Context;
-use Magento\Config\Block\System\Config\Form\Field;
-use Magento\Framework\Data\Form\Element\AbstractElement;
 
-class StatusPanel extends Field
+/** The status panel on Catalog › AnswerEng: every enabled view, or one view picked in the store switcher. */
+class Panel extends Template
 {
     /**
      * @var string
@@ -34,15 +34,7 @@ class StatusPanel extends Field
     }
 
     /**
-     * @inheritdoc
-     */
-    public function render(AbstractElement $element)
-    {
-        return $this->_decorateRowHtml($element, '<td colspan="4">' . $this->toHtml() . '</td>');
-    }
-
-    /**
-     * Get store id.
+     * The chosen store view, or 0 for the overview (also for unknown ids).
      *
      * @return int
      */
@@ -60,8 +52,20 @@ class StatusPanel extends Field
     public function getPanel(): array
     {
         $storeId = $this->getStoreId();
-        return $storeId > 0
-            ? $this->panel->forView($storeId)
-            : $this->panel->forDefault((int) $this->getRequest()->getParam('website'));
+        return $storeId > 0 ? $this->panel->forView($storeId) : $this->panel->forDefault();
+    }
+
+    /**
+     * The settings page, at this view's scope when one is chosen.
+     *
+     * @return string
+     */
+    public function getSettingsUrl(): string
+    {
+        $storeId = $this->getStoreId();
+        return $this->getUrl(
+            'adminhtml/system_config/edit',
+            $storeId > 0 ? ['section' => 'answereng', 'store' => $storeId] : ['section' => 'answereng']
+        );
     }
 }

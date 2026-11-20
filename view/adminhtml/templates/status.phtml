@@ -1,6 +1,6 @@
 <?php
 /**
- * @var \Fullspec\AnswerEng\Block\Adminhtml\System\Config\StatusPanel $block
+ * @var \Fullspec\AnswerEng\Block\Adminhtml\Status\Panel $block
  * @var \Magento\Framework\Escaper $escaper
  */
 use Fullspec\AnswerEng\Model\Admin\PanelLabels;
@@ -24,17 +24,29 @@ $logShown = 5;
                     <code><?= $escaper->escapeHtml($panel['storeKey']) ?></code></span>
             <?php endif; ?>
         </div>
-        <?php if ($storeId > 0): ?>
-            <?= /* @noEscape */ $pill(PanelLabels::state($panel['state'], $panel['reason'], $panel['lastSyncAt'])) ?>
-        <?php endif; ?>
+        <div class="ae-head-end">
+            <?php if ($storeId > 0): ?>
+                <?php $viewState = PanelLabels::state(
+                    $panel['state'],
+                    $panel['reason'],
+                    $panel['lastSyncAt'],
+                    $panel['summary']->state
+                ); ?>
+                <?= /* @noEscape */ $pill($viewState) ?>
+            <?php endif; ?>
+            <a class="ae-settings-link" href="<?= $escaper->escapeUrl($block->getSettingsUrl()) ?>">
+                <?= $escaper->escapeHtml(__('Settings')) ?></a>
+        </div>
     </div>
 
 <?php if ($storeId <= 0): ?>
-    <p class="ae-intro"><?= $escaper->escapeHtml(__('Choose a store view (scope switcher, top left) to sync, test the '
-        . 'connection or manage AnswerEng stores.')) ?></p>
+    <p class="ae-intro"><?= $escaper->escapeHtml(__('Choose a store view above, or open one below, to see its AI '
+        . 'visibility, test the connection or manage its AnswerEng store.')) ?></p>
     <?php if ($panel === []): ?>
-        <p class="ae-empty"><?= $escaper->escapeHtml(__('No store view is enabled for AnswerEng yet. Choose a store '
-            . 'view, set "Enabled for AnswerEng" to Yes, and save.')) ?></p>
+        <p class="ae-empty"><?= $escaper->escapeHtml(__('No store view is enabled for AnswerEng yet. In Settings, '
+            . 'choose a store view, set "Enabled for AnswerEng" to Yes, and save.')) ?>
+            <a href="<?= $escaper->escapeUrl($block->getSettingsUrl()) ?>">
+                <?= $escaper->escapeHtml(__('Open settings')) ?></a></p>
     <?php else: ?>
         <table class="data-grid ae-grid">
             <thead><tr>
@@ -48,7 +60,9 @@ $logShown = 5;
             <tbody>
             <?php foreach ($panel as $row): ?>
                 <tr>
-                    <td><?= $escaper->escapeHtml($row['name']) ?></td>
+                    <?php $viewUrl = $block->getUrl('answereng/status/index', ['store' => $row['storeId']]); ?>
+                    <td><a href="<?= $escaper->escapeUrl($viewUrl) ?>">
+                        <?= $escaper->escapeHtml($row['name']) ?></a></td>
                     <td><code><?= $escaper->escapeHtml($row['storeKey']) ?></code></td>
                     <?php $rowState = PanelLabels::state($row['state'], $row['reason'], $row['lastSyncAt']); ?>
                     <td><?= /* @noEscape */ $pill($rowState) ?>
@@ -178,6 +192,7 @@ $logShown = 5;
         <?php else: ?>
             <?php $stateText = match ($summary->state) {
                 'not_synced' => __('Not synced yet.'),
+                'out_of_sync' => __('Out of sync with AnswerEng. Sync now to see results.'),
                 'no_run' => __('Connected. Waiting for the first analysis run.'),
                 'pending_deletion' => __('This store is scheduled for deletion.'),
                 'disabled' => __('Enable this store view and enter an API key to see results.'),
@@ -185,9 +200,21 @@ $logShown = 5;
             }; ?>
             <p class="ae-meta"><?= $escaper->escapeHtml($stateText) ?></p>
         <?php endif; ?>
-        <a class="ae-results-link" href="<?= $escaper->escapeUrl($summary->dashboardUrl) ?>" target="_blank"
-           rel="noopener"><?= $escaper->escapeHtml(__('Open full results in AnswerEng')) ?>
-            <span aria-hidden="true">→</span></a>
+        <?php if ($summary->dashboardUrl !== null): ?>
+            <p class="ae-results">
+                <a class="ae-results-link" href="<?= $escaper->escapeUrl($summary->dashboardUrl) ?>"
+                   target="_blank" rel="noopener"><?= $escaper->escapeHtml(__('Open full results in AnswerEng')) ?>
+                    <span aria-hidden="true">→</span></a>
+                <?php $signInHint = __('Sign in there with this store view\'s API key.'); ?>
+                <span class="ae-results-hint"><?= $escaper->escapeHtml($signInHint) ?></span>
+            </p>
+        <?php elseif ($panel['testEngine'] !== null): ?>
+            <p class="ae-meta ae-results-hint"><?= $escaper->escapeHtml(__(
+                'Connected to a test engine at %1. Full results on app.answereng.io are only for stores '
+                . 'that sync to AnswerEng.',
+                $panel['testEngine']
+            )) ?></p>
+        <?php endif; ?>
     </section>
 
     <div class="ae-actions">
@@ -331,3 +358,4 @@ $logShown = 5;
     <?php endif; ?>
 <?php endif; ?>
 </div>
+<!-- /answereng-panel -->

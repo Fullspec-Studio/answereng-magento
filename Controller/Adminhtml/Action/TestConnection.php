@@ -11,7 +11,7 @@ use Fullspec\AnswerEng\Model\Config\SettingsProvider;
 
 class TestConnection extends AbstractAction
 {
-    public const ADMIN_RESOURCE = 'Fullspec_AnswerEng::config';
+    public const ADMIN_RESOURCE = 'Fullspec_AnswerEng::status';
 
     /**
      * Constructor.

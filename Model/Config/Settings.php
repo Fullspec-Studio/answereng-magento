@@ -58,6 +58,16 @@ class Settings
     }
 
     /**
+     * Whether this view talks to AnswerEng itself, not a test or staging engine.
+     *
+     * Only then do its results exist on app.answereng.io.
+     */
+    public function usesProductionEngine(): bool
+    {
+        return strtolower(rtrim($this->engineUrl, '/')) === ConfigSettingsProvider::DEFAULT_ENGINE_URL;
+    }
+
+    /**
      * Connection.
      *
      * @return Connection

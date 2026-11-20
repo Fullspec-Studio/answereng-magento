@@ -30,6 +30,29 @@ class StoreKeyPolicy
     }
 
     /**
+     * Whether the key is a local or private address AnswerEng can't reach.
+     *
+     * Covers localhost, IP addresses and development-only names such as *.test or *.local.
+     * Used for a warning, never to block a save.
+     *
+     * @param string $key
+     * @return bool
+     */
+    public static function looksLocal(string $key): bool
+    {
+        $key = strtolower(self::normalize($key));
+        if ($key === '' || filter_var($key, FILTER_VALIDATE_IP) !== false) {
+            return true;
+        }
+        foreach (['localhost', 'local', 'test', 'internal', 'invalid', 'example', 'lan', 'home.arpa'] as $suffix) {
+            if ($key === $suffix || str_ends_with($key, '.' . $suffix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Assert unique.
      *
      * @param string $key

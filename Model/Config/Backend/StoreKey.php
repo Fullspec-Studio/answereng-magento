@@ -93,11 +93,22 @@ class StoreKey extends Value
      */
     public function afterSave()
     {
+        $key = (string) $this->getValue();
+        $settings = $this->settings->forStore((int) $this->getScopeId());
+        // Only for the real engine: a local key is normal when testing against a local or staging engine.
+        if ($settings->enabled && $settings->usesProductionEngine() && StoreKeyPolicy::looksLocal($key)) {
+            $this->messages->addWarningMessage(__(
+                'Store key "%1" looks like a local address, which AnswerEng can\'t reach. '
+                . 'Set it to your shop\'s public domain.',
+                $key
+            ));
+        }
         $synced = $this->state->get((int) $this->getScopeId())->syncedStoreKey;
         if ($this->isValueChanged() && $synced !== null && $synced !== (string) $this->getValue()) {
             $this->messages->addWarningMessage(__(
                 'This store view had synced to AnswerEng as "%1". The new key registers a NEW AnswerEng store that '
-                . 'counts against your plan; "%1" keeps its data and its slot until you delete it in the Danger zone.',
+                . 'counts against your plan; "%1" keeps its data and its slot until you delete it '
+                . '(Catalog › AnswerEng, Danger zone).',
                 $synced
             ));
         }

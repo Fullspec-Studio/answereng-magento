@@ -122,6 +122,7 @@ class PanelViewModel
             'storeId' => $storeId,
             'enabled' => $s->enabled,
             'storeKey' => $s->storeKey,
+            'testEngine' => $s->usesProductionEngine() ? null : $this->engineAddress($s->engineUrl),
             'state' => $state->state,
             'reason' => $state->reason,
             'message' => $this->message(
@@ -184,5 +185,17 @@ class PanelViewModel
             }
         }
         return StateMessage::for($state, $reason, $retryReason, $detail, $purgeAfter, $existingKeys);
+    }
+
+    /**
+     * Host and port of a test engine, for the panel's "connected to a test engine at …" note.
+     *
+     * @param string $engineUrl
+     * @return string
+     */
+    private function engineAddress(string $engineUrl): string
+    {
+        $rest = (string) preg_replace('#^[a-z][a-z0-9+.-]*://#i', '', $engineUrl);
+        return explode('/', $rest, 2)[0];
     }
 }

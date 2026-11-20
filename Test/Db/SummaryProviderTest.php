@@ -38,8 +38,15 @@ final class SummaryProviderTest extends DbTestCase
         return json_decode((string) file_get_contents(dirname(__DIR__) . "/Fixtures/read_api/$name"), true);
     }
 
+    public function testATestEngineHasNoDashboardLink(): void
+    {
+        $this->transport->enqueue(FakeTransport::json(200, $this->fixture('summary.json')));
+        self::assertNull($this->provider->forView(1)->dashboardUrl);
+    }
+
     public function testFreshResultIsCachedAndSnapshotted(): void
     {
+        $this->settings->put(1, ['storeKey' => 'demo-outdoor-store', 'engineUrl' => 'https://api.answereng.io']);
         $this->transport->enqueue(FakeTransport::json(200, $this->fixture('summary.json')));
         $view = $this->provider->forView(1);
         self::assertSame(SummaryView::FRESH, $view->state);
@@ -78,6 +85,26 @@ final class SummaryProviderTest extends DbTestCase
         $this->transport->enqueue(FakeTransport::json(403, ['code' => 'invalid_key']));
         self::assertSame(SummaryView::UNAVAILABLE, $this->provider->forView(1)->state);
         $this->transport->enqueue(FakeTransport::json(404, null));
+        self::assertSame(SummaryView::NOT_SYNCED, $this->provider->forView(1)->state);
+    }
+
+    public function testUnknownStoreAfterASyncWithThisKeyIsOutOfSync(): void
+    {
+        $this->state->ensure(1);
+        $rev = $this->state->get(1)->configRevision;
+        $at = new \DateTimeImmutable('2026-11-05 21:59:00');
+        $this->state->recordSuccess(1, $rev, $at, $at, 181, 'demo-outdoor-store', null);
+        $this->transport->enqueue(FakeTransport::json(404, ['code' => 'unknown_store']));
+        self::assertSame(SummaryView::OUT_OF_SYNC, $this->provider->forView(1)->state);
+    }
+
+    public function testUnknownStoreAfterASyncWithAnotherKeyIsNotSynced(): void
+    {
+        $this->state->ensure(1);
+        $rev = $this->state->get(1)->configRevision;
+        $at = new \DateTimeImmutable('2026-11-05 21:59:00');
+        $this->state->recordSuccess(1, $rev, $at, $at, 181, 'old-key', null);
+        $this->transport->enqueue(FakeTransport::json(404, ['code' => 'unknown_store']));
         self::assertSame(SummaryView::NOT_SYNCED, $this->provider->forView(1)->state);
     }
 

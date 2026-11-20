@@ -21,6 +21,16 @@ final class PanelLabelsTest extends TestCase
         self::assertSame(['label' => 'mystery', 'tone' => 'neutral'], PanelLabels::state('mystery', null, null));
     }
 
+    public function testOutOfSyncSummaryOverridesSyncedOnly(): void
+    {
+        self::assertSame(
+            ['label' => 'Out of sync', 'tone' => 'warn'],
+            PanelLabels::state('ok', null, '2026-11-05 21:59', 'out_of_sync')
+        );
+        self::assertSame(['label' => 'Synced', 'tone' => 'good'], PanelLabels::state('ok', null, '2026-11-05 21:59', 'fresh'));
+        self::assertSame('Sync failed', PanelLabels::state('exhausted', null, null, 'out_of_sync')['label']);
+    }
+
     public function testEveryLoggedOutcomeHasALabel(): void
     {
         $outcomes = ['pushed', 'cleared', 'catalog_cleared', 'deletion_requested', 'deletion_cancelled', 'forgotten',

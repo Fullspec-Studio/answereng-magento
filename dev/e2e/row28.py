@@ -2,7 +2,7 @@
 import re
 from admin import Admin
 a = Admin("admin", "admin123!local")
-p = a.config(store=1)
+p = a.status(store=1)
 fields = {"store": 1, "identity_id": 1, "confirm_key": "localhost", "acknowledge": "1"}
 for name in ("syncnow", "testconnection", "clear", "delete", "cancel", "forget"):
     url = a.action_url(p, name)
