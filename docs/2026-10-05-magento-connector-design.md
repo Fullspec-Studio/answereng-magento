@@ -105,9 +105,12 @@ key collides (defense in depth). Never auto-suffix.
 (`localhost`, an IP address, or a `.test`, `.local`, `.localhost`,
 `.internal`, `.example`, `.invalid`, `.lan` or `home.arpa` name) shows a
 warning — never an error — when the view is enabled and uses the production
-engine: "Store key "{key}" looks like a local address, which AnswerEng can't
-reach. Set it to your shop's public domain." Against a test engine a local
-key is normal, so no warning.
+engine: "Store key "{key}" looks like a local address. It doesn't identify
+your shop, and AnswerEng refuses a key another account already uses. Set it
+to your shop's public domain." (AnswerEng never visits the store; the key is
+only the store's identity, so a generic key like `localhost` risks
+`store_owned_elsewhere`.) Against a test engine a local key is normal, so no
+warning.
 
 **Changing a synced store key.** Each store key the engine has seen occupies
 one of the workspace's plan store slots until it is deleted (§11.3: 7-day

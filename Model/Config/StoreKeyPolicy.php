@@ -30,7 +30,7 @@ class StoreKeyPolicy
     }
 
     /**
-     * Whether the key is a local or private address AnswerEng can't reach.
+     * Whether the key looks like a local or private address rather than the shop's public domain.
      *
      * Covers localhost, IP addresses and development-only names such as *.test or *.local.
      * Used for a warning, never to block a save.
