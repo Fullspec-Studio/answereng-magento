@@ -177,7 +177,7 @@ def make_server(address, store_cap=1, state_file=None):
                 if status == "suggested" and when is None:
                     out.append(dict(fix, applied_at=None))
                 elif status == "applied" and when is not None:
-                    out.append(dict(fix, status="applied", applied_at=when))
+                    out.append(dict(fix, applied_at=when))
             return self._send(200, out, acct)
 
         def _applied(self, store, fix_id, method, acct):
@@ -196,7 +196,7 @@ def make_server(address, store_cap=1, state_file=None):
                 state.save()   # the change lands, the answer never does
                 self.close_connection = True
                 return None
-            return self._send(200, dict(fix, status="applied" if when else fix["status"], applied_at=when), acct)
+            return self._send(200, dict(fix, applied_at=when), acct)
 
         def _push(self, body, acct):
             errors = validate(body)

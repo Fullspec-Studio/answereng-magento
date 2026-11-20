@@ -127,12 +127,15 @@ class MockEngineTest(unittest.TestCase):
         status, body, _ = self.call("POST", "/stores/shop.example.com/fixes/118/applied")
         self.assertEqual(200, status)
         self.assertIsNotNone(body["applied_at"])
+        self.assertEqual("suggested", body["status"])   # the engine only sets applied_at
         self.assertEqual([117], self.fixes("suggested"))
         self.assertEqual([118], self.fixes("applied"))
+        listed = self.call("GET", "/stores/shop.example.com/fixes?status=applied")[1]
+        self.assertEqual(["suggested"], [f["status"] for f in listed])
         self.assertEqual([], self.fixes("rejected"))
         self.assertEqual(422, self.call("GET", "/stores/shop.example.com/fixes?status=bogus")[0])
         status, body, _ = self.call("DELETE", "/stores/shop.example.com/fixes/118/applied")
-        self.assertEqual((200, None), (status, body["applied_at"]))
+        self.assertEqual((200, None, "suggested"), (status, body["applied_at"], body["status"]))
         self.assertEqual([118, 117], self.fixes("suggested"))
 
     def test_unknown_fix_is_404_unknown_store(self):
