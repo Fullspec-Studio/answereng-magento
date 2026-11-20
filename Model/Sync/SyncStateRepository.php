@@ -129,21 +129,28 @@ class SyncStateRepository
      *
      * @param list<int> $enabledStoreIds
      * @param \DateTimeImmutable $now
+     * @param list<int> $manualStoreIds views with auto-sync off: only due retries apply
      * @return list<int>
      */
-    public function selectForDebounce(array $enabledStoreIds, \DateTimeImmutable $now): array
-    {
+    public function selectForDebounce(
+        array $enabledStoreIds,
+        \DateTimeImmutable $now,
+        array $manualStoreIds = []
+    ): array {
         if ($enabledStoreIds === []) {
             return [];
         }
         $cutoff = Ts::fmt($now->modify('-' . self::DEBOUNCE_SECONDS . ' seconds'));
+        $notManual = $manualStoreIds === []
+            ? ''
+            : " AND store_id NOT IN ({$this->placeholders($manualStoreIds)})";
         return $this->ids(
             "SELECT store_id FROM {$this->t()}
              WHERE store_id IN ({$this->placeholders($enabledStoreIds)})
-               AND ((state IN ('ok', 'blocked') AND dirty = 1 AND last_change_at <= ?)
+               AND ((state IN ('ok', 'blocked') AND dirty = 1 AND last_change_at <= ?{$notManual})
                     OR (state = 'retrying' AND next_attempt_at <= ?))
              ORDER BY store_id",
-            [...$enabledStoreIds, $cutoff, Ts::fmt($now)]
+            [...$enabledStoreIds, $cutoff, ...$manualStoreIds, Ts::fmt($now)]
         );
     }
 

@@ -10,6 +10,9 @@
             <store>
                 <enabled>0</enabled>
             </store>
+            <sync>
+                <auto_sync>1</auto_sync>
+            </sync>
         </answereng>
     </default>
 </config>

@@ -79,6 +79,15 @@ final class SyncStateRepositoryTest extends DbTestCase
         self::assertSame([1, 3, 4], $this->repo->selectForDebounce([1, 2, 3, 4, 5, 6, 7], $this->now()));
     }
 
+    public function testManualViewsOnlyRetry(): void
+    {
+        $old = '2026-10-07 11:50:00';
+        $this->set(1, ['dirty' => 1, 'last_change_at' => $old]);
+        $this->set(2, ['dirty' => 0, 'state' => 'retrying', 'next_attempt_at' => '2026-10-07 11:59:00']);
+        self::assertSame([2], $this->repo->selectForDebounce([1, 2], $this->now(), [1, 2]));
+        self::assertSame([1, 2], $this->repo->selectForDebounce([1, 2], $this->now(), [2]));
+    }
+
     public function testReconcileSelection(): void
     {
         $this->set(1, []);

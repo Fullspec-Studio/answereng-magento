@@ -18,6 +18,7 @@ class Settings
      * @param string $storeKey
      * @param list<string> $brandNames
      * @param list<string> $competitors
+     * @param bool $autoSync Change-triggered syncs; nightly and manual syncs ignore it
      */
     public function __construct(
         public readonly int $storeId,
@@ -26,7 +27,8 @@ class Settings
         public readonly string $apiKey,
         public readonly string $storeKey,
         public readonly array $brandNames,
-        public readonly array $competitors
+        public readonly array $competitors,
+        public readonly bool $autoSync = true
     ) {
     }
 

@@ -23,7 +23,8 @@ final class FakeSettings implements SettingsProvider
             $o['apiKey'] ?? 'ae_live',
             $o['storeKey'] ?? "store$storeId.example.com",
             $o['brands'] ?? ['Acme'],
-            $o['competitors'] ?? ['Rival']
+            $o['competitors'] ?? ['Rival'],
+            $o['autoSync'] ?? true
         );
     }
 

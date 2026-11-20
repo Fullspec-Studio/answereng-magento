@@ -22,6 +22,7 @@ class ConfigSettingsProvider implements SettingsProvider
     public const PATH_STORE_KEY = 'answereng/store/store_key';
     public const PATH_BRANDS = 'answereng/brand/brand_names';
     public const PATH_COMPETITORS = 'answereng/brand/competitors';
+    public const PATH_AUTO_SYNC = 'answereng/sync/auto_sync';
 
     /**
      * Constructor.
@@ -48,7 +49,8 @@ class ConfigSettingsProvider implements SettingsProvider
             trim((string) $this->config->getValue(self::PATH_API_KEY)),
             StoreKeyPolicy::normalize((string) $this->storeValue(self::PATH_STORE_KEY, $storeId)),
             $this->lines((string) $this->storeValue(self::PATH_BRANDS, $storeId)),
-            $this->lines((string) $this->storeValue(self::PATH_COMPETITORS, $storeId))
+            $this->lines((string) $this->storeValue(self::PATH_COMPETITORS, $storeId)),
+            (bool) $this->storeValue(self::PATH_AUTO_SYNC, $storeId)
         );
     }
 

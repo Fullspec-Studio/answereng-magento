@@ -42,6 +42,14 @@
                     </comment>
                 </field>
             </group>
+            <group id="sync" translate="label" sortOrder="35" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Catalog sync</label>
+                <field id="auto_sync" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Auto-sync</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Syncs your catalog when products or settings change. Turn off to sync only nightly or when you click Sync now.</comment>
+                </field>
+            </group>
             <group id="brand" translate="label comment" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Brand</label>
                 <comment>One name per line. Store views inherit these from the website or default scope unless overridden.</comment>
