@@ -2,6 +2,10 @@
 
 `python3 dev/mock-engine/mock_engine.py --port 8895 --store-cap 1`
 
+Stores are kept in `dev/mock-engine/state.json` (git-ignored), so they survive a
+restart. Add `--fresh` to start with no stores, or `--state-file ''` to keep them
+in memory only.
+
 Binds 127.0.0.1 by default. For a Magento running in Docker (reaching it via
 `host.docker.internal`), bind all interfaces: add `--host 0.0.0.0`.
 

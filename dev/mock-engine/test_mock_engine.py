@@ -1,6 +1,8 @@
 """Tests for the local mock engine. Run: python3 -m unittest dev/mock-engine/test_mock_engine.py"""
 import http.client
 import json
+import pathlib
+import tempfile
 import threading
 import unittest
 
@@ -113,6 +115,42 @@ class MockEngineTest(unittest.TestCase):
         status, body, _ = self.call("GET", "/stores/unknown.example.com/summary")
         self.assertEqual((404, "unknown_store"), (status, body["code"]))
 
+
+
+class PersistenceTest(unittest.TestCase):
+    """With a state file, stores survive a restart (the default when run from the command line)."""
+
+    def serve(self, state_file):
+        server = mock_engine.make_server(("127.0.0.1", 0), store_cap=1, state_file=state_file)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        return server.server_address[1]
+
+    def call(self, port, method, path, body=None):
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        conn.request(method, path, None if body is None else json.dumps(body),
+                     {"Content-Type": "application/json", "x-api-key": KEY})
+        resp = conn.getresponse()
+        raw = resp.read()
+        return resp.status, (json.loads(raw) if raw else None)
+
+    def test_stores_survive_a_restart(self):
+        state_file = pathlib.Path(tempfile.mkdtemp()) / "state.json"
+        first = self.serve(state_file)
+        self.call(first, "POST", "/catalog", {
+            "store_key": "localhost", "brand_names": ["Luma"], "competitors": [],
+            "products": [{"sku": "S1", "title": "Tee", "description": "", "price": 1.0, "category": "",
+                          "attributes": {}}]})
+        self.call(first, "DELETE", "/stores/localhost", {"confirm_store_key": "localhost"})
+        second = self.serve(state_file)
+        status, stores = self.call(second, "GET", "/stores")
+        self.assertEqual((200, [("localhost", "pending_deletion")]),
+                         (status, [(s["store_key"], s["status"]) for s in stores]))
+
+    def test_without_a_state_file_nothing_is_written(self):
+        port = self.serve(None)
+        self.assertEqual(404, self.call(port, "GET", "/stores/localhost/summary")[0])
 
 if __name__ == "__main__":
     unittest.main()

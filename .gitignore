@@ -2,6 +2,8 @@
 /composer.lock.bak
 /.phpunit.cache/
 /dev/mock-engine/received/
+/dev/mock-engine/state.json
+/dev/mock-engine/state.tmp
 /dist/
 .DS_Store
 /.phpunit.result.cache
