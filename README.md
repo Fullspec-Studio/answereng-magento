@@ -30,10 +30,11 @@ visibility and store actions are under Catalog › AnswerEng › Status & AI
 Visibility (permission `Fullspec_AnswerEng::status`). Marking a drafted fix
 applied needs `Fullspec_AnswerEng::fixes`.
 
-**Upgrading:** run `bin/magento setup:upgrade` after updating the module. The
-results page stores fix lists in two new snapshot columns on
-`answereng_sync_state` (and widens the summary snapshot to `mediumtext`), and
-the page errors until the schema is applied.
+**Upgrading:** run `bin/magento setup:upgrade` after updating the module, and
+before using the new version. The results page stores fix lists in two new
+snapshot columns on `answereng_sync_state` (and widens the summary snapshot to
+`mediumtext`). The status page errors until the schema is applied, and so does
+saving AnswerEng settings that change the API key, store key or engine URL.
 
 ## Behaviour notes
 
@@ -46,7 +47,8 @@ the page errors until the schema is applied.
 - The status page reads results live from AnswerEng. The reads for one page
   view share a 20-second budget; if AnswerEng is slow or unreachable the page
   shows the last stored results labelled stale.
-- Settings › Sync › Auto-sync (default Yes): when No, changes to products no
+- Stores › Configuration › Catalog › AnswerEng › Catalog sync › Auto-sync
+  (default Yes): when No, changes to products and to AnswerEng settings no
   longer trigger a sync for that view. The nightly reconcile, retries, Sync now
   and the CLI still run.
 - Settings › What data leaves this site lists what is sent to AnswerEng.

@@ -62,6 +62,11 @@ class FixActions
                 'That fix no longer exists in AnswerEng. Refresh to see the current list.'
             ));
         }
+        if ($r->status === 409 && $r->code() === 'store_pending_deletion') {
+            return new ActionResult(false, (string) __(
+                "This store is scheduled for deletion, so fixes can't be changed."
+            ));
+        }
         if ($r->status === 409) {
             return new ActionResult(false, (string) __(
                 "AnswerEng refused that fix, so it can't be marked as applied."

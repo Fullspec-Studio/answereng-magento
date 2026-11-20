@@ -88,6 +88,15 @@ final class FixActionsTest extends DbTestCase
         $this->assertCaches(true);
     }
 
+    public function testStorePendingDeletionIsNotReportedAsRefused(): void
+    {
+        $this->transport->enqueue(FakeTransport::json(409, ['error' => 'x', 'code' => 'store_pending_deletion']));
+        $result = $this->actions->setApplied(1, 118, true);
+        self::assertFalse($result->ok);
+        self::assertSame("This store is scheduled for deletion, so fixes can't be changed.", $result->message);
+        $this->assertCaches(true);
+    }
+
     /** @return array<string,array{int}> */
     public static function otherClientErrors(): array
     {

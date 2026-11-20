@@ -163,6 +163,16 @@ final class EngineClientTest extends TestCase
         self::assertTrue($budget->stopped());
     }
 
+    public function testBudgetedRateLimitIsNotRetried(): void
+    {
+        $budget = new ReadBudget(new FixedClock());
+        $this->transport->enqueue(FakeTransport::json(429, null))->enqueue(FakeTransport::json(200, ['fixes' => []]));
+        $r = $this->client->fixes($this->conn, 's', 'suggested', $budget);
+        self::assertSame(429, $r->status);
+        self::assertTrue($budget->stopped());
+        self::assertCount(1, $this->transport->requests);
+    }
+
     public function testFixesPathAndStatus(): void
     {
         $this->transport->enqueue(FakeTransport::json(200, ['fixes' => []]));

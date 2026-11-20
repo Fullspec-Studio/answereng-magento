@@ -155,7 +155,7 @@ on the plugin screen.
   exist (WooCommerce's footnote otherwise). No chart library.
 - **Copy draft** uses the Clipboard API from the existing `panel-actions.js` module, with a
   "Copied" confirmation and a fallback that selects the text when the API is unavailable.
-- **Auto-sync** switch, matching WooCommerce: `answereng/store/auto_sync`, Yes/No, default Yes,
+- **Auto-sync** switch, matching WooCommerce: `answereng/sync/auto_sync` (its own group so it can be set at default/website scope), Yes/No, default Yes,
   settable at default, website and store view scope. When No for a view, only *change-triggered*
   syncs stop: `answereng_sync_dirty` doesn't pick the view up for product or settings changes.
   Still running for that view: the nightly `answereng_reconcile` (so changes, including settings

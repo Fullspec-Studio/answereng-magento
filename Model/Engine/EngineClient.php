@@ -160,8 +160,9 @@ class EngineClient
     /**
      * A GET, retried once on a transient failure.
      *
-     * With a budget the attempts share it: each is capped by the budget, a retry needs enough time left,
-     * and a transient outcome stops the budget's remaining reads.
+     * With a budget the attempts share it: each is capped by the budget, a retry needs enough time left
+     * (never after a 429, which would keep a throttled key throttled), and a transient outcome
+     * stops the budget's remaining reads.
      *
      * @param Connection $c
      * @param string $path
@@ -178,7 +179,7 @@ class EngineClient
             return $this->once('GET', $c, $path, null, self::READ_TIMEOUT);
         }
         $result = $this->budgetedAttempt($c, $path, $budget);
-        if ($result->isTransient() && $budget->allowsRetry()) {
+        if ($result->isTransient() && $result->status !== 429 && $budget->allowsRetry()) {
             $result = $this->budgetedAttempt($c, $path, $budget);
         }
         if ($result->isTransient()) {

@@ -8,7 +8,7 @@
                     <resource id="Fullspec_AnswerEng::status" title="AnswerEng: status and AI visibility" translate="title" sortOrder="200">
                         <resource id="Fullspec_AnswerEng::sync" title="AnswerEng: sync now and clear catalog" translate="title" sortOrder="10"/>
                         <resource id="Fullspec_AnswerEng::delete_store" title="AnswerEng: delete stores (Danger zone)" translate="title" sortOrder="20"/>
-                        <resource id="Fullspec_AnswerEng::fixes" title="Mark drafted fixes applied" translate="title" sortOrder="30"/>
+                        <resource id="Fullspec_AnswerEng::fixes" title="AnswerEng: mark drafted fixes applied" translate="title" sortOrder="30"/>
                     </resource>
                 </resource>
                 <resource id="Magento_Backend::stores">
