@@ -1,8 +1,9 @@
 # AnswerEng for Magento
 
 Magento 2.4 module (`Fullspec_AnswerEng`) that syncs each opted-in store view's
-catalog to [AnswerEng](https://answereng.io) and shows sync status and a
-headline AI-visibility number in admin.
+catalog to [AnswerEng](https://answereng.io) and shows sync status, AI
+visibility results (trend, per-engine presence, share of voice) and drafted
+fixes in admin.
 
 ## Development
 
@@ -26,7 +27,14 @@ Design: docs/2026-10-05-magento-connector-design.md.
 Then Stores › Configuration › Catalog › AnswerEng: paste the API key, enable
 each store view you want analysed, and set brand names. Sync status, AI
 visibility and store actions are under Catalog › AnswerEng › Status & AI
-Visibility (permission `Fullspec_AnswerEng::status`).
+Visibility (permission `Fullspec_AnswerEng::status`). Marking a drafted fix
+applied needs `Fullspec_AnswerEng::fixes`.
+
+**Upgrading:** run `bin/magento setup:upgrade` after updating the module, and
+before using the new version. The results page stores fix lists in two new
+snapshot columns on `answereng_sync_state` (and widens the summary snapshot to
+`mediumtext`). The status page errors until the schema is applied, and so does
+saving AnswerEng settings that change the API key, store key or engine URL.
 
 ## Behaviour notes
 
@@ -36,6 +44,14 @@ Visibility (permission `Fullspec_AnswerEng::status`).
   root (Magento has no ordered "first" category path; ties → lowest id).
 - Price = the NOT LOGGED IN "from" price from the price index (null if not
   indexed). Description = short description, falling back to description.
+- The status page reads results live from AnswerEng. The reads for one page
+  view share a 20-second budget; if AnswerEng is slow or unreachable the page
+  shows the last stored results labelled stale.
+- Stores › Configuration › Catalog › AnswerEng › Catalog sync › Auto-sync
+  (default Yes): when No, changes to products and to AnswerEng settings no
+  longer trigger a sync for that view. The nightly reconcile, retries, Sync now
+  and the CLI still run.
+- Settings › What data leaves this site lists what is sent to AnswerEng.
 - Store deletion has a 7-day undo window and needs the
   `Fullspec_AnswerEng::delete_store` permission. Roles with "Resource Access:
   All" include it; give limited roles only what they need.

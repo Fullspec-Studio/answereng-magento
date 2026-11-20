@@ -16,15 +16,16 @@ import pathlib
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import unquote
+from urllib.parse import parse_qs, unquote, urlsplit
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "Test" / "Fixtures"
+FIX_STATUSES = ("suggested", "approved", "rejected", "refused", "applied")
 RECEIVED = pathlib.Path(__file__).resolve().parent / "received"
 DEFAULT_STATE_FILE = pathlib.Path(__file__).resolve().parent / "state.json"
 ERRORS = json.loads((FIXTURES / "error_codes.json").read_text())
 MODES = {"normal", "cold-504", "slow", "throttle-429", "invalid-key", "store-limit", "product-limit",
-         "ownership", "run-in-progress", "missing-code", "purging", "preview-running", "preview-complete"}
+         "ownership", "run-in-progress", "missing-code", "purging", "preview-running", "preview-complete", "lost-response"}
 
 
 def account_for(key):
@@ -136,6 +137,10 @@ def make_server(address, store_cap=1, state_file=None):
                     summary = json.loads((FIXTURES / "read_api" / name).read_text())
                     summary["store_key"] = store_key
                     return self._send(200, summary, acct)
+                if rest == ["fixes"] and method == "GET":
+                    return self._fixes(store, path_query(self.path).get("status", "suggested"), acct)
+                if len(rest) == 3 and rest[0] == "fixes" and rest[2] == "applied" and method in ("POST", "DELETE"):
+                    return self._applied(store, rest[1], method, acct)
                 if rest == ["catalog"] and method == "DELETE":
                     if mode == "run-in-progress":
                         return self._send(409, err("run_in_progress"), acct)
@@ -161,6 +166,38 @@ def make_server(address, store_cap=1, state_file=None):
                     return self._send(200, {"store_key": store_key, "status": "active"}, acct)
             return self._send(404, err("invalid_request", error="unknown resource"), acct)
 
+        def _fixes(self, store, status, acct):
+            if status not in FIX_STATUSES:
+                return self._send(422, err("invalid_request",
+                                           error=f"invalid status; expected one of {FIX_STATUSES}"), acct)
+            applied = store.setdefault("applied", {})
+            out = []
+            for fix in all_fixes():
+                when = applied.get(str(fix["fix_id"]))
+                if status == "suggested" and when is None:
+                    out.append(dict(fix, applied_at=None))
+                elif status == "applied" and when is not None:
+                    out.append(dict(fix, applied_at=when))
+            return self._send(200, out, acct)
+
+        def _applied(self, store, fix_id, method, acct):
+            fix = next((f for f in all_fixes() if str(f["fix_id"]) == fix_id), None)
+            if fix is None:
+                return self._send(404, err("unknown_store"), acct)
+            if fix["status"] == "refused":
+                return self._send(409, err("invalid_request", error="fix was refused"), acct)
+            applied = store.setdefault("applied", {})
+            if method == "POST":   # re-marking keeps the original timestamp, as the engine does
+                applied.setdefault(fix_id, datetime.datetime.now(datetime.timezone.utc).isoformat())
+            else:
+                applied.pop(fix_id, None)
+            when = applied.get(fix_id)
+            if state.mode == "lost-response":
+                state.save()   # the change lands, the answer never does
+                self.close_connection = True
+                return None
+            return self._send(200, dict(fix, applied_at=when), acct)
+
         def _push(self, body, acct):
             errors = validate(body)
             if errors:
@@ -182,7 +219,7 @@ def make_server(address, store_cap=1, state_file=None):
                     return self._send(403, err("store_limit", limit=state.store_cap,
                                                error=f"plan allows {state.store_cap} store(s)"), acct)
                 store = state.stores[key] = {"owner": acct, "products": [], "status": "active",
-                                             "purge_after": None, "id": state.next_id}
+                                             "purge_after": None, "id": state.next_id, "applied": {}}
                 state.next_id += 1
             if store["status"] != "active":
                 return self._send(409, err("store_pending_deletion", purge_after=store["purge_after"]), acct)
@@ -202,6 +239,14 @@ def make_server(address, store_cap=1, state_file=None):
             self._route("DELETE")
 
     return ThreadingHTTPServer(address, Handler)
+
+
+def all_fixes():
+    return json.loads((FIXTURES / "read_api" / "fixes.json").read_text())
+
+
+def path_query(raw):
+    return {k: v[-1] for k, v in parse_qs(urlsplit(raw).query).items()}
 
 
 def validate(body):

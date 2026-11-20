@@ -83,6 +83,7 @@ docs/integration-checklist.md
 | Store key | store view only | Persisted, never computed per request: when a view is saved enabled with a blank key, the backend model fills it with the host of the view's base URL AT THAT MOMENT and saves it. Later base-URL changes do not move it. |
 | Brand names | default, website, store view | Inherited downward; one or more effective values required when enabled. |
 | Competitors | default, website, store view | Inherited downward; zero or more. |
+| Auto-sync | default, website, store view | `answereng/sync/auto_sync`, Yes/No, default Yes. When No, only change-triggered syncs (the debounced dirty-view pass) stop for that view; the nightly reconcile, retries of a failed sync, **Sync now** and the CLI still run. Not part of the settings hash or fingerprint. |
 
 Engine URL and API key are default-scope only (`showInWebsite`/`showInStore`
 = 0). The only settings with inheritance are brands and competitors, and the
@@ -311,10 +312,11 @@ output via `$escaper`.
 
 - **Default scope:** one table, a row per enabled view — store key, last sync
   time + outcome, product count, "Sync now".
-- **Store-view scope:** sync status pill, last 20 log entries, **Sync now**
-  and **Test connection** (admin AJAX controllers; form key + ACL),
-  **headline visibility** rate with interval and latest run date from
-  `GET /stores/{key}/summary` (GETs retry once on 5xx/transport), and **"Open full results in AnswerEng →"** to
+- **Store-view scope:** the results page described in §7.2 (visibility,
+  per-engine presence, share of voice, drafted fixes, sync controls: **Sync
+  now** and **Test connection** are admin AJAX controllers; form key + ACL),
+  with the last 20 log entries under Recent activity (GETs retry once on
+  5xx/transport, within the shared budget in §7.2), and **"Open full results in AnswerEng →"** to
   `https://app.answereng.io/stores/{key}`, with the hint "Sign in there with
   this store view's API key." The link appears only when the engine URL is
   the production `https://api.answereng.io`; with any other engine the panel
@@ -459,6 +461,60 @@ inside the hash; the fingerprint is stored, never the key).
 - When the engine is unreachable and a matching snapshot exists, the panel
   shows it labeled **"Stale — last fetched <date time>"**; with no matching
   snapshot it shows "Results unavailable — engine unreachable".
+
+### 7.2 Results page (store-view scope), as built 2026-11-20
+
+The store-view page matches the WooCommerce plugin's results: the same
+sections, copy and engine labels (spec
+`docs/superpowers/specs/2026-11-20-magento-results-parity-design.md`). Top to
+bottom, with the header (status pill, **Refresh**, Settings) above:
+
+1. **Alerts:** stale banner, pending-deletion banner with Cancel, the sync
+   state message, and the "Not synced yet" / "Out of sync" notices. A jump
+   link "N drafted fixes to review →" sits under the header when fixes exist.
+2. **AI visibility** (open): headline rate with the change since the last
+   run, its 95% interval, and a trend chart (inline SVG, y-axis from zero;
+   one point shows WooCommerce's "appears once two weekly samples" note).
+3. **Per-engine presence** and **Share of voice** (open, side by side; they
+   stack under 1024 px). Your store is brand green, competitors gray; the
+   competitor-list link goes to the Brand group of the settings.
+4. **Drafted fixes** (open): kind and priority pills, engine, the buyer
+   prompt, "Why you're missing", the draft text with **Copy draft**, and
+   **Mark as applied**. A collapsed **Applied (N)** list shows the date and
+   **Undo**. The Mark and Undo buttons need `Fullspec_AnswerEng::fixes`.
+5. **Sync** (collapsed when healthy): last sync, products sent, an
+   auto-sync-off line when applicable, Sync now, Test connection, Clear;
+   Recent activity (collapsed) and the Danger zone below.
+
+**Read budget.** The engine reads behind one page view (`GET /stores`, the
+summary, suggested fixes, applied fixes) share one 20-second budget. Each
+attempt takes at most 15 s, and a retry happens only with at least 5 s left.
+A transient failure (transport error or 5xx) stops the remaining reads; the
+page then falls back to the stale snapshot, with the summary and both fix
+lists stored together (`snapshot_json`, `snapshot_fixes_json`,
+`snapshot_applied_json`, all `mediumtext`, valid only for the matching
+fingerprint). If the fixes cannot be read and have no snapshot, the section
+says they are unavailable right now.
+
+**Mark and undo** (`POST answereng/action/fixapplied`, fields `store`,
+`fix_id`, `op` = `mark|unmark`; form key; ACL `::fixes` under `::status`):
+- 2xx: the fix-list caches are dropped; success.
+- 404 (engine code `unknown_store`): "That fix no longer exists in
+  AnswerEng. Refresh to see the current list." Caches are kept.
+- 409: refused.
+- Any other 4xx, including 429: "AnswerEng didn't accept that change.
+  Nothing was changed."
+- No response, or 5xx: "Couldn't confirm that change. AnswerEng didn't
+  respond in time. Refresh in a moment to see whether it was applied." and
+  the fix lists are dropped, so the next view reads the real state.
+
+**Settings.** The **What data leaves this site** group (default scope,
+collapsed) lists what is sent (SKU, name, short description, price,
+category, storefront-visible attributes, brand and competitor names, store
+key) and what is not (customer names, emails and addresses; orders and
+payment data; product images, analytics and telemetry), and
+names the configured engine URL. The API key note points newcomers to sign up
+at answereng.io. Auto-sync is described in §3.
 
 ## 8. Testing and local development
 
@@ -788,3 +844,15 @@ running run are skipped; the freed slot lets a new store be created. CDK
 synth asserts the three gateway responses, the new DELETE/POST methods with
 API key required, and the daily purge rule. Existing route-pinning tests
 extended with the new routes.
+
+### 11.5 Endpoints the Magento module uses
+
+`GET /stores`, `GET /stores/{key}/summary`, `POST /catalog` (sync),
+`DELETE /stores/{key}/catalog`, the scheduled-deletion routes (§11.3), and,
+since the results page (§7.2):
+
+- `GET /stores/{key}/fixes?status=suggested|applied`
+- `POST /stores/{key}/fixes/{id}/applied` (mark applied)
+- `DELETE /stores/{key}/fixes/{id}/applied` (undo)
+
+The fixtures under `Test/Fixtures/` are the frozen contract for these.

@@ -5,8 +5,11 @@ namespace Fullspec\AnswerEng\Test\Db;
 
 use Fullspec\AnswerEng\Model\Admin\PanelViewModel;
 use Fullspec\AnswerEng\Model\Admin\RemoteStoreActions;
+use Fullspec\AnswerEng\Model\Admin\ResultsProvider;
 use Fullspec\AnswerEng\Model\Admin\SummaryProvider;
 use Fullspec\AnswerEng\Model\Engine\EngineClient;
+use Fullspec\AnswerEng\Model\Engine\ReadBudget;
+use Fullspec\AnswerEng\Model\Engine\TransportException;
 use Fullspec\AnswerEng\Model\Registry\RemoteStoreRegistry;
 use Fullspec\AnswerEng\Model\Registry\RoleResolver;
 use Fullspec\AnswerEng\Model\Sync\Classifier;
@@ -46,15 +49,16 @@ final class PanelViewModelTest extends DbTestCase
         $auth->method('isAllowed')->willReturnCallback(static fn (string $r) => $r !== 'Fullspec_AnswerEng::delete_store');
         $url = $this->createMock(UrlInterface::class);
         $url->method('getUrl')->willReturnCallback(static fn (string $route) => "/admin/$route");
-        $vm = new PanelViewModel($settings, $state, $log, new SummaryProvider($settings, $state, $engine, new ArrayCache(), $clock),
-            $actions, $registry, $roles, $auth, $url, new NullLogger());
+        $vm = new PanelViewModel($settings, $state, $log, self::results($settings, $state, $engine, $clock),
+            $actions, $registry, $roles, $auth, $url, new NullLogger(), $clock);
 
         $data = $vm->forView(1);
         self::assertSame('ok', $data['state']);
         self::assertSame(['current', 'previous'], array_column($data['identities'], 'role'));
         self::assertSame($old, $data['identities'][1]['id']);
         self::assertSame([true, false], [$data['canSync'], $data['canDelete']]);
-        self::assertSame('not_synced', $data['summary']->state);
+        self::assertSame('not_synced', $data['results']->summary->state);
+        self::assertFalse($data['healthy']);
         self::assertSame('engine.test', $data['testEngine']);
         self::assertSame('/admin/answereng/action/delete', $data['urls']['delete']);
         self::assertTrue($data['canClear']);
@@ -75,9 +79,117 @@ final class PanelViewModelTest extends DbTestCase
         $auth->method('isAllowed')->willReturn($allowAll);
         $url = $this->createMock(UrlInterface::class);
         $url->method('getUrl')->willReturnCallback(static fn (string $route) => "/admin/$route");
-        return new PanelViewModel($settings, $state, $log,
-            new SummaryProvider($settings, $state, $engine, new ArrayCache(), $clock), $actions, $registry, $roles, $auth,
-            $url, new NullLogger());
+        return new PanelViewModel($settings, $state, $log, self::results($settings, $state, $engine, $clock), $actions,
+            $registry, $roles, $auth, $url, new NullLogger(), $clock);
+    }
+
+    private static function results(
+        FakeSettings $settings,
+        SyncStateRepository $state,
+        EngineClient $engine,
+        FixedClock $clock
+    ): ResultsProvider {
+        $cache = new ArrayCache();
+        return new ResultsProvider($settings, $state, $engine, $cache, $clock,
+            new SummaryProvider($settings, $state, $engine, $cache, $clock));
+    }
+
+    private function fixture(string $name): array
+    {
+        return json_decode((string) file_get_contents(dirname(__DIR__) . "/Fixtures/read_api/$name"), true);
+    }
+
+    public function testSyncedViewWithResultsIsHealthyAndCarriesFixesAndPermissions(): void
+    {
+        $settings = new FakeSettings();
+        $settings->put(1, ['storeKey' => 'demo-outdoor-store', 'autoSync' => false]);
+        $state = new SyncStateRepository($this->db);
+        $state->ensure(1);
+        $clock = new FixedClock();
+        $state->recordSuccess(1, $state->get(1)->configRevision, $clock->now(), $clock->now(), 12, null, null);
+        $transport = new FakeTransport();
+        $transport->enqueue(FakeTransport::json(200, $this->fixture('summary.json')))
+            ->enqueue(FakeTransport::json(200, $this->fixture('fixes.json')))
+            ->enqueue(FakeTransport::json(200, []));
+        $data = $this->viewModel($settings, $transport)->forView(1);
+        self::assertArrayNotHasKey('summary', $data);
+        self::assertSame('fresh', $data['results']->summary->state);
+        self::assertSame([118, 117], array_map(static fn ($f) => $f->fixId, $data['results']->fixes));
+        self::assertTrue($data['healthy']);
+        self::assertTrue($data['canApplyFixes']);
+        self::assertFalse($data['autoSync']);
+        self::assertSame('/admin/answereng/action/fixapplied', $data['urls']['fixApplied']);
+
+        $transport = new FakeTransport();
+        $transport->enqueue(FakeTransport::json(200, $this->fixture('summary.json')))
+            ->enqueue(FakeTransport::json(200, $this->fixture('fixes.json')))
+            ->enqueue(FakeTransport::json(200, []));
+        $denied = $this->viewModel($settings, $transport, false)->forView(1);
+        self::assertFalse($denied['canApplyFixes']);
+    }
+
+    /** Local check: GET /stores ran outside the page budget, so a hanging engine held the page ~50 s. */
+    public function testStoreListAndResultsShareOneReadBudget(): void
+    {
+        $settings = new FakeSettings();
+        $s = $settings->put(1, ['storeKey' => 'demo-outdoor-store']);
+        $state = new SyncStateRepository($this->db);
+        $registry = new RemoteStoreRegistry($this->db);
+        $clock = new FixedClock();
+        $state->recordAccount(1, 'acct_a', $s->apiKeyHash());
+        $registry->recordPush('https://engine.test', 'acct_a', 'demo-outdoor-store', 1, $clock->now());
+        $transport = new FakeTransport();
+        $engine = new EngineClient($transport, new NullLogger());
+        $roles = new RoleResolver($settings, $state, $registry);
+        $log = new SyncLog($this->db);
+        $actions = new RemoteStoreActions($settings, $state, $log, $engine, new Classifier(), $registry, $roles,
+            new FakeDisabler($settings), $clock);
+        $auth = $this->createMock(AuthorizationInterface::class);
+        $auth->method('isAllowed')->willReturn(true);
+        $url = $this->createMock(UrlInterface::class);
+        $url->method('getUrl')->willReturnCallback(static fn (string $route) => "/admin/$route");
+        $cache = new ArrayCache();
+        $results = new ResultsProvider($settings, $state, $engine, $cache, $clock,
+            new SummaryProvider($settings, $state, $engine, $cache, $clock));
+        $vm = new PanelViewModel($settings, $state, $log, $results, $actions, $registry, $roles, $auth, $url,
+            new NullLogger(), $clock);
+
+        $transport->enqueue(FakeTransport::json(200, [['store_key' => 'demo-outdoor-store', 'status' => 'active']],
+            ['X-AnswerEng-Account' => 'acct_a']))
+            ->enqueue(FakeTransport::json(200, $this->fixture('summary.json')))
+            ->enqueue(FakeTransport::json(200, $this->fixture('fixes.json')))
+            ->enqueue(FakeTransport::json(200, []));
+        $vm->forView(1);   // seeds the snapshot
+
+        $cache->items = [];
+        $transport->requests = [];
+        $transport->onSend = static function (string $method, string $u, int $timeout) use ($clock): void {
+            $clock->advance($timeout);
+        };
+        for ($i = 0; $i < 8; $i++) {
+            $transport->enqueue(new TransportException('timed out'));
+        }
+        $data = $vm->forView(1);
+        self::assertLessThanOrEqual(ReadBudget::TOTAL, array_sum(array_column($transport->requests, 'timeout')));
+        self::assertSame('stale', $data['results']->summary->state);
+        self::assertCount(2, $data['results']->fixes ?? []);
+        self::assertTrue($data['results']->fixesStale);
+    }
+
+    public function testNoResultsIsNotHealthyEvenWhenSynced(): void
+    {
+        $settings = new FakeSettings();
+        $settings->put(1, ['storeKey' => 'demo-outdoor-store']);
+        $state = new SyncStateRepository($this->db);
+        $state->ensure(1);
+        $clock = new FixedClock();
+        $state->recordSuccess(1, $state->get(1)->configRevision, $clock->now(), $clock->now(), 12, null, null);
+        $transport = new FakeTransport();
+        $transport->enqueue(FakeTransport::json(200, $this->fixture('summary_no_runs.json')));
+        $data = $this->viewModel($settings, $transport)->forView(1);
+        self::assertSame('no_run', $data['results']->summary->state);
+        self::assertFalse($data['healthy']);
+        self::assertTrue($data['autoSync']);
     }
 
     public function testDisabledViewStillOffersClearForItsCurrentIdentity(): void

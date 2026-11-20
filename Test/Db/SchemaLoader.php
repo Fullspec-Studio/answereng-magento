@@ -68,6 +68,7 @@ final class SchemaLoader
             'int' => 'INT',
             'varchar' => 'VARCHAR(' . (int) $col['length'] . ')',
             'text' => 'TEXT',
+            'mediumtext' => 'MEDIUMTEXT',
             'datetime' => 'DATETIME',
             default => throw new \RuntimeException("unsupported column type $type"),
         };

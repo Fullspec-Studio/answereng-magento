@@ -1,0 +1,192 @@
+<?php
+/**
+ * AI visibility: the figure, change since the last run, the 95% band and the weekly trend
+ * (WooCommerce render_hero, render_trend); otherwise the preview or the empty state.
+ *
+ * @var \Fullspec\AnswerEng\Block\Adminhtml\Status\Panel $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+use Fullspec\AnswerEng\Model\Admin\PanelLabels;
+use Fullspec\AnswerEng\Model\Admin\SummaryView;
+use Fullspec\AnswerEng\Model\Admin\TrendChart;
+
+$panel = $block->getPanel();
+$summary = $panel['results']->summary;
+$hasResults = $summary->rate !== null && in_array($summary->state, [SummaryView::FRESH, SummaryView::STALE], true);
+// "Out of sync" and "Not synced yet" are alerts at the top; there is nothing to show here.
+$skip = !$hasResults && in_array($summary->state, [
+    SummaryView::NOT_SYNCED,
+    SummaryView::OUT_OF_SYNC,
+    SummaryView::STALE,
+], true);
+?>
+<?php if (!$skip): ?>
+<details class="ae-section ae-visibility" id="answereng-visibility" open>
+    <summary><?= $escaper->escapeHtml(__('AI visibility')) ?></summary>
+    <div class="ae-section-body">
+    <?php if ($hasResults): ?>
+        <div class="ae-hero-grid">
+            <div class="ae-card">
+                <div class="ae-label"><?= $escaper->escapeHtml(__('Overall visibility · latest run')) ?></div>
+                <?php $figure = PanelLabels::percent((float) $summary->rate); ?>
+                <p class="ae-figure">
+                    <span><?= $escaper->escapeHtml($figure) ?><span class="ae-figure-pct">%</span></span>
+                    <?php $delta = PanelLabels::delta($summary->trend); ?>
+                    <?php if ($delta !== null): ?>
+                        <?php $deltaClass = abs($delta) < 0.05 ? 'flat' : ($delta > 0 ? 'up' : 'down'); ?>
+                        <span class="ae-delta ae-delta--<?= $escaper->escapeHtmlAttr($deltaClass) ?>">
+                            <?= $escaper->escapeHtml(PanelLabels::deltaText($delta)) ?></span>
+                    <?php endif; ?>
+                </p>
+                <p class="ae-meta"><?= $escaper->escapeHtml(__('of AI answer samples recommend your products')) ?>
+                    <?php if ($summary->runStartedAt !== null): ?>
+                        <span class="ae-dim"><?= $escaper->escapeHtml(__(
+                            '(run of %1 UTC)',
+                            PanelLabels::when($summary->runStartedAt)
+                        )) ?></span>
+                    <?php endif; ?>
+                </p>
+                <?php
+                $gx = static fn (?float $r): float => round(max(0.0, min(1.0, (float) $r)) * 292, 1);
+                $low = $gx($summary->low ?? $summary->rate);
+                $high = max($gx($summary->high ?? $summary->rate), $low + 5);
+                ?>
+                <svg class="ae-interval" width="100%" height="34" viewBox="0 0 292 34" preserveAspectRatio="none"
+                     aria-hidden="true" focusable="false">
+                    <rect class="ae-interval-track" x="0" y="15" width="292" height="4" rx="2"/>
+                    <rect class="ae-interval-band" x="<?= (float) $low ?>" y="12"
+                          width="<?= (float) round($high - $low, 1) ?>" height="10" rx="5"/>
+                    <rect class="ae-interval-mark" x="<?= (float) $low ?>" y="7" width="2.5" height="20" rx="1.2"/>
+                    <rect class="ae-interval-mark" x="<?= (float) round($high - 2.5, 1) ?>" y="7" width="2.5"
+                          height="20" rx="1.2"/>
+                    <circle class="ae-interval-mark" cx="<?= (float) $gx($summary->rate) ?>" cy="17" r="7"/>
+                </svg>
+                <div class="ae-interval-scale" aria-hidden="true"><span>0</span><span>50</span><span>100</span></div>
+                <p class="ae-explain"><strong><?= $escaper->escapeHtml(__(
+                    '95% CI: %1–%2%',
+                    PanelLabels::percent((float) ($summary->low ?? $summary->rate)),
+                    PanelLabels::percent((float) ($summary->high ?? $summary->rate))
+                )) ?></strong> — <?= $escaper->escapeHtml(__(
+                    'the true rate very likely sits in this band. More weekly samples narrow it.'
+                )) ?></p>
+            </div>
+
+            <div class="ae-card">
+                <div class="ae-trend-head">
+                    <div class="ae-label"><?= $escaper->escapeHtml(__('Visibility trend · weekly samples')) ?></div>
+                    <div class="ae-legend" aria-hidden="true">
+                        <span><span class="ae-legend-line"></span>
+                            <?= $escaper->escapeHtml(__('point estimate')) ?></span>
+                        <span><span class="ae-legend-band"></span>
+                            <?= $escaper->escapeHtml(__('95% CI band')) ?></span>
+                    </div>
+                </div>
+                <?php
+                $chartW = 480;
+                $chartH = 200;
+                ?>
+                <?php $g = TrendChart::geometry($summary->trend, $chartW, $chartH); ?>
+                <?php if ($g === null): ?>
+                    <p class="ae-footnote"><?= $escaper->escapeHtml(__(
+                        'The trend appears once two weekly samples have completed.'
+                    )) ?></p>
+                <?php else: ?>
+                    <?php
+                    $box = $g['box'];
+                    $lastDot = count($g['dots']) - 1;
+                    $lastLabel = count($g['labels']) - 1;
+                    ?>
+                    <svg class="ae-trend-svg" viewBox="0 0 <?= (int) $chartW ?> <?= (int) $chartH ?>" role="img"
+                         aria-label="<?= $escaper->escapeHtmlAttr(__('Visibility trend · weekly samples')) ?>">
+                        <?php foreach ($g['ticks'] as $i => $tick): ?>
+                            <line class="ae-trend-grid<?= $i === 0 ? ' ae-trend-grid--base' : '' ?>"
+                                  x1="<?= (float) $box['left'] ?>" x2="<?= (float) $box['right'] ?>"
+                                  y1="<?= (float) $tick['y'] ?>" y2="<?= (float) $tick['y'] ?>"/>
+                            <text class="ae-trend-tick" x="<?= (float) ($box['left'] - 6) ?>"
+                                  y="<?= (float) ($tick['y'] + 4) ?>"
+                                  text-anchor="end"><?= $escaper->escapeHtml($tick['text']) ?></text>
+                        <?php endforeach; ?>
+                        <polygon class="ae-trend-band" points="<?= $escaper->escapeHtmlAttr($g['band']) ?>"/>
+                        <polyline class="ae-trend-line" points="<?= $escaper->escapeHtmlAttr($g['line']) ?>"/>
+                        <?php foreach ($g['dots'] as $i => $dot): ?>
+                            <circle class="ae-trend-dot<?= $i === $lastDot ? ' ae-trend-dot--last' : '' ?>"
+                                    cx="<?= (float) $dot['x'] ?>" cy="<?= (float) $dot['y'] ?>"
+                                    r="<?= $i === $lastDot ? '4.5' : '3' ?>"/>
+                        <?php endforeach; ?>
+                        <?php foreach ($g['labels'] as $i => $label): ?>
+                            <text class="ae-trend-label<?= $i === $lastLabel ? ' ae-trend-label--now' : '' ?>"
+                                  x="<?= (float) $label['x'] ?>" y="<?= (int) ($chartH - 6) ?>"
+                                  text-anchor="middle"><?= $escaper->escapeHtml($label['text']) ?></text>
+                        <?php endforeach; ?>
+                    </svg>
+                    <p class="ae-footnote"><?= $escaper->escapeHtml(__(
+                        'Y-axis starts at zero · %1 completed runs.',
+                        count($g['dots'])
+                    )) ?></p>
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php elseif ($summary->state === SummaryView::PREVIEW_RUNNING): ?>
+        <p class="ae-meta"><?= $escaper->escapeHtml(__(
+            'Your first AI read is running. It\'s usually ready in a few minutes.'
+        )) ?></p>
+    <?php elseif ($summary->state === SummaryView::PREVIEW_COMPLETE && $summary->preview !== null): ?>
+        <?php $p = $summary->preview; ?>
+        <p class="ae-figure ae-figure--sentence"><?= $escaper->escapeHtml(__(
+            'Perplexity recommended your store in %1 of %2 answers',
+            (int) $p['answers_recommended'],
+            (int) $p['answers']
+        )) ?></p>
+        <p class="ae-meta"><?= $escaper->escapeHtml(__(
+            'Quick preview: %1 questions, one engine. The range is wide (%2–%3%).',
+            (int) $p['questions'],
+            (int) round(((float) ($p['range'][0] ?? 0)) * 100),
+            (int) round(((float) ($p['range'][1] ?? 0)) * 100)
+        )) ?></p>
+        <ul class="ae-questions">
+            <?php foreach ((array) ($p['per_question'] ?? []) as $q): ?>
+                <li>
+                    <span class="ae-question"><?= $escaper->escapeHtml((string) $q['text']) ?></span>
+                    <span class="ae-answer"><?= (int) $q['answers'] === 0
+                        ? $escaper->escapeHtml(__('No readable answers'))
+                        : $escaper->escapeHtml(__(
+                            'Recommended in %1 of %2 answers',
+                            (int) $q['recommended'],
+                            (int) $q['answers']
+                        )) ?><?php if (!empty($q['competitors_named'])): ?>.
+                        <?= $escaper->escapeHtml(__(
+                            'Recommended instead: %1',
+                            implode(', ', array_map('strval', $q['competitors_named']))
+                        )) ?><?php endif; ?></span>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        <p class="ae-meta"><a href="https://answereng.io/#pricing" target="_blank" rel="noopener">
+            <?= $escaper->escapeHtml(__('Free checks 4 engines monthly. Starter checks weekly →')) ?></a></p>
+    <?php else: ?>
+        <?php $stateText = match ($summary->state) {
+            SummaryView::NO_RUN => __('Connected. Waiting for the first analysis run.'),
+            SummaryView::PENDING_DELETION => __('This store is scheduled for deletion.'),
+            SummaryView::DISABLED => __('Enable this store view and enter an API key to see results.'),
+            default => __('Results unavailable: AnswerEng could not be reached.'),
+        }; ?>
+        <p class="ae-meta"><?= $escaper->escapeHtml($stateText) ?></p>
+    <?php endif; ?>
+    <?php if ($summary->dashboardUrl !== null): ?>
+        <p class="ae-results">
+            <a class="ae-results-link" href="<?= $escaper->escapeUrl($summary->dashboardUrl) ?>"
+               target="_blank" rel="noopener"><?= $escaper->escapeHtml(__('Open full results in AnswerEng')) ?>
+                <span aria-hidden="true">→</span></a>
+            <?php $signInHint = __('Sign in there with this store view\'s API key.'); ?>
+            <span class="ae-results-hint"><?= $escaper->escapeHtml($signInHint) ?></span>
+        </p>
+    <?php elseif ($panel['testEngine'] !== null): ?>
+        <p class="ae-meta ae-results-hint"><?= $escaper->escapeHtml(__(
+            'Connected to a test engine at %1. Full results on app.answereng.io are only for stores '
+            . 'that sync to AnswerEng.',
+            $panel['testEngine']
+        )) ?></p>
+    <?php endif; ?>
+    </div>
+</details>
+<?php endif; ?>

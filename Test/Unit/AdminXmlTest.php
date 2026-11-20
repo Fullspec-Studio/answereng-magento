@@ -39,7 +39,7 @@ final class AdminXmlTest extends TestCase
         $status = $acl->xpath('//resource[@id="Magento_Catalog::catalog"]/resource[@id="Fullspec_AnswerEng::status"]');
         self::assertCount(1, $status);
         $children = array_map(static fn ($r) => (string) $r['id'], $status[0]->xpath('resource'));
-        self::assertSame(['Fullspec_AnswerEng::sync', 'Fullspec_AnswerEng::delete_store'], $children);
+        self::assertSame(['Fullspec_AnswerEng::sync', 'Fullspec_AnswerEng::delete_store', 'Fullspec_AnswerEng::fixes'], $children);
         self::assertCount(1, $acl->xpath('//resource[@id="Magento_Config::config"]/resource[@id="Fullspec_AnswerEng::config"]'));
     }
 
@@ -57,6 +57,7 @@ final class AdminXmlTest extends TestCase
             'delete' => ['Action/Delete.php', 'Fullspec_AnswerEng::delete_store'],
             'cancel' => ['Action/Cancel.php', 'Fullspec_AnswerEng::delete_store'],
             'forget' => ['Action/Forget.php', 'Fullspec_AnswerEng::delete_store'],
+            'mark fix applied' => ['Action/FixApplied.php', 'Fullspec_AnswerEng::fixes'],
         ];
     }
 
@@ -74,5 +75,41 @@ final class AdminXmlTest extends TestCase
         $source = (string) file_get_contents(self::ROOT . '/Controller/Adminhtml/Action/AbstractAction.php');
         self::assertStringNotContainsString('system_config', $source);
         self::assertStringContainsString("'answereng/status/index'", $source);
+    }
+
+    public function testDataDisclosureGroupIsCollapsedAndUsesItsBlock(): void
+    {
+        $xml = simplexml_load_file(self::ROOT . '/etc/adminhtml/system.xml');
+        self::assertNotFalse($xml);
+        $group = $xml->xpath('//group[@id="data"]');
+        self::assertCount(1, $group, 'the data group exists');
+        self::assertSame('What data leaves this site', (string) $group[0]->label);
+        self::assertNotSame('1', (string) ($group[0]['expanded'] ?? ''), 'collapsed by default');
+        self::assertNotSame('true', (string) ($group[0]['expanded'] ?? ''), 'collapsed by default');
+        $field = $group[0]->xpath('field[@id="disclosure"]');
+        self::assertCount(1, $field);
+        self::assertSame(
+            'Fullspec\\AnswerEng\\Block\\Adminhtml\\System\\Config\\DataDisclosure',
+            (string) $field[0]->frontend_model
+        );
+        self::assertFileExists(self::ROOT . '/view/adminhtml/templates/data-disclosure.phtml');
+        $sort = [];
+        foreach ($xml->system->section->group as $g) {
+            $sort[(string) $g['id']] = (int) $g['sortOrder'];
+        }
+        self::assertGreaterThan($sort['brand'], $sort['data'], 'the data group comes last');
+    }
+
+    public function testApiKeyCommentPointsNewcomersToSignUp(): void
+    {
+        $xml = simplexml_load_file(self::ROOT . '/etc/adminhtml/system.xml');
+        self::assertNotFalse($xml);
+        $comment = (string) $xml->xpath('//group[@id="connection"]/field[@id="api_key"]/comment')[0];
+        self::assertStringContainsString('Paste the API key from your AnswerEng welcome email. Stored encrypted.', $comment);
+        self::assertStringContainsString(
+            'No API key yet? Get one at <a href="https://answereng.io"',
+            $comment
+        );
+        self::assertStringContainsString('The free tier needs no card, and your key arrives by email.', $comment);
     }
 }

@@ -17,6 +17,13 @@ class Panel extends Template
     protected $_template = 'Fullspec_AnswerEng::status.phtml';
 
     /**
+     * The panel data, loaded once per request (the template and its partials all read it).
+     *
+     * @var array<string,mixed>|list<array<string,mixed>>|null
+     */
+    private ?array $panelData = null;
+
+    /**
      * Constructor.
      *
      * @param Context $context
@@ -51,8 +58,32 @@ class Panel extends Template
      */
     public function getPanel(): array
     {
-        $storeId = $this->getStoreId();
-        return $storeId > 0 ? $this->panel->forView($storeId) : $this->panel->forDefault();
+        if ($this->panelData === null) {
+            $storeId = $this->getStoreId();
+            $this->panelData = $storeId > 0 ? $this->panel->forView($storeId) : $this->panel->forDefault();
+        }
+        return $this->panelData;
+    }
+
+    /**
+     * One section of the view page (view/adminhtml/templates/status/<name>.phtml).
+     *
+     * @param string $name
+     * @return string
+     */
+    public function renderPart(string $name): string
+    {
+        return $this->fetchView((string) $this->getTemplateFile('Fullspec_AnswerEng::status/' . $name . '.phtml'));
+    }
+
+    /**
+     * The settings page at the Brand group, where the competitor list lives.
+     *
+     * @return string
+     */
+    public function getCompetitorsUrl(): string
+    {
+        return $this->getSettingsUrl() . '#answereng_brand-head';
     }
 
     /**

@@ -5,6 +5,7 @@ namespace Fullspec\AnswerEng\Model\Admin;
 
 use Fullspec\AnswerEng\Model\Config\SettingsProvider;
 use Fullspec\AnswerEng\Model\Engine\EngineClient;
+use Fullspec\AnswerEng\Model\Engine\ReadBudget;
 use Fullspec\AnswerEng\Model\Support\Clock;
 use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 
@@ -41,10 +42,14 @@ class SummaryProvider
     /**
      * For view.
      *
+     * With a budget the summary read shares it with the page's other reads; a transient failure stops it,
+     * so callers can tell from $budget->stopped() that the remaining reads must not be sent.
+     *
      * @param int $storeId
+     * @param ReadBudget|null $budget
      * @return SummaryView
      */
-    public function forView(int $storeId): SummaryView
+    public function forView(int $storeId, ?ReadBudget $budget = null): SummaryView
     {
         $s = $this->settings->forStore($storeId);
         // A test or staging engine's stores are not on app.answereng.io, so there is nothing to link to.
@@ -57,7 +62,7 @@ class SummaryProvider
         if ($cached !== null) {
             return $this->fromJson($cached, SummaryView::FRESH, $url, null);
         }
-        $r = $this->engine->summary($s->connection(), $s->storeKey);
+        $r = $this->engine->summary($s->connection(), $s->storeKey, $budget);
         if ($r->isSuccess() && $r->json !== null) {
             $json = json_encode($r->json, JSON_THROW_ON_ERROR);
             $noRun = ($r->json['latest_run'] ?? null) === null;
@@ -75,9 +80,8 @@ class SummaryProvider
         if ($r->status === 409 && $r->code() === 'store_pending_deletion') {
             return new SummaryView(SummaryView::PENDING_DELETION, $url);
         }
-        $transient = $r->status === null || $r->status >= 500 || $r->status === 429;
         $state = $this->state->get($storeId);
-        if ($transient && $state->snapshotJson !== null && $state->snapshotFingerprint === $s->fingerprint()) {
+        if ($r->isTransient() && $state->snapshotJson !== null && $state->snapshotFingerprint === $s->fingerprint()) {
             return $this->fromJson($state->snapshotJson, SummaryView::STALE, $url, $state->snapshotFetchedAt);
         }
         return new SummaryView(SummaryView::UNAVAILABLE, $url);
@@ -135,7 +139,67 @@ class SummaryProvider
             $num($v['low'] ?? null),
             $num($v['high'] ?? null),
             is_string($data['latest_run']['started_at'] ?? null) ? $data['latest_run']['started_at'] : null,
-            $fetchedAt
+            $fetchedAt,
+            null,
+            $this->trend($data['visibility_trend'] ?? null),
+            $this->intervals($data['engine_breakdown'] ?? null),
+            $this->intervals($data['share_of_voice'] ?? null)
         );
+    }
+
+    /**
+     * A rate interval {rate, low, high}; low and high default to the rate. Null without a numeric rate.
+     *
+     * @param mixed $ri
+     * @return array{rate:float,low:float,high:float}|null
+     */
+    private function interval(mixed $ri): ?array
+    {
+        if (!is_array($ri) || !is_numeric($ri['rate'] ?? null)) {
+            return null;
+        }
+        $rate = (float) $ri['rate'];
+        return [
+            'rate' => $rate,
+            'low' => is_numeric($ri['low'] ?? null) ? (float) $ri['low'] : $rate,
+            'high' => is_numeric($ri['high'] ?? null) ? (float) $ri['high'] : $rate,
+        ];
+    }
+
+    /**
+     * `engine_breakdown` or `share_of_voice`: valid intervals keyed by name, in engine order.
+     *
+     * @param mixed $map
+     * @return array<string,array{rate:float,low:float,high:float}>
+     */
+    private function intervals(mixed $map): array
+    {
+        $out = [];
+        foreach (is_array($map) ? $map : [] as $name => $ri) {
+            $interval = $this->interval($ri);
+            if ($interval !== null) {
+                $out[(string) $name] = $interval;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * `visibility_trend`: valid points, oldest first.
+     *
+     * @param mixed $points
+     * @return list<array{started_at:string|null,rate:float,low:float,high:float}>
+     */
+    private function trend(mixed $points): array
+    {
+        $out = [];
+        foreach (is_array($points) && array_is_list($points) ? $points : [] as $p) {
+            $interval = $this->interval($p);
+            if ($interval !== null) {
+                $at = is_array($p) && is_string($p['started_at'] ?? null) ? $p['started_at'] : null;
+                $out[] = ['started_at' => $at] + $interval;
+            }
+        }
+        return $out;
     }
 }

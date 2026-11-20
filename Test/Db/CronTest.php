@@ -29,6 +29,22 @@ final class CronTest extends DbTestCase
         self::assertSame([[1, 'debounce', false]], $runner->calls);
     }
 
+    public function testAutoSyncOffSkipsDirtyViewsButReconcileStillRuns(): void
+    {
+        $settings = new FakeSettings();
+        $settings->put(1, ['autoSync' => false]);
+        $settings->put(2);
+        $clock = new FixedClock();
+        $state = new SyncStateRepository($this->db);
+        $state->markDirty([1, 2], $clock->now()->modify('-10 minutes'));
+        $runner = new FakeRunner();
+        (new SyncDirty($settings, $state, $runner, $clock, new NullLogger()))->execute();
+        self::assertSame([[2, 'debounce', false]], $runner->calls);
+        $runner = new FakeRunner();
+        (new Reconcile($settings, $state, $runner, $clock, new NullLogger()))->execute();
+        self::assertSame([[1, 'reconcile', false], [2, 'reconcile', false]], $runner->calls);
+    }
+
     public function testReconcileSyncsEveryEligibleEnabledView(): void
     {
         $settings = new FakeSettings();

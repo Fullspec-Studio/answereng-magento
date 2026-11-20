@@ -1,0 +1,99 @@
+<?php
+/**
+ * Per AI engine and share of voice, side by side (WooCommerce render_engine_breakdown,
+ * render_share_of_voice). Engine ids and competitor names come from the engine: escaped.
+ *
+ * @var \Fullspec\AnswerEng\Block\Adminhtml\Status\Panel $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+use Fullspec\AnswerEng\Model\Admin\PanelLabels;
+use Fullspec\AnswerEng\Model\Admin\SummaryView;
+
+$summary = $block->getPanel()['results']->summary;
+$hasResults = $summary->rate !== null && in_array($summary->state, [SummaryView::FRESH, SummaryView::STALE], true);
+if (!$hasResults) {
+    return;
+}
+$width = static fn (float $rate): string => number_format(max(0.0, min(1.0, $rate)) * 100, 1, '.', '');
+$ci = static fn (array $ri): string => (string) __(
+    '%1% (CI %2%–%3%)',
+    number_format($ri['rate'] * 100, 1),
+    number_format($ri['low'] * 100, 1),
+    number_format($ri['high'] * 100, 1)
+);
+$competitorGrays = ['#5B6B80', '#9AA8B9', '#C4CEDA'];
+$sov = $summary->shareOfVoice;
+if (isset($sov['__store__'])) {
+    $sov = ['__store__' => $sov['__store__']] + $sov;
+}
+?>
+<div class="ae-pair" id="answereng-breakdown">
+    <details class="ae-section" open>
+        <summary><?= $escaper->escapeHtml(__('Per-engine presence')) ?></summary>
+        <div class="ae-section-body">
+        <?php if ($summary->engineBreakdown === []): ?>
+            <p class="ae-footnote"><?= $escaper->escapeHtml(__('No per-engine data in the latest run.')) ?></p>
+        <?php else: ?>
+            <?php foreach ($summary->engineBreakdown as $engine => $ri): ?>
+                <?php
+                $meta = PanelLabels::engine((string) $engine);
+                $half = round(($ri['high'] - $ri['low']) / 2 * 100, 1);
+                $halfText = number_format($half, $half < 10 ? 1 : 0);
+                $swatch = 'background:' . $meta['color'];
+                $fill = 'width:' . $width($ri['rate']) . '%;' . $swatch;
+                ?>
+                <div class="ae-bar-row" title="<?= $escaper->escapeHtmlAttr($engine . ' — ' . $ci($ri)) ?>">
+                    <span class="ae-bar-swatch" style="<?= $escaper->escapeHtmlAttr($swatch) ?>"></span>
+                    <span class="ae-bar-name"><?= $escaper->escapeHtml($meta['label']) ?></span>
+                    <span class="ae-bar-track"><span class="ae-bar-fill"
+                        style="<?= $escaper->escapeHtmlAttr($fill) ?>"></span></span>
+                    <span class="ae-bar-pct"><?= $escaper->escapeHtml(PanelLabels::percent($ri['rate'])) ?>%</span>
+                    <span class="ae-bar-ci">±<?= $escaper->escapeHtml($halfText) ?></span>
+                </div>
+            <?php endforeach; ?>
+            <p class="ae-footnote"><?= $escaper->escapeHtml(__(
+                '± is the 95% interval half-width — narrower means more certain.'
+            )) ?></p>
+        <?php endif; ?>
+        </div>
+    </details>
+
+    <details class="ae-section" open>
+        <summary><?= $escaper->escapeHtml(__('Share of voice · when any brand is named')) ?></summary>
+        <div class="ae-section-body">
+        <?php if ($sov === []): ?>
+            <p class="ae-footnote"><?= $escaper->escapeHtml(__(
+                'No share-of-voice data — add competitors on the settings page.'
+            )) ?> <a href="<?= $escaper->escapeUrl($block->getCompetitorsUrl()) ?>">
+                <?= $escaper->escapeHtml(__('Edit competitor list')) ?></a></p>
+        <?php else: ?>
+            <?php $grayIndex = 0; ?>
+            <?php foreach ($sov as $who => $ri): ?>
+                <?php
+                $isStore = (string) $who === '__store__';
+                if ($isStore) {
+                    $color = '#294c3b';
+                    $label = (string) __('Your store (you)');
+                } else {
+                    $color = $competitorGrays[min($grayIndex++, count($competitorGrays) - 1)];
+                    $label = (string) $who;
+                }
+                $fill = 'width:' . $width($ri['rate']) . '%;background:' . $color;
+                ?>
+                <div class="ae-bar-row ae-bar-row--sov<?= $isStore ? ' ae-bar-row--you' : '' ?>"
+                     title="<?= $escaper->escapeHtmlAttr($ci($ri)) ?>">
+                    <span class="ae-bar-name"><?= $escaper->escapeHtml($label) ?></span>
+                    <span class="ae-bar-track ae-bar-track--tall"><span class="ae-bar-fill"
+                        style="<?= $escaper->escapeHtmlAttr($fill) ?>"></span></span>
+                    <span class="ae-bar-pct"><?= $escaper->escapeHtml(PanelLabels::percent($ri['rate'])) ?>%</span>
+                </div>
+            <?php endforeach; ?>
+            <p class="ae-footnote"><?= $escaper->escapeHtml(__(
+                'Your brand is always green; competitors are always gray. Shares don’t sum to 100 — answers can '
+                . 'name several brands.'
+            )) ?> <a href="<?= $escaper->escapeUrl($block->getCompetitorsUrl()) ?>">
+                <?= $escaper->escapeHtml(__('Edit competitor list')) ?></a></p>
+        <?php endif; ?>
+        </div>
+    </details>
+</div>

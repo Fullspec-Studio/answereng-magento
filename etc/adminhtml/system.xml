@@ -23,7 +23,7 @@
                 </field>
                 <field id="api_key" translate="label comment" type="obscure" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>API key</label>
-                    <comment>Get a key at https://answereng.io/signup. Stored encrypted.</comment>
+                    <comment><![CDATA[Paste the API key from your AnswerEng welcome email. Stored encrypted. No API key yet? Get one at <a href="https://answereng.io" target="_blank" rel="noopener">answereng.io</a>. The free tier needs no card, and your key arrives by email.]]></comment>
                     <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                 </field>
             </group>
@@ -42,6 +42,14 @@
                     </comment>
                 </field>
             </group>
+            <group id="sync" translate="label" sortOrder="35" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Catalog sync</label>
+                <field id="auto_sync" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Auto-sync</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Syncs your catalog when products or settings change. Turn off to sync only nightly or when you click Sync now.</comment>
+                </field>
+            </group>
             <group id="brand" translate="label comment" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Brand</label>
                 <comment>One name per line. Store views inherit these from the website or default scope unless overridden.</comment>
@@ -50,6 +58,13 @@
                 </field>
                 <field id="competitors" translate="label" type="textarea" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Competitors</label>
+                </field>
+            </group>
+            <group id="data" translate="label" sortOrder="50" showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>What data leaves this site</label>
+                <field id="disclosure" translate="label" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Data disclosure</label>
+                    <frontend_model>Fullspec\AnswerEng\Block\Adminhtml\System\Config\DataDisclosure</frontend_model>
                 </field>
             </group>
         </section>

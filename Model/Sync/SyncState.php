@@ -28,6 +28,8 @@ class SyncState
      * @param string|null $snapshotJson
      * @param string|null $snapshotFingerprint
      * @param \DateTimeImmutable|null $snapshotFetchedAt
+     * @param string|null $snapshotFixesJson
+     * @param string|null $snapshotAppliedJson
      */
     public function __construct(
         public readonly int $storeId,
@@ -47,7 +49,9 @@ class SyncState
         public readonly ?string $accountKeyHash,
         public readonly ?string $snapshotJson,
         public readonly ?string $snapshotFingerprint,
-        public readonly ?\DateTimeImmutable $snapshotFetchedAt
+        public readonly ?\DateTimeImmutable $snapshotFetchedAt,
+        public readonly ?string $snapshotFixesJson = null,
+        public readonly ?string $snapshotAppliedJson = null
     ) {
     }
 
@@ -77,7 +81,9 @@ class SyncState
             $str('account_key_hash'),
             $str('snapshot_json'),
             $str('snapshot_fingerprint'),
-            Ts::parse($str('snapshot_fetched_at'))
+            Ts::parse($str('snapshot_fetched_at')),
+            $str('snapshot_fixes_json'),
+            $str('snapshot_applied_json')
         );
     }
 }

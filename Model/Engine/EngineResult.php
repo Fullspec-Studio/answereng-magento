@@ -72,6 +72,16 @@ class EngineResult
     }
 
     /**
+     * No response, a 5xx or a 429: worth stopping further reads for.
+     *
+     * @return bool
+     */
+    public function isTransient(): bool
+    {
+        return $this->status === null || $this->status >= 500 || $this->status === 429;
+    }
+
+    /**
      * The engine's error `code` from the body, if any.
      *
      * @return string|null

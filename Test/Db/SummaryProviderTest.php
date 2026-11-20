@@ -6,6 +6,7 @@ namespace Fullspec\AnswerEng\Test\Db;
 use Fullspec\AnswerEng\Model\Admin\SummaryProvider;
 use Fullspec\AnswerEng\Model\Admin\SummaryView;
 use Fullspec\AnswerEng\Model\Engine\EngineClient;
+use Fullspec\AnswerEng\Model\Engine\ReadBudget;
 use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 use Fullspec\AnswerEng\Test\Support\ArrayCache;
 use Fullspec\AnswerEng\Test\Support\FakeSettings;
@@ -55,6 +56,43 @@ final class SummaryProviderTest extends DbTestCase
         self::assertSame(SummaryView::FRESH, $this->provider->forView(1)->state);
         self::assertCount(1, $this->transport->requests);
         self::assertNotNull($this->state->get(1)->snapshotJson);
+    }
+
+    public function testCarriesTrendEnginesAndShareOfVoiceFreshAndFromTheSnapshot(): void
+    {
+        $this->transport->enqueue(FakeTransport::json(200, $this->fixture('summary.json')));
+        $fresh = $this->provider->forView(1);
+        $this->cache->items = [];
+        $this->transport->enqueue(FakeTransport::json(504, null))->enqueue(FakeTransport::json(504, null));
+        $stale = $this->provider->forView(1);
+        foreach ([$fresh, $stale] as $view) {
+            self::assertCount(3, $view->trend);
+            self::assertSame(
+                ['started_at' => '2026-09-28T06:00:12+00:00', 'rate' => 0.42, 'low' => 0.37, 'high' => 0.47],
+                $view->trend[2]
+            );
+            self::assertSame(['perplexity:sonar', 'bedrock:us.anthropic.claude-haiku-4-5-20251001-v1:0',
+                'bedrock:meta.llama3-1-70b-instruct-v1:0', 'bedrock:mistral.mistral-large-2402-v1:0'],
+                array_keys($view->engineBreakdown));
+            self::assertSame(['rate' => 0.47, 'low' => 0.37, 'high' => 0.57], $view->engineBreakdown['perplexity:sonar']);
+            self::assertSame(['__store__', 'Merrell', 'Salomon'], array_keys($view->shareOfVoice));
+        }
+    }
+
+    public function testMalformedTrendAndBreakdownEntriesAreSkipped(): void
+    {
+        $summary = $this->fixture('summary.json');
+        $summary['visibility_trend'] = [['rate' => 'x'], 'junk', ['started_at' => 5, 'rate' => 0.2], ['rate' => 0.3, 'low' => 0.1]];
+        $summary['engine_breakdown'] = ['a' => 'junk', 'b' => ['rate' => 0.5, 'low' => 0.4, 'high' => 0.6], 7 => ['rate' => 0.1]];
+        $summary['share_of_voice'] = 'nope';
+        $this->transport->enqueue(FakeTransport::json(200, $summary));
+        $view = $this->provider->forView(1);
+        self::assertSame([
+            ['started_at' => null, 'rate' => 0.2, 'low' => 0.2, 'high' => 0.2],
+            ['started_at' => null, 'rate' => 0.3, 'low' => 0.1, 'high' => 0.3],
+        ], $view->trend);
+        self::assertSame(['b', '7'], array_map('strval', array_keys($view->engineBreakdown)));
+        self::assertSame([], $view->shareOfVoice);
     }
 
     public function testUnreachableEngineFallsBackToAMatchingSnapshotMarkedStale(): void
@@ -157,5 +195,18 @@ final class SummaryProviderTest extends DbTestCase
         $this->provider->forView(1);
         $this->provider->forget(1);
         self::assertSame([], $this->cache->items);
+    }
+
+    public function testATransientFailureStopsTheBudget(): void
+    {
+        $budget = new ReadBudget(new FixedClock());
+        $this->transport->enqueue(FakeTransport::json(200, $this->fixture('summary.json')));
+        self::assertSame(SummaryView::FRESH, $this->provider->forView(1, $budget)->state);
+        self::assertFalse($budget->stopped());
+        $this->cache->items = [];
+        $this->transport->enqueue(FakeTransport::json(504, null))->enqueue(FakeTransport::json(504, null));
+        self::assertSame(SummaryView::STALE, $this->provider->forView(1, $budget)->state);
+        self::assertTrue($budget->stopped());
+        self::assertSame(15, $this->transport->requests[1]['timeout']);
     }
 }

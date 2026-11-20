@@ -1,0 +1,31 @@
+<?php
+/**
+ * @var \Fullspec\AnswerEng\Block\Adminhtml\System\Config\DataDisclosure $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+?>
+<div class="answereng-panel answereng-data-disclosure">
+    <div class="ae-disclosure-grid">
+        <div class="ae-disclosure-col">
+            <h4 class="ae-disclosure-label"><?= $escaper->escapeHtml(__('Sent to AnswerEng')) ?></h4>
+            <ul>
+                <?php foreach ($block->getSentItems() as $item): ?>
+                    <li><?= $escaper->escapeHtml($item) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+        <div class="ae-disclosure-col">
+            <h4 class="ae-disclosure-label"><?= $escaper->escapeHtml(__('Never sent, anywhere')) ?></h4>
+            <ul>
+                <?php foreach ($block->getNeverSentItems() as $item): ?>
+                    <li><?= $escaper->escapeHtml($item) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    </div>
+    <p class="ae-meta">
+        <?= $escaper->escapeHtml(
+            __('Product data goes to %1, the engine URL configured above.', $block->getEngineUrl())
+        ) ?>
+    </p>
+</div>

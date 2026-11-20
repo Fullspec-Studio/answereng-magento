@@ -1,0 +1,180 @@
+<?php
+/**
+ * Sync (status, last sync, products, Sync now, Test connection), Recent activity and the
+ * Danger zone. Sync opens by default when the view isn't healthy.
+ *
+ * @var \Fullspec\AnswerEng\Block\Adminhtml\Status\Panel $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+use Fullspec\AnswerEng\Model\Admin\PanelLabels;
+
+$storeId = $block->getStoreId();
+$panel = $block->getPanel();
+$pill = static fn (array $l): string => '<span class="ae-pill ae-pill--' . $escaper->escapeHtmlAttr($l['tone']) . '">'
+    . $escaper->escapeHtml($l['label']) . '</span>';
+$logShown = 5;
+?>
+<details class="ae-section ae-sync" id="answereng-sync"<?= $panel['healthy'] ? '' : ' open' ?>>
+    <summary><?= $escaper->escapeHtml(__('Sync')) ?></summary>
+    <div class="ae-section-body">
+    <dl class="ae-facts">
+        <div><dt><?= $escaper->escapeHtml(__('Status')) ?></dt>
+            <dd><?= /* @noEscape */ $pill(PanelLabels::state(
+                $panel['state'],
+                $panel['reason'],
+                $panel['lastSyncAt'],
+                $panel['results']->summary->state
+            )) ?></dd></div>
+        <div><dt><?= $escaper->escapeHtml(__('Last sync')) ?></dt>
+            <dd><?= $escaper->escapeHtml(PanelLabels::when($panel['lastSyncAt'])) ?>
+                <?php if ($panel['lastSyncAt'] !== null): ?><span class="ae-unit">UTC</span><?php endif; ?></dd></div>
+        <div><dt><?= $escaper->escapeHtml(__('Products sent')) ?></dt>
+            <dd><?= $escaper->escapeHtml((string) ($panel['productCount'] ?? '–')) ?></dd></div>
+    </dl>
+    <?php if (!$panel['autoSync']): ?>
+        <p class="ae-meta"><?= $escaper->escapeHtml(__(
+            'Auto-sync is off. Your catalog syncs nightly, or when you click Sync now.'
+        )) ?></p>
+    <?php endif; ?>
+    <div class="ae-actions">
+        <?php if ($panel['canSync']): ?>
+            <button type="button" class="action-secondary"
+                    data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['syncNow']) ?>"
+                    data-fields='<?= $escaper->escapeHtmlAttr(json_encode(['store' => $storeId])) ?>'>
+                <?= $escaper->escapeHtml(__('Sync now')) ?></button>
+        <?php endif; ?>
+        <button type="button" class="action-default"
+                data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['testConnection']) ?>"
+                data-fields='<?= $escaper->escapeHtmlAttr(json_encode(['store' => $storeId])) ?>'>
+            <?= $escaper->escapeHtml(__('Test connection')) ?></button>
+        <?php if ($panel['canSync'] && $panel['canClear']): ?>
+            <button type="button" class="ae-quiet-action"
+                    data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['clear']) ?>"
+                    data-confirm-text="<?= $escaper->escapeHtmlAttr(__(
+                        'Remove all products from AnswerEng store "%1" and pause weekly analysis? History and '
+                        . 'results are kept, and the store still counts toward your plan. The next sync restores '
+                        . 'the catalog.',
+                        $panel['storeKey']
+                    )) ?>"
+                    data-fields='<?= $escaper->escapeHtmlAttr(json_encode(['store' => $storeId])) ?>'>
+                <?= $escaper->escapeHtml(__('Clear AnswerEng catalog')) ?></button>
+        <?php endif; ?>
+    </div>
+    </div>
+</details>
+
+<?php if ($panel['log'] !== []): ?>
+    <details class="ae-section ae-activity" id="answereng-activity" data-answereng-log>
+        <summary><?= $escaper->escapeHtml(__('Recent activity')) ?></summary>
+        <div class="ae-section-body">
+        <?php if (count($panel['log']) > $logShown): ?>
+            <div class="ae-section-head">
+                <?php $showAll = __('Show all %1', count($panel['log'])); ?>
+                <button type="button" class="ae-quiet-action" data-answereng-toggle-log aria-expanded="false"
+                        data-label-more="<?= $escaper->escapeHtmlAttr($showAll) ?>"
+                        data-label-less="<?= $escaper->escapeHtmlAttr(__('Show fewer')) ?>">
+                    <?= $escaper->escapeHtml($showAll) ?></button>
+            </div>
+        <?php endif; ?>
+        <table class="data-grid ae-grid">
+            <thead><tr>
+                <th><?= $escaper->escapeHtml(__('When (UTC)')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Outcome')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Started by')) ?></th>
+                <th><?= $escaper->escapeHtml(__('Detail')) ?></th>
+            </tr></thead>
+            <tbody>
+            <?php foreach ($panel['log'] as $i => $entry): ?>
+                <tr<?= $i >= $logShown ? ' class="ae-log-more" hidden' : '' ?>>
+                    <?php $at = PanelLabels::when((string) $entry['created_at']); ?>
+                    <td class="ae-nowrap"><?= $escaper->escapeHtml($at) ?></td>
+                    <td><?= /* @noEscape */ $pill(PanelLabels::outcome((string) $entry['outcome'])) ?></td>
+                    <?php $by = PanelLabels::source(
+                        (string) $entry['source'],
+                        $entry['admin_user'] !== null ? (string) $entry['admin_user'] : null
+                    ); ?>
+                    <td><?= $escaper->escapeHtml($by) ?></td>
+                    <?php $detail = PanelLabels::detail($entry['detail'] ?? null); ?>
+                    <td class="ae-detail"><?= $escaper->escapeHtml($detail) ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        </div>
+    </details>
+<?php endif; ?>
+
+<?php if ($panel['canDelete'] && $panel['identities'] !== []): ?>
+    <details class="answereng-danger-zone ae-danger">
+        <summary><?= $escaper->escapeHtml(__('Danger zone')) ?></summary>
+        <?php foreach ($panel['identities'] as $identity): ?>
+            <div class="answereng-identity ae-identity" data-answereng-identity
+                 data-store-key="<?= $escaper->escapeHtmlAttr($identity['storeKey']) ?>">
+                <?php
+                $meta = [
+                    $identity['role'] === 'current' ? __('Current store') : __('Previous store'),
+                    match ($identity['status']) {
+                        'active' => __('Active'),
+                        'pending_deletion' => __('Scheduled for deletion'),
+                        'deleted' => __('Deleted'),
+                        default => (string) $identity['status'],
+                    },
+                ];
+                if ($identity['purgeAfter']) {
+                    $meta[] = __('deletes %1 UTC', PanelLabels::when($identity['purgeAfter']));
+                }
+                if ($identity['usedBy'] !== []) {
+                    $meta[] = __('also used by %1', implode(', ', $identity['usedBy']));
+                }
+                ?>
+                <p class="ae-identity-head">
+                    <code><?= $escaper->escapeHtml($identity['storeKey']) ?></code>
+                    <span class="ae-identity-meta"><?= $escaper->escapeHtml(implode(' · ', $meta)) ?></span>
+                </p>
+                <?php $fields = ['store' => $storeId, 'identity_id' => $identity['id']]; ?>
+                <?php if ($identity['status'] === 'active'): ?>
+                    <p class="ae-danger-copy"><?= $escaper->escapeHtml(__(
+                        'Deleting %1 schedules permanent removal of everything AnswerEng holds for this store: '
+                        . 'its catalog, questions, every analysis run and raw AI answer, diagnoses and drafted '
+                        . 'fixes, and its dashboard project with its reviewers and invitations. You have 7 days '
+                        . 'to cancel. After that it cannot be recovered, and the store\'s plan slot is freed. '
+                        . 'Results already shown in the dashboard will disappear.',
+                        $identity['storeKey']
+                    )) ?></p>
+                    <div class="ae-confirm">
+                        <label class="ae-field">
+                            <span><?= $escaper->escapeHtml(__('Type the store key to confirm')) ?></span>
+                            <input type="text" class="admin__control-text" data-confirm-key autocomplete="off"
+                                   spellcheck="false"></label>
+                        <?php $ack = __('I understand this cannot be undone after 7 days'); ?>
+                        <label class="ae-check"><input type="checkbox" data-confirm-ack>
+                            <span><?= $escaper->escapeHtml($ack) ?></span></label>
+                        <button type="button" class="action-secondary ae-delete" disabled data-confirm-delete
+                                data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['delete']) ?>"
+                                data-fields='<?= $escaper->escapeHtmlAttr(json_encode($fields)) ?>'>
+                            <?= $escaper->escapeHtml(__('Delete store from AnswerEng')) ?></button>
+                    </div>
+                <?php elseif ($identity['status'] === 'pending_deletion'): ?>
+                    <div class="ae-actions">
+                        <button type="button" class="action-secondary"
+                                data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['cancel']) ?>"
+                                data-fields='<?= $escaper->escapeHtmlAttr(json_encode($fields)) ?>'>
+                            <?= $escaper->escapeHtml(__('Cancel deletion')) ?></button>
+                    </div>
+                <?php endif; ?>
+                <?php if ($identity['role'] === 'previous'): ?>
+                    <div class="ae-actions">
+                        <button type="button" class="action-default"
+                                data-answereng-action="<?= $escaper->escapeHtmlAttr($panel['urls']['forget']) ?>"
+                                data-confirm-text="<?= $escaper->escapeHtmlAttr(__(
+                                    'Forget this store here? Nothing changes in AnswerEng: the store and its plan '
+                                    . 'slot stay.'
+                                )) ?>"
+                                data-fields='<?= $escaper->escapeHtmlAttr(json_encode($fields)) ?>'>
+                            <?= $escaper->escapeHtml(__('Forget')) ?></button>
+                    </div>
+                <?php endif; ?>
+            </div>
+        <?php endforeach; ?>
+    </details>
+<?php endif; ?>

@@ -16,8 +16,13 @@ Implements the connector API the module uses, from the frozen contract in
 
 Modes: normal, cold-504, slow (35 s), throttle-429 (Retry-After 60),
 invalid-key, store-limit, product-limit, ownership, run-in-progress,
-missing-code, purging, preview-running and preview-complete (the summary of a
+missing-code, purging, lost-response (a POST/DELETE `.../applied` is applied and saved, then the connection is dropped with no response), preview-running and preview-complete (the summary of a
 store with products carries the instant-first-read `preview` block and no `latest_run`). Received catalogs land in `received/` (git-ignored).
 Purges are not simulated.
+
+Fixes: `GET /stores/{key}/fixes?status=suggested|applied` (default `suggested`; the other engine statuses return `[]`,
+anything else is 422) serves `Test/Fixtures/read_api/fixes.json`, split by the store's applied set.
+`POST|DELETE /stores/{key}/fixes/{fix_id}/applied` marks or unmarks a fix (200 with the fix; re-marking keeps the original
+`applied_at`; an unknown fix is 404 `unknown_store`). Applied state is kept per store in the state file.
 
 Tests: `cd dev/mock-engine && python3 -m unittest test_mock_engine.py -v`

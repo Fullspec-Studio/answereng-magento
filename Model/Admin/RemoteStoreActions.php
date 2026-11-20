@@ -7,6 +7,7 @@ use Fullspec\AnswerEng\Model\Config\ConfigDisabler;
 use Fullspec\AnswerEng\Model\Config\Settings;
 use Fullspec\AnswerEng\Model\Config\SettingsProvider;
 use Fullspec\AnswerEng\Model\Engine\EngineClient;
+use Fullspec\AnswerEng\Model\Engine\ReadBudget;
 use Fullspec\AnswerEng\Model\Engine\EngineResult;
 use Fullspec\AnswerEng\Model\Registry\RemoteStore;
 use Fullspec\AnswerEng\Model\Registry\RemoteStoreRegistry;
@@ -292,10 +293,11 @@ class RemoteStoreActions
      * Reconcile remote statuses for identities reachable through the CURRENT connection.
      *
      * @param int $storeId
+     * @param ReadBudget|null $budget the status page's shared read budget
      * @return list<string>|null the workspace's store keys read from GET /stores, or null when no call was made
      *                           (no key, no identities) or it failed
      */
-    public function refreshStatuses(int $storeId): ?array
+    public function refreshStatuses(int $storeId, ?ReadBudget $budget = null): ?array
     {
         $s = $this->settings->forStore($storeId);
         $identities = array_filter(
@@ -305,7 +307,7 @@ class RemoteStoreActions
         if ($s->apiKey === '' || $identities === []) {
             return null;
         }
-        $r = $this->engine->listStores($s->connection());
+        $r = $this->engine->listStores($s->connection(), $budget);
         if (!$r->isSuccess() || $r->account === null) {
             return null;
         }
@@ -340,15 +342,16 @@ class RemoteStoreActions
      * The workspace's store keys (GET /stores), or null without a key or on failure.
      *
      * @param int $storeId
+     * @param ReadBudget|null $budget the status page's shared read budget
      * @return list<string>|null
      */
-    public function existingStoreKeys(int $storeId): ?array
+    public function existingStoreKeys(int $storeId, ?ReadBudget $budget = null): ?array
     {
         $s = $this->settings->forStore($storeId);
         if ($s->apiKey === '') {
             return null;
         }
-        $r = $this->engine->listStores($s->connection());
+        $r = $this->engine->listStores($s->connection(), $budget);
         if (!$r->isSuccess()) {
             return null;
         }

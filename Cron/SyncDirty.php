@@ -9,7 +9,10 @@ use Fullspec\AnswerEng\Model\Sync\SyncRunner;
 use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 use Psr\Log\LoggerInterface;
 
-/** Every 5 minutes: views dirty and quiet for 5 minutes, plus due retries (spec §6). */
+/**
+ * Every 5 minutes: views dirty and quiet for 5 minutes, plus due retries (spec §6).
+ * Views with auto-sync off only get their due retries.
+ */
 class SyncDirty
 {
     /**
@@ -37,7 +40,12 @@ class SyncDirty
      */
     public function execute(): void
     {
-        foreach ($this->state->selectForDebounce($this->settings->enabledStoreIds(), $this->clock->now()) as $storeId) {
+        $enabled = $this->settings->enabledStoreIds();
+        $manual = array_values(array_filter(
+            $enabled,
+            fn (int $id) => !$this->settings->forStore($id)->autoSync
+        ));
+        foreach ($this->state->selectForDebounce($enabled, $this->clock->now(), $manual) as $storeId) {
             try {
                 $this->runner->sync($storeId, 'debounce');
             } catch (\Throwable $e) {

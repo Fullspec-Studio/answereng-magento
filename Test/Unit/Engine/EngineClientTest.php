@@ -5,7 +5,10 @@ namespace Fullspec\AnswerEng\Test\Unit\Engine;
 
 use Fullspec\AnswerEng\Model\Engine\Connection;
 use Fullspec\AnswerEng\Model\Engine\EngineClient;
+use Fullspec\AnswerEng\Model\Engine\ReadBudget;
 use Fullspec\AnswerEng\Model\Engine\TransportException;
+use Fullspec\AnswerEng\Model\Support\Clock;
+use Fullspec\AnswerEng\Test\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -93,5 +96,135 @@ final class EngineClientTest extends TestCase
         $r = $client->postCatalog($this->conn, '{}');
         self::assertSame('"[api key]" is not valid header value.', $r->transportError);
         self::assertStringNotContainsString('ae_secret', $logger->all);
+    }
+
+    public function testHangingEngineStopsWithinTheBudget(): void
+    {
+        $clock = new FixedClock();
+        $budget = new ReadBudget($clock);
+        $this->transport->onSend = function (string $method, string $url, int $timeout) use ($clock): void {
+            $clock->advance($timeout);
+        };
+        $this->transport->enqueue(new TransportException('timed out'))
+            ->enqueue(new TransportException('timed out'));
+        $summary = $this->client->summary($this->conn, 'shop.example.com', $budget);
+        $fixes = $this->client->fixes($this->conn, 'shop.example.com', 'suggested', $budget);
+        $again = $this->client->fixes($this->conn, 'shop.example.com', 'applied', $budget);
+        self::assertTrue($summary->isTransient());
+        self::assertTrue($fixes->isTransient());
+        self::assertTrue($again->isTransient());
+        self::assertSame([15, 5], array_column($this->transport->requests, 'timeout'));
+        self::assertLessThanOrEqual(ReadBudget::TOTAL, array_sum(array_column($this->transport->requests, 'timeout')));
+    }
+
+    public function testRetryOnlyWhenFiveSecondsRemain(): void
+    {
+        $clock = new FixedClock();
+        $budget = new ReadBudget($clock);
+        $clock->advance(6);
+        $this->transport->onSend = function (string $method, string $url, int $timeout) use ($clock): void {
+            $clock->advance(10);
+        };
+        $this->transport->enqueue(FakeTransport::json(503, null));
+        $r = $this->client->summary($this->conn, 's', $budget);
+        self::assertSame(503, $r->status);
+        self::assertCount(1, $this->transport->requests);
+        self::assertSame(14, $this->transport->requests[0]['timeout']);
+        self::assertTrue($budget->stopped());
+
+        $clock2 = new FixedClock();
+        $budget2 = new ReadBudget($clock2);
+        $transport2 = new FakeTransport();
+        $client2 = new EngineClient($transport2, new NullLogger());
+        $transport2->onSend = function (string $method, string $url, int $timeout) use ($clock2): void {
+            $clock2->advance(6);
+        };
+        $transport2->enqueue(FakeTransport::json(503, null))->enqueue(FakeTransport::json(200, ['ok' => true]));
+        self::assertTrue($client2->summary($this->conn, 's', $budget2)->isSuccess());
+        self::assertSame([15, 14], array_column($transport2->requests, 'timeout'));
+        self::assertFalse($budget2->stopped());
+    }
+
+    public function testNonTransientReadDoesNotStopTheBudget(): void
+    {
+        $budget = new ReadBudget(new FixedClock());
+        $this->transport->enqueue(FakeTransport::json(404, ['code' => 'store_not_found']));
+        $r = $this->client->summary($this->conn, 's', $budget);
+        self::assertFalse($r->isTransient());
+        self::assertFalse($budget->stopped());
+        self::assertCount(1, $this->transport->requests);
+    }
+
+    public function testRateLimitIsTransient(): void
+    {
+        $budget = new ReadBudget(new FixedClock());
+        $this->transport->enqueue(FakeTransport::json(429, null))->enqueue(FakeTransport::json(429, null));
+        self::assertTrue($this->client->fixes($this->conn, 's', 'suggested', $budget)->isTransient());
+        self::assertTrue($budget->stopped());
+    }
+
+    public function testBudgetedRateLimitIsNotRetried(): void
+    {
+        $budget = new ReadBudget(new FixedClock());
+        $this->transport->enqueue(FakeTransport::json(429, null))->enqueue(FakeTransport::json(200, ['fixes' => []]));
+        $r = $this->client->fixes($this->conn, 's', 'suggested', $budget);
+        self::assertSame(429, $r->status);
+        self::assertTrue($budget->stopped());
+        self::assertCount(1, $this->transport->requests);
+    }
+
+    public function testFixesPathAndStatus(): void
+    {
+        $this->transport->enqueue(FakeTransport::json(200, ['fixes' => []]));
+        $this->client->fixes($this->conn, 'shop.example.com', 'applied');
+        self::assertSame(
+            'https://engine.test/stores/shop.example.com/fixes?status=applied',
+            $this->transport->requests[0]['url']
+        );
+    }
+
+    public function testMarkAndUnmarkAppliedAreSingleWrites(): void
+    {
+        $this->transport->enqueue(FakeTransport::json(503, null))->enqueue(FakeTransport::json(503, null));
+        $a = $this->client->markApplied($this->conn, 'shop.example.com', 118);
+        $b = $this->client->unmarkApplied($this->conn, 'shop.example.com', 118);
+        self::assertSame(503, $a->status);
+        self::assertSame(503, $b->status);
+        self::assertCount(2, $this->transport->requests);
+        self::assertSame(['POST', 'https://engine.test/stores/shop.example.com/fixes/118/applied', 30],
+            [$this->transport->requests[0]['method'], $this->transport->requests[0]['url'],
+                $this->transport->requests[0]['timeout']]);
+        self::assertSame(['DELETE', 'https://engine.test/stores/shop.example.com/fixes/118/applied'],
+            [$this->transport->requests[1]['method'], $this->transport->requests[1]['url']]);
+    }
+
+    public function testNothingIsSentWhenTheBudgetIsSpentAtSendTime(): void
+    {
+        $clock = new FixedClock();
+        $budget = new ReadBudget($clock);
+        $clock->advance(20);
+        $r = $this->client->summary($this->conn, 's', $budget);
+        self::assertTrue($r->isTransient());
+        self::assertSame([], $this->transport->requests);
+        self::assertTrue($budget->stopped());
+    }
+
+    public function testNoZeroTimeoutReachesTheTransportWhenTheSecondTicksOver(): void
+    {
+        // stopped() sees 1 s left, attemptTimeout() then sees 0: the attempt must not be sent.
+        $clock = new class implements Clock {
+            private int $reads = 0;
+            public function now(): \DateTimeImmutable
+            {
+                $this->reads++;
+                // construction, stopped(): the start; attemptTimeout(): 20 s later
+                return (new \DateTimeImmutable('2026-10-07 12:00:00', new \DateTimeZone('UTC')))
+                    ->modify($this->reads > 2 ? '+20 seconds' : '+0 seconds');
+            }
+        };
+        $budget = new ReadBudget($clock);
+        $r = $this->client->summary($this->conn, 's', $budget);
+        self::assertTrue($r->isTransient());
+        self::assertSame([], $this->transport->requests);
     }
 }

@@ -10,7 +10,9 @@
       "Answers for this question favor products that state their fit."
     ],
     "prompt_text": "waterproof hiking boots for wide feet",
-    "engine": "perplexity"
+    "engine": "perplexity",
+    "prompt_id": 41,
+    "applied_at": null
   },
   {
     "fix_id": 117,
@@ -22,6 +24,8 @@
       "The stove's weight isn't in a structured attribute."
     ],
     "prompt_text": "lightest camp stove for backpacking",
-    "engine": "bedrock"
+    "engine": "bedrock",
+    "prompt_id": 42,
+    "applied_at": null
   }
 ]

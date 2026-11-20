@@ -67,4 +67,36 @@ final class PanelLabelsTest extends TestCase
         self::assertSame('–', PanelLabels::when(null));
         self::assertSame('not a date', PanelLabels::when('not a date'));
     }
+
+    public function testEngineLabels(): void
+    {
+        self::assertSame(['label' => 'Perplexity Sonar', 'color' => '#1D4ED8'], PanelLabels::engine('perplexity:sonar'));
+        self::assertSame('Perplexity Sonar', PanelLabels::engine('perplexity')['label']);
+        self::assertSame(
+            ['label' => 'Claude', 'color' => '#C15F3C'],
+            PanelLabels::engine('bedrock:us.anthropic.claude-haiku-4-5-20251001-v1:0')
+        );
+        self::assertSame('Llama', PanelLabels::engine('bedrock:meta.llama3-1-70b-instruct-v1:0')['label']);
+        self::assertSame('Mistral', PanelLabels::engine('bedrock:mistral.mistral-large-2402-v1:0')['label']);
+        self::assertSame('Amazon Bedrock', PanelLabels::engine('bedrock')['label']);
+        self::assertSame(['label' => 'gemini:2.5', 'color' => '#B0367A'], PanelLabels::engine('gemini:2.5'));
+    }
+
+    public function testDelta(): void
+    {
+        self::assertNull(PanelLabels::delta([]));
+        self::assertNull(PanelLabels::delta([['rate' => 0.3]]));
+        self::assertEqualsWithDelta(4.0, PanelLabels::delta([['rate' => 0.34], ['rate' => 0.38], ['rate' => 0.42]]), 1e-9);
+        self::assertEqualsWithDelta(-2.5, PanelLabels::delta([['rate' => 0.425], ['rate' => 0.4]]), 1e-9);
+        self::assertSame('— no change vs last run', PanelLabels::deltaText(0.04));
+        self::assertSame('▲ +4.0 vs last run', PanelLabels::deltaText(4.0));
+        self::assertSame('▼ −2.5 vs last run', PanelLabels::deltaText(-2.5));
+    }
+
+    public function testPercentHasOneDecimalUnderTen(): void
+    {
+        self::assertSame('42', PanelLabels::percent(0.42));
+        self::assertSame('7.5', PanelLabels::percent(0.075));
+        self::assertSame('0.0', PanelLabels::percent(0.0));
+    }
 }

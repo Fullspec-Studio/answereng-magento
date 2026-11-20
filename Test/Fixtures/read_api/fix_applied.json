@@ -1,0 +1,15 @@
+{
+  "fix_id": 118,
+  "kind": "copy",
+  "content": "Waterproof, wide-fit leather hiking boot with a Vibram sole, sized for wide feet.",
+  "status": "suggested",
+  "priority": "high",
+  "reasons": [
+    "The description doesn't mention wide fit.",
+    "Answers for this question favor products that state their fit."
+  ],
+  "prompt_text": "waterproof hiking boots for wide feet",
+  "engine": "perplexity",
+  "prompt_id": 41,
+  "applied_at": "2026-10-30T14:22:05+00:00"
+}
