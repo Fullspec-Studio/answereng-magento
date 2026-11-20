@@ -39,7 +39,7 @@ final class AdminXmlTest extends TestCase
         $status = $acl->xpath('//resource[@id="Magento_Catalog::catalog"]/resource[@id="Fullspec_AnswerEng::status"]');
         self::assertCount(1, $status);
         $children = array_map(static fn ($r) => (string) $r['id'], $status[0]->xpath('resource'));
-        self::assertSame(['Fullspec_AnswerEng::sync', 'Fullspec_AnswerEng::delete_store'], $children);
+        self::assertSame(['Fullspec_AnswerEng::sync', 'Fullspec_AnswerEng::delete_store', 'Fullspec_AnswerEng::fixes'], $children);
         self::assertCount(1, $acl->xpath('//resource[@id="Magento_Config::config"]/resource[@id="Fullspec_AnswerEng::config"]'));
     }
 
@@ -57,6 +57,7 @@ final class AdminXmlTest extends TestCase
             'delete' => ['Action/Delete.php', 'Fullspec_AnswerEng::delete_store'],
             'cancel' => ['Action/Cancel.php', 'Fullspec_AnswerEng::delete_store'],
             'forget' => ['Action/Forget.php', 'Fullspec_AnswerEng::delete_store'],
+            'mark fix applied' => ['Action/FixApplied.php', 'Fullspec_AnswerEng::fixes'],
         ];
     }
 
