@@ -116,6 +116,38 @@ class MockEngineTest(unittest.TestCase):
         self.assertEqual((404, "unknown_store"), (status, body["code"]))
 
 
+    def fixes(self, status):
+        status_code, body, _ = self.call("GET", f"/stores/shop.example.com/fixes?status={status}")
+        self.assertEqual(200, status_code)
+        return [f["fix_id"] for f in body]
+
+    def test_fixes_suggested_then_applied_then_undo(self):
+        self.push()
+        self.assertEqual([118, 117], self.fixes("suggested"))
+        status, body, _ = self.call("POST", "/stores/shop.example.com/fixes/118/applied")
+        self.assertEqual(200, status)
+        self.assertIsNotNone(body["applied_at"])
+        self.assertEqual([117], self.fixes("suggested"))
+        self.assertEqual([118], self.fixes("applied"))
+        self.assertEqual([], self.fixes("rejected"))
+        self.assertEqual(422, self.call("GET", "/stores/shop.example.com/fixes?status=bogus")[0])
+        status, body, _ = self.call("DELETE", "/stores/shop.example.com/fixes/118/applied")
+        self.assertEqual((200, None), (status, body["applied_at"]))
+        self.assertEqual([118, 117], self.fixes("suggested"))
+
+    def test_unknown_fix_is_404_unknown_store(self):
+        self.push()
+        status, body, _ = self.call("POST", "/stores/shop.example.com/fixes/999/applied")
+        self.assertEqual((404, "unknown_store"), (status, body["code"]))
+
+    def test_lost_response_still_applies(self):
+        self.push()
+        self.mode("lost-response")
+        with self.assertRaises((http.client.RemoteDisconnected, ConnectionError)):
+            self.call("POST", "/stores/shop.example.com/fixes/118/applied")
+        self.mode("normal")
+        self.assertEqual([118], self.fixes("applied"))
+
 
 class PersistenceTest(unittest.TestCase):
     """With a state file, stores survive a restart (the default when run from the command line)."""
@@ -147,6 +179,18 @@ class PersistenceTest(unittest.TestCase):
         status, stores = self.call(second, "GET", "/stores")
         self.assertEqual((200, [("localhost", "pending_deletion")]),
                          (status, [(s["store_key"], s["status"]) for s in stores]))
+
+    def test_applied_survives_restart(self):
+        state_file = pathlib.Path(tempfile.mkdtemp()) / "state.json"
+        first = self.serve(state_file)
+        self.call(first, "POST", "/catalog", {
+            "store_key": "localhost", "brand_names": ["Luma"], "competitors": [],
+            "products": [{"sku": "S1", "title": "Tee", "description": "", "price": 1.0, "category": "",
+                          "attributes": {}}]})
+        self.call(first, "POST", "/stores/localhost/fixes/118/applied")
+        second = self.serve(state_file)
+        status, fixes = self.call(second, "GET", "/stores/localhost/fixes?status=applied")
+        self.assertEqual((200, [118]), (status, [f["fix_id"] for f in fixes]))
 
     def test_without_a_state_file_nothing_is_written(self):
         port = self.serve(None)
