@@ -93,6 +93,16 @@ class StoreKey extends Value
      */
     public function afterSave()
     {
+        $key = (string) $this->getValue();
+        $settings = $this->settings->forStore((int) $this->getScopeId());
+        // Only for the real engine: a local key is normal when testing against a local or staging engine.
+        if ($settings->enabled && $settings->usesProductionEngine() && StoreKeyPolicy::looksLocal($key)) {
+            $this->messages->addWarningMessage(__(
+                'Store key "%1" looks like a local address, which AnswerEng can\'t reach. '
+                . 'Set it to your shop\'s public domain.',
+                $key
+            ));
+        }
         $synced = $this->state->get((int) $this->getScopeId())->syncedStoreKey;
         if ($this->isValueChanged() && $synced !== null && $synced !== (string) $this->getValue()) {
             $this->messages->addWarningMessage(__(

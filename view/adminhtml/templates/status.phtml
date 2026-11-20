@@ -200,9 +200,21 @@ $logShown = 5;
             }; ?>
             <p class="ae-meta"><?= $escaper->escapeHtml($stateText) ?></p>
         <?php endif; ?>
-        <a class="ae-results-link" href="<?= $escaper->escapeUrl($summary->dashboardUrl) ?>" target="_blank"
-           rel="noopener"><?= $escaper->escapeHtml(__('Open full results in AnswerEng')) ?>
-            <span aria-hidden="true">→</span></a>
+        <?php if ($summary->dashboardUrl !== null): ?>
+            <p class="ae-results">
+                <a class="ae-results-link" href="<?= $escaper->escapeUrl($summary->dashboardUrl) ?>"
+                   target="_blank" rel="noopener"><?= $escaper->escapeHtml(__('Open full results in AnswerEng')) ?>
+                    <span aria-hidden="true">→</span></a>
+                <?php $signInHint = __('Sign in there with this store view\'s API key.'); ?>
+                <span class="ae-results-hint"><?= $escaper->escapeHtml($signInHint) ?></span>
+            </p>
+        <?php elseif ($panel['testEngine'] !== null): ?>
+            <p class="ae-meta ae-results-hint"><?= $escaper->escapeHtml(__(
+                'Connected to a test engine at %1. Full results on app.answereng.io are only for stores '
+                . 'that sync to AnswerEng.',
+                $panel['testEngine']
+            )) ?></p>
+        <?php endif; ?>
     </section>
 
     <div class="ae-actions">

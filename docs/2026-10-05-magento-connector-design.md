@@ -100,6 +100,14 @@ views. Config save fails validation with "store key must be unique" when two
 enabled views resolve to the same key; the syncer also refuses a view whose
 key collides (defense in depth). Never auto-suffix.
 
+**Local-looking store keys:** saving a store key that looks local
+(`localhost`, an IP address, or a `.test`, `.local`, `.localhost`,
+`.internal`, `.example`, `.invalid`, `.lan` or `home.arpa` name) shows a
+warning — never an error — when the view is enabled and uses the production
+engine: "Store key "{key}" looks like a local address, which AnswerEng can't
+reach. Set it to your shop's public domain." Against a test engine a local
+key is normal, so no warning.
+
 **Changing a synced store key.** Each store key the engine has seen occupies
 one of the workspace's plan store slots until it is deleted (§11.3: 7-day
 undo window, then purge); catalog clear (§11.2) keeps the store and its
@@ -307,8 +315,12 @@ output via `$escaper`.
   and **Test connection** (admin AJAX controllers; form key + ACL),
   **headline visibility** rate with interval and latest run date from
   `GET /stores/{key}/summary` (GETs retry once on 5xx/transport), and **"Open full results in AnswerEng →"** to
-  `https://app.answereng.io/stores/{key}`. `latest_run: null` renders a
-  "no completed run yet" state.
+  `https://app.answereng.io/stores/{key}`, with the hint "Sign in there with
+  this store view's API key." The link appears only when the engine URL is
+  the production `https://api.answereng.io`; with any other engine the panel
+  says "Connected to a test engine at {host:port}. Full results on
+  app.answereng.io are only for stores that sync to AnswerEng." instead.
+  `latest_run: null` renders a "no completed run yet" state.
 - **Clear AnswerEng catalog** (the view's `current` remote store, enabled or
   not; ACL `Fullspec_AnswerEng::sync`; confirm dialog naming the store key):
   calls `DELETE /stores/{store_key}/catalog` only after the connection

@@ -38,8 +38,15 @@ final class SummaryProviderTest extends DbTestCase
         return json_decode((string) file_get_contents(dirname(__DIR__) . "/Fixtures/read_api/$name"), true);
     }
 
+    public function testATestEngineHasNoDashboardLink(): void
+    {
+        $this->transport->enqueue(FakeTransport::json(200, $this->fixture('summary.json')));
+        self::assertNull($this->provider->forView(1)->dashboardUrl);
+    }
+
     public function testFreshResultIsCachedAndSnapshotted(): void
     {
+        $this->settings->put(1, ['storeKey' => 'demo-outdoor-store', 'engineUrl' => 'https://api.answereng.io']);
         $this->transport->enqueue(FakeTransport::json(200, $this->fixture('summary.json')));
         $view = $this->provider->forView(1);
         self::assertSame(SummaryView::FRESH, $view->state);

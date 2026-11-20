@@ -35,4 +35,12 @@ final class SettingsTest extends TestCase
     {
         self::assertSame('https://api.answereng.io', $this->settings()->connection()->engineUrl);
     }
+
+    public function testOnlyTheAnswerEngApiCountsAsTheProductionEngine(): void
+    {
+        self::assertTrue($this->settings()->usesProductionEngine());
+        self::assertTrue($this->settings(['engineUrl' => 'HTTPS://API.answereng.io'])->usesProductionEngine());
+        self::assertFalse($this->settings(['engineUrl' => 'http://host.docker.internal:8895'])->usesProductionEngine());
+        self::assertFalse($this->settings(['engineUrl' => 'https://api.answereng.io.evil.example'])->usesProductionEngine());
+    }
 }

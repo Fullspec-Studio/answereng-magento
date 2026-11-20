@@ -21,7 +21,7 @@ class SummaryView
      * Constructor.
      *
      * @param string $state
-     * @param string $dashboardUrl
+     * @param string|null $dashboardUrl null when the view uses a test engine
      * @param float|null $rate
      * @param float|null $low
      * @param float|null $high
@@ -31,7 +31,7 @@ class SummaryView
      */
     public function __construct(
         public readonly string $state,
-        public readonly string $dashboardUrl,
+        public readonly ?string $dashboardUrl,
         public readonly ?float $rate = null,
         public readonly ?float $low = null,
         public readonly ?float $high = null,
