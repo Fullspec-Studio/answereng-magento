@@ -166,3 +166,18 @@ Tally: ✅ 13, ❌ 0, ⚠️ 0, 🔎 0.
   selected run (known deferral; seen at 20:40:43).
 - Core admin noise unrelated to the module: Braintree `system.js` TypeError in the
   console, sample-data media-gallery exceptions during `setup:upgrade`.
+
+## 2026-11-20 — live check of the results page against api.answereng.io
+
+Local Magento 2.4.8 pointed at production with the separate smoke tenant (1Password "AnswerEng - Magento smoke test"), store key `magento-smoke-20261105`, auto-sync off; restored to the mock afterwards.
+
+| Check | Result |
+|---|---|
+| Status page loads against production | Pass: "Connected. Waiting for the first analysis run." (no run since 2026-11-05; free plan) |
+| "Open full results in AnswerEng →" + sign-in hint shown for the production engine | Pass: links to app.answereng.io/stores/magento-smoke-20261105 |
+| Test connection | Pass: "Connected — waiting for the first analysis run. Stores in this workspace: magento-smoke-20261105." |
+| Sync now | Pass: "Sent 181 products to AnswerEng." |
+| Refresh | Pass: "Checked for new results." |
+| Console | 0 errors |
+| Results, trend, engines, share of voice, drafted fixes, Mark/Undo live | Not testable yet: the store has no completed run and no fixes |
+| Dashboard link lands on the store after key entry | Not yet: dashboard PR #11 merged but not deployed (manual `vercel deploy --prod`) |

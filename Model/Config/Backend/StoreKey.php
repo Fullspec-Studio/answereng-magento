@@ -98,8 +98,8 @@ class StoreKey extends Value
         // Only for the real engine: a local key is normal when testing against a local or staging engine.
         if ($settings->enabled && $settings->usesProductionEngine() && StoreKeyPolicy::looksLocal($key)) {
             $this->messages->addWarningMessage(__(
-                'Store key "%1" looks like a local address, which AnswerEng can\'t reach. '
-                . 'Set it to your shop\'s public domain.',
+                'Store key "%1" looks like a local address. It doesn\'t identify your shop, and AnswerEng '
+                . 'refuses a key another account already uses. Set it to your shop\'s public domain.',
                 $key
             ));
         }
