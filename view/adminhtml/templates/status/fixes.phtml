@@ -6,6 +6,7 @@
  * @var \Fullspec\AnswerEng\Block\Adminhtml\Status\Panel $block
  * @var \Magento\Framework\Escaper $escaper
  */
+use Fullspec\AnswerEng\Model\Admin\FixView;
 use Fullspec\AnswerEng\Model\Admin\PanelLabels;
 use Fullspec\AnswerEng\Model\Admin\SummaryView;
 
@@ -35,7 +36,10 @@ $date = static function (?string $at): string {
 <details class="ae-section ae-fixes" id="answereng-fixes" open>
     <summary><?= $escaper->escapeHtml(__('Drafted fixes')) ?>
         <?php if ($fixes !== null && $fixes !== []): ?>
-            <span class="ae-count-chip"><?= $escaper->escapeHtml(__('%1 awaiting review', count($fixes))) ?></span>
+            <span class="ae-count-chip"><?= $escaper->escapeHtml(__(
+                '%1 awaiting review',
+                PanelLabels::fixCount($summary->suggestedFixes, count($fixes))
+            )) ?></span>
         <?php endif; ?>
     </summary>
     <div class="ae-section-body">
@@ -54,63 +58,99 @@ $date = static function (?string $at): string {
             'Where your products were missing from answers, AnswerEng diagnosed why and drafted content you can '
             . 'review, copy, and paste into the product editor.'
         )) ?></p>
+        <?php $total = $summary->suggestedFixes; ?>
+        <?php if (($total !== null && $total > count($fixes))
+            || ($total === null && count($fixes) >= PanelLabels::FIX_LIST_LIMIT)): ?>
+            <p class="ae-meta"><?= $escaper->escapeHtml(__(
+                'Showing the %1 newest. Mark fixes as applied to see the rest.',
+                count($fixes)
+            )) ?></p>
+        <?php endif; ?>
         <div class="ae-fix-list">
-        <?php foreach ($fixes as $fix): ?>
+        <?php foreach (FixView::groupByDiagnosis($fixes) as $group): ?>
             <?php
-            $priority = strtolower($fix->priority);
+            $first = $group[0];
+            $priority = strtolower($first->priority);
             $tone = match ($priority) {
                 'high' => 'bad',
                 'medium' => 'warn',
                 default => 'neutral',
             };
-            $kind = str_replace('_', ' ', $fix->kind);
-            $engineLabel = $fix->engine === '' ? '' : PanelLabels::engine($fix->engine)['label'];
+            $engineLabel = $first->engine === '' ? '' : PanelLabels::engine($first->engineKey())['label'];
+            $reasons = PanelLabels::reasons($first->reasons);
+            $reasonHeadings = [
+                'missing' => __('Missing from your product data'),
+                'other' => __('Why you’re missing'),
+            ];
             ?>
             <article class="ae-fix" data-answereng-fix>
                 <div class="ae-fix-meta">
-                    <?php if ($kind !== ''): ?>
-                        <span class="ae-pill ae-pill--neutral"><?= $escaper->escapeHtml($kind) ?></span>
-                    <?php endif; ?>
                     <?php if ($priority !== ''): ?>
                         <span class="ae-pill ae-pill--<?= $escaper->escapeHtmlAttr($tone) ?>">
-                            <?= $escaper->escapeHtml(__('%1 priority', $priority)) ?></span>
+                            <?= $escaper->escapeHtml(__('%1 priority', ucfirst($priority))) ?></span>
                     <?php endif; ?>
                     <?php if ($engineLabel !== ''): ?>
-                        <span class="ae-fix-engine"><?= $escaper->escapeHtml($engineLabel) ?></span>
+                        <span class="ae-fix-engine"><?= $escaper->escapeHtml(__('Seen in %1', $engineLabel)) ?></span>
                     <?php endif; ?>
-                    <span class="ae-fix-actions">
-                        <button type="button" class="action-default ae-copy"
-                                data-answereng-copy="<?= $escaper->escapeHtmlAttr($fix->content) ?>"
-                                data-label-copied="<?= $escaper->escapeHtmlAttr(__('Copied')) ?>">
-                            <?= $escaper->escapeHtml(__('Copy draft')) ?></button>
-                        <?php if ($canApply): ?>
-                            <button type="button" class="action-default"
-                                    data-answereng-action="<?= /* @noEscape */ $fixUrl ?>"
-                                    data-fields="<?= /* @noEscape */ $fields($fix->fixId, 'mark') ?>">
-                                <?= $escaper->escapeHtml(__('Mark as applied')) ?></button>
-                        <?php endif; ?>
-                    </span>
                 </div>
                 <div class="ae-fix-body">
                     <div class="ae-fix-side">
-                        <?php if ($fix->promptText !== ''): ?>
+                        <?php if ($first->promptText !== ''): ?>
                             <div>
                                 <?php $promptLabel = __('Buyer prompt it addresses'); ?>
                                 <div class="ae-microlabel"><?= $escaper->escapeHtml($promptLabel) ?></div>
-                                <div class="ae-fix-prompt">“<?= $escaper->escapeHtml($fix->promptText) ?>”</div>
+                                <div class="ae-fix-prompt">“<?= $escaper->escapeHtml($first->promptText) ?>”</div>
                             </div>
                         <?php endif; ?>
-                        <?php $reasons = implode('; ', $fix->reasons); ?>
-                        <?php if ($reasons !== ''): ?>
-                            <div>
-                                <div class="ae-microlabel"><?= $escaper->escapeHtml(__('Why you’re missing')) ?></div>
-                                <div class="ae-fix-reason"><?= $escaper->escapeHtml($reasons) ?></div>
-                            </div>
-                        <?php endif; ?>
+                        <?php foreach ($reasonHeadings as $bucket => $heading): ?>
+                            <?php $items = $reasons[$bucket]; ?>
+                            <?php if ($items !== []): ?>
+                                <div>
+                                    <div class="ae-microlabel"><?= $escaper->escapeHtml($heading) ?></div>
+                                    <ul class="ae-fix-reasons">
+                                        <?php foreach (array_slice($items, 0, 3) as $item): ?>
+                                            <li><?= $escaper->escapeHtml($item) ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                    <?php if (count($items) > 3): ?>
+                                        <details class="ae-fix-more">
+                                            <?php $more = __('Show %1 more', count($items) - 3); ?>
+                                            <summary><?= $escaper->escapeHtml($more) ?></summary>
+                                            <ul class="ae-fix-reasons">
+                                                <?php foreach (array_slice($items, 3) as $item): ?>
+                                                    <li><?= $escaper->escapeHtml($item) ?></li>
+                                                <?php endforeach; ?>
+                                            </ul>
+                                        </details>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
                     </div>
-                    <div class="ae-fix-draft-wrap">
-                        <div class="ae-microlabel"><?= $escaper->escapeHtml(__('Draft — review before use')) ?></div>
-                        <pre class="ae-fix-draft"><?= $escaper->escapeHtml($fix->content) ?></pre>
+                    <div class="ae-fix-drafts">
+                    <?php foreach ($group as $fix): ?>
+                        <div class="ae-fix-draft-wrap">
+                            <div class="ae-fix-draft-head">
+                                <span class="ae-microlabel"><?= $escaper->escapeHtml(__(
+                                    'Draft %1 — review before use',
+                                    PanelLabels::fixKind($fix->kind)
+                                )) ?></span>
+                                <span class="ae-fix-actions">
+                                    <button type="button" class="action-default ae-copy"
+                                            data-answereng-copy="<?= $escaper->escapeHtmlAttr($fix->content) ?>"
+                                            data-label-copied="<?= $escaper->escapeHtmlAttr(__('Copied')) ?>">
+                                        <?= $escaper->escapeHtml(__('Copy draft')) ?></button>
+                                    <?php if ($canApply): ?>
+                                        <button type="button" class="action-default"
+                                                data-answereng-action="<?= /* @noEscape */ $fixUrl ?>"
+                                                data-fields="<?= /* @noEscape */ $fields($fix->fixId, 'mark') ?>">
+                                            <?= $escaper->escapeHtml(__('Mark as applied')) ?></button>
+                                    <?php endif; ?>
+                                </span>
+                            </div>
+                            <pre class="ae-fix-draft"><?= $escaper->escapeHtml($fix->content) ?></pre>
+                        </div>
+                    <?php endforeach; ?>
                     </div>
                 </div>
             </article>

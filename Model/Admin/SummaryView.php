@@ -31,6 +31,7 @@ class SummaryView
      * @param list<array{started_at:string|null,rate:float,low:float,high:float}> $trend visibility_trend
      * @param array<string,array{rate:float,low:float,high:float}> $engineBreakdown by raw engine id
      * @param array<string,array{rate:float,low:float,high:float}> $shareOfVoice by brand; "__store__" is you
+     * @param int|null $suggestedFixes the full count of drafted fixes; null from engines that don't send it
      */
     public function __construct(
         public readonly string $state,
@@ -43,7 +44,8 @@ class SummaryView
         public readonly ?array $preview = null,
         public readonly array $trend = [],
         public readonly array $engineBreakdown = [],
-        public readonly array $shareOfVoice = []
+        public readonly array $shareOfVoice = [],
+        public readonly ?int $suggestedFixes = null
     ) {
     }
 }

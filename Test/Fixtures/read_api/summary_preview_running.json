@@ -9,5 +9,6 @@
     "state": "running",
     "engine": "perplexity"
   },
-  "rating_eligible": false
+  "rating_eligible": false,
+  "suggested_fixes": 0
 }

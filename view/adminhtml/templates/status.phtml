@@ -90,9 +90,13 @@ $pill = static fn (array $l): string => '<span class="ae-pill ae-pill--' . $esca
 <?php else: ?>
     <?php $fixCount = count($panel['results']->fixes ?? []); ?>
     <?php if ($fixCount > 0): ?>
-        <p class="ae-jump" data-answereng-jump><a href="#answereng-fixes"><?= $escaper->escapeHtml($fixCount === 1
+        <?php $fixLabel = \Fullspec\AnswerEng\Model\Admin\PanelLabels::fixCount(
+            $panel['results']->summary->suggestedFixes,
+            $fixCount
+        ); ?>
+        <p class="ae-jump" data-answereng-jump><a href="#answereng-fixes"><?= $escaper->escapeHtml($fixLabel === '1'
             ? __('1 drafted fix to review →')
-            : __('%1 drafted fixes to review →', $fixCount)) ?></a></p>
+            : __('%1 drafted fixes to review →', $fixLabel)) ?></a></p>
     <?php endif; ?>
     <?= /* @noEscape */ $block->renderPart('alerts') ?>
     <?= /* @noEscape */ $block->renderPart('visibility') ?>

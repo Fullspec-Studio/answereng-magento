@@ -11,5 +11,7 @@
   "prompt_text": "waterproof hiking boots for wide feet",
   "engine": "perplexity",
   "prompt_id": 41,
-  "applied_at": "2026-10-30T14:22:05+00:00"
+  "applied_at": "2026-10-30T14:22:05+00:00",
+  "model": "sonar",
+  "diagnosis_id": 77
 }

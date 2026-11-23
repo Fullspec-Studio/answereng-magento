@@ -873,8 +873,34 @@
     font-weight: 600;
 }
 
-.answereng-panel .ae-fix-reason {
+.answereng-panel .ae-fix-reasons {
+    margin: 0;
+    padding-left: 1.2em;
     color: var(--ae-muted);
+}
+
+.answereng-panel .ae-fix-reasons li + li {
+    margin-top: 2px;
+}
+
+.answereng-panel .ae-fix-more > summary {
+    margin-top: 4px;
+    color: var(--ae-green);
+    cursor: pointer;
+}
+
+.answereng-panel .ae-fix-drafts {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.answereng-panel .ae-fix-draft-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
 }
 
 .answereng-panel .ae-fix-draft {

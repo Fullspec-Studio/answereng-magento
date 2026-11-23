@@ -30,7 +30,8 @@ class PanelLabels
     /**
      * Display name and series color for a raw engine id ("perplexity:sonar", "bedrock:…claude…").
      *
-     * A fix's `engine` is the provider; `bedrock` alone is "Amazon Bedrock". Unknown ids show as given.
+     * Pass a fix's `FixView::engineKey()`. Older engines send only the provider, and `bedrock` alone is
+     * "Amazon Bedrock". Unknown ids show as given.
      *
      * @param string $key
      * @return array{label: string, color: string}
@@ -47,6 +48,80 @@ class PanelLabels
             return ['label' => 'Amazon Bedrock', 'color' => self::OTHER_ENGINE];
         }
         return ['label' => $key, 'color' => self::OTHER_ENGINE];
+    }
+
+    /** Plain names for the engine's fix kinds. */
+    private const FIX_KINDS = [
+        'copy' => 'Product description',
+        'qa' => 'Q&A',
+        'schema' => 'Structured data',
+        'attribute' => 'Attribute',
+    ];
+
+    /** The engine marks a reason it has no data for with this prefix. */
+    private const MISSING_PREFIX = 'insufficient_data:';
+
+    /** The engine lists at most this many fixes per request. */
+    public const FIX_LIST_LIMIT = 100;
+
+    /**
+     * Plain name for a fix kind ("qa" is "Q&A"); unknown kinds are humanized.
+     *
+     * @param string $kind
+     * @return string
+     */
+    public static function fixKind(string $kind): string
+    {
+        $kind = strtolower(trim($kind));
+        return self::FIX_KINDS[$kind] ?? ucfirst(str_replace('_', ' ', $kind));
+    }
+
+    /**
+     * A diagnosis's reasons split into product data the engine found missing and everything else.
+     *
+     * "insufficient_data: product lacks material specifications (…)" becomes
+     * "Material specifications (…)" under `missing`. Other reasons are capitalized. Duplicates are dropped.
+     *
+     * @param list<string> $reasons
+     * @return array{missing: list<string>, other: list<string>}
+     */
+    public static function reasons(array $reasons): array
+    {
+        $out = ['missing' => [], 'other' => []];
+        foreach ($reasons as $reason) {
+            $reason = trim($reason);
+            $bucket = 'other';
+            if (stripos($reason, self::MISSING_PREFIX) === 0) {
+                $bucket = 'missing';
+                $reason = trim(substr($reason, strlen(self::MISSING_PREFIX)));
+                $reason = (string) preg_replace('/^(the\s+)?product\s+(lacks|is missing|has no)\s+/i', '', $reason);
+            }
+            $reason = rtrim($reason, " .;");
+            if ($reason === '') {
+                continue;
+            }
+            $reason = ucfirst($reason);
+            if (!in_array($reason, $out[$bucket], true)) {
+                $out[$bucket][] = $reason;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * How many drafted fixes await review, as shown: the engine's full count when it sends one,
+     * otherwise the listed count, with "+" once the list hits the engine's limit.
+     *
+     * @param int|null $total
+     * @param int $listed
+     * @return string
+     */
+    public static function fixCount(?int $total, int $listed): string
+    {
+        if ($total !== null) {
+            return (string) max($total, $listed);
+        }
+        return $listed >= self::FIX_LIST_LIMIT ? $listed . '+' : (string) $listed;
     }
 
     /**

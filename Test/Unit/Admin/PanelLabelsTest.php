@@ -99,4 +99,44 @@ final class PanelLabelsTest extends TestCase
         self::assertSame('7.5', PanelLabels::percent(0.075));
         self::assertSame('0.0', PanelLabels::percent(0.0));
     }
+
+    public function testFixKindsHavePlainNames(): void
+    {
+        self::assertSame('Q&A', PanelLabels::fixKind('qa'));
+        self::assertSame('Product description', PanelLabels::fixKind('copy'));
+        self::assertSame('Structured data', PanelLabels::fixKind('SCHEMA'));
+        self::assertSame('Attribute', PanelLabels::fixKind('attribute'));
+        self::assertSame('Alt text', PanelLabels::fixKind('alt_text'));
+    }
+
+    public function testReasonsSplitMissingDataFromOtherFindings(): void
+    {
+        self::assertSame([
+            'missing' => ['Material specifications (waterproof)', 'Weight', 'Battery life'],
+            'other' => ['Title is generic', 'Price is high'],
+        ], PanelLabels::reasons([
+            'insufficient_data: product lacks material specifications (waterproof)',
+            'INSUFFICIENT_DATA: The product is missing weight.',
+            'insufficient_data: battery life',
+            'insufficient_data: product lacks weight',
+            'title is generic',
+            '  Price is high; ',
+            'insufficient_data:',
+            '',
+        ]));
+    }
+
+    public function testFixCount(): void
+    {
+        self::assertSame('137', PanelLabels::fixCount(137, 100));
+        self::assertSame('3', PanelLabels::fixCount(2, 3));
+        self::assertSame('100+', PanelLabels::fixCount(null, 100));
+        self::assertSame('42', PanelLabels::fixCount(null, 42));
+    }
+
+    public function testFixEngineKeyNamesTheModel(): void
+    {
+        self::assertSame('Claude', PanelLabels::engine('bedrock:us.anthropic.claude-haiku-4-5-20251001-v1:0')['label']);
+        self::assertSame('Amazon Bedrock', PanelLabels::engine('bedrock')['label']);
+    }
 }
