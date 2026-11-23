@@ -20,6 +20,25 @@ final class FixViewTest extends TestCase
         self::assertSame('perplexity', $first->engine);
         self::assertNull($first->appliedAt);
         self::assertSame(117, $fixes[1]->fixId);
+        self::assertSame(['sonar', 77, 'perplexity:sonar'], [$first->model, $first->diagnosisId, $first->engineKey()]);
+    }
+
+    public function testOlderEnginesWithoutModelOrDiagnosisStillParse(): void
+    {
+        [$fix] = FixView::listFromJson([['fix_id' => 1, 'content' => 'x', 'engine' => 'bedrock']]);
+        self::assertSame(['', null, 'bedrock'], [$fix->model, $fix->diagnosisId, $fix->engineKey()]);
+    }
+
+    public function testGroupsByDiagnosisThenByPromptEngineAndReasons(): void
+    {
+        $f = static fn (int $id, ?int $diag, string $prompt = 'p', array $reasons = ['r']) =>
+            new FixView($id, 'copy', 'c', 'high', $reasons, $prompt, 'bedrock', null, '', $diag);
+        $groups = FixView::groupByDiagnosis([
+            $f(1, 7), $f(2, 8), $f(3, 7),
+            $f(4, null), $f(5, null), $f(6, null, 'other'), $f(7, null, 'p', ['different']),
+        ]);
+        $ids = array_map(static fn (array $g) => array_map(static fn (FixView $x) => $x->fixId, $g), $groups);
+        self::assertSame([[1, 3], [2], [4, 5], [6], [7]], $ids);
     }
 
     public function testMalformedEntriesAreSkippedOrDefaulted(): void

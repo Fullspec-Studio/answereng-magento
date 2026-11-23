@@ -143,7 +143,8 @@ class SummaryProvider
             null,
             $this->trend($data['visibility_trend'] ?? null),
             $this->intervals($data['engine_breakdown'] ?? null),
-            $this->intervals($data['share_of_voice'] ?? null)
+            $this->intervals($data['share_of_voice'] ?? null),
+            is_int($data['suggested_fixes'] ?? null) && $data['suggested_fixes'] >= 0 ? $data['suggested_fixes'] : null
         );
     }
 

@@ -19,6 +19,8 @@ class FixView
      * @param string $promptText
      * @param string $engine the provider (`perplexity`, `bedrock`), not the model
      * @param string|null $appliedAt
+     * @param string $model the engine's model id; empty from engines that don't send it
+     * @param int|null $diagnosisId drafts from one diagnosis share it; null from engines that don't send it
      */
     public function __construct(
         public readonly int $fixId,
@@ -28,7 +30,9 @@ class FixView
         public readonly array $reasons,
         public readonly string $promptText,
         public readonly string $engine,
-        public readonly ?string $appliedAt
+        public readonly ?string $appliedAt,
+        public readonly string $model = '',
+        public readonly ?int $diagnosisId = null
     ) {
     }
 
@@ -62,9 +66,41 @@ class FixView
                 $reasons,
                 $str($e, 'prompt_text'),
                 $str($e, 'engine'),
-                is_string($e['applied_at'] ?? null) ? $e['applied_at'] : null
+                is_string($e['applied_at'] ?? null) ? $e['applied_at'] : null,
+                $str($e, 'model'),
+                is_int($e['diagnosis_id'] ?? null) ? $e['diagnosis_id'] : null
             );
         }
         return $fixes;
+    }
+
+    /**
+     * Engine id in `engine_breakdown` form ("bedrock:…claude…"), or the provider alone without a model.
+     *
+     * @return string
+     */
+    public function engineKey(): string
+    {
+        return $this->model === '' ? $this->engine : $this->engine . ':' . $this->model;
+    }
+
+    /**
+     * Fixes grouped by the diagnosis that drafted them, in first-seen order.
+     *
+     * Without a diagnosis id (older engines), fixes with the same prompt, engine and reasons are grouped.
+     *
+     * @param list<FixView> $fixes
+     * @return list<list<FixView>>
+     */
+    public static function groupByDiagnosis(array $fixes): array
+    {
+        $groups = [];
+        foreach ($fixes as $fix) {
+            $key = $fix->diagnosisId !== null
+                ? 'd' . $fix->diagnosisId
+                : 'p' . hash('sha256', (string) json_encode([$fix->promptText, $fix->engineKey(), $fix->reasons]));
+            $groups[$key][] = $fix;
+        }
+        return array_values($groups);
     }
 }

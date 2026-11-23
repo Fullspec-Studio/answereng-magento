@@ -76,6 +76,7 @@ final class SummaryProviderTest extends DbTestCase
                 array_keys($view->engineBreakdown));
             self::assertSame(['rate' => 0.47, 'low' => 0.37, 'high' => 0.57], $view->engineBreakdown['perplexity:sonar']);
             self::assertSame(['__store__', 'Merrell', 'Salomon'], array_keys($view->shareOfVoice));
+            self::assertSame(137, $view->suggestedFixes);
         }
     }
 

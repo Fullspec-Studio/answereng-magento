@@ -12,7 +12,9 @@
     "prompt_text": "waterproof hiking boots for wide feet",
     "engine": "perplexity",
     "prompt_id": 41,
-    "applied_at": null
+    "applied_at": null,
+    "model": "sonar",
+    "diagnosis_id": 77
   },
   {
     "fix_id": 117,
@@ -26,6 +28,8 @@
     "prompt_text": "lightest camp stove for backpacking",
     "engine": "bedrock",
     "prompt_id": 42,
-    "applied_at": null
+    "applied_at": null,
+    "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "diagnosis_id": 78
   }
 ]

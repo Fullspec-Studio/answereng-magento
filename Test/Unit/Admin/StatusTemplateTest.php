@@ -164,6 +164,57 @@ final class StatusTemplateTest extends TestCase
         self::assertStringContainsString('Copy draft', $denied);
     }
 
+    public function testDraftsFromOneDiagnosisShareACardWithReadableReasons(): void
+    {
+        $reasons = [
+            'insufficient_data: product lacks material specifications (waterproof, breathable)',
+            'insufficient_data: product lacks size dimensions',
+            'insufficient_data: product lacks weight',
+            'insufficient_data: product lacks capacity',
+            'title is generic',
+        ];
+        $mk = static fn (int $id, string $kind, int $diag, string $prompt) => new FixView(
+            $id, $kind, "draft $id", 'high', $reasons, $prompt, 'bedrock', null,
+            'us.anthropic.claude-haiku-4-5-20251001-v1:0', $diag
+        );
+        $fixes = [$mk(1, 'qa', 7, 'compact bag'), $mk(2, 'copy', 7, 'compact bag'), $mk(3, 'schema', 8, 'gym bag')];
+        $html = $this->render(self::panel(['results' => new ResultsView(self::summary(), $fixes, [], false)]), 'fixes');
+
+        self::assertSame(2, substr_count($html, 'data-answereng-fix'));
+        self::assertSame(3, substr_count($html, 'Copy draft'));
+        self::assertStringContainsString('Draft Q&amp;A — review before use', $html);
+        self::assertStringContainsString('Draft Product description — review before use', $html);
+        self::assertStringContainsString('Draft Structured data — review before use', $html);
+        self::assertStringContainsString('Seen in Claude', $html);
+        self::assertStringNotContainsString('Amazon Bedrock', $html);
+        self::assertStringNotContainsString('insufficient_data', $html);
+        self::assertStringContainsString('Missing from your product data', $html);
+        self::assertStringContainsString('<li>Material specifications (waterproof, breathable)</li>', $html);
+        self::assertStringContainsString('Show 1 more', $html);
+        self::assertStringContainsString('<li>Title is generic</li>', $html);
+        self::assertStringContainsString('High priority', $html);
+    }
+
+    public function testFixCountUsesTheEngineTotalOrMarksTheListLimit(): void
+    {
+        $many = array_map(static fn (int $i) => self::fix($i), range(1, 100));
+        $capped = $this->render(self::panel(['results' => new ResultsView(self::summary(), $many, [], false)]));
+        self::assertStringContainsString('100+ drafted fixes to review', $capped);
+        self::assertStringContainsString('100+ awaiting review', $capped);
+        self::assertStringContainsString('Showing the 100 newest.', $capped);
+
+        $s = self::summary();
+        $withTotal = new SummaryView($s->state, $s->dashboardUrl, $s->rate, $s->low, $s->high, $s->runStartedAt,
+            $s->fetchedAt, null, $s->trend, $s->engineBreakdown, $s->shareOfVoice, 137);
+        $total = $this->render(self::panel(['results' => new ResultsView($withTotal, $many, [], false)]));
+        self::assertStringContainsString('137 drafted fixes to review', $total);
+        self::assertStringContainsString('137 awaiting review', $total);
+        self::assertStringContainsString('Showing the 100 newest.', $total);
+
+        $few = $this->render(self::panel());
+        self::assertStringNotContainsString('Showing the', $few);
+    }
+
     private function attrsDecoded(string $html): string
     {
         return html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -221,7 +272,7 @@ final class StatusTemplateTest extends TestCase
     {
         $html = $this->render(self::panel());
         self::assertStringContainsString('<span class="ae-bar-name">Perplexity Sonar</span>', $html);
-        self::assertStringContainsString('<span class="ae-fix-engine">Perplexity Sonar</span>', $html);
+        self::assertStringContainsString('<span class="ae-fix-engine">Seen in Perplexity Sonar</span>', $html);
         self::assertStringContainsString('Your store (you)', $html);
         self::assertStringContainsString('Merrell', $html);
         self::assertStringContainsString('▲ +8.0 vs last run', $html);

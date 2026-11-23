@@ -136,6 +136,10 @@ def make_server(address, store_cap=1, state_file=None):
                         name = f"summary_{mode.replace('-', '_')}.json"
                     summary = json.loads((FIXTURES / "read_api" / name).read_text())
                     summary["store_key"] = store_key
+                    if "suggested_fixes" in summary:
+                        applied = store.get("applied", {})
+                        summary["suggested_fixes"] = sum(1 for f in all_fixes()
+                                                         if str(f["fix_id"]) not in applied)
                     return self._send(200, summary, acct)
                 if rest == ["fixes"] and method == "GET":
                     return self._fixes(store, path_query(self.path).get("status", "suggested"), acct)

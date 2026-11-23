@@ -181,3 +181,24 @@ Local Magento 2.4.8 pointed at production with the separate smoke tenant (1Passw
 | Console | 0 errors |
 | Results, trend, engines, share of voice, drafted fixes, Mark/Undo live | Not testable yet: the store has no completed run and no fixes |
 | Dashboard link lands on the store after key entry | Not yet: dashboard PR #11 merged but not deployed (manual `vercel deploy --prod`) |
+
+### 2026-11-20 follow-up — after a manual run (run 496)
+
+Started one run for the smoke store only (`RunMachine` execution `manual-magento-smoke-20261120`): complete, coverage 1.0. Same setup as above; local config restored byte-identical afterwards. Dashboard PR #11 deployed to app.answereng.io first.
+
+| Check | Result |
+|---|---|
+| Visibility hero | Pass: 2.5% (95% CI 1.1–5.8%), run of 21 Nov 2026 06:06 UTC |
+| Trend | Pass: "The trend appears once two weekly samples have completed." (first run) |
+| Per-engine presence | Pass: Llama 0.0%, Mistral 4.0%, Claude 6.0%, Perplexity Sonar 0.0% |
+| Share of voice | Pass: your store 2.5%, Lululemon 15%, Nike 28% |
+| Drafted fixes | Pass: listed with buyer prompt, reasons, draft, Copy draft |
+| Mark as applied (fix 12084) | Pass: "Marked as applied."; Applied (1) appears; engine lists it under `status=applied` |
+| Undo | Pass: "Moved back to drafted fixes."; engine lists it as suggested again, 0 applied |
+| Dashboard link lands on the store after key entry | Pass: app.answereng.io/stores/magento-smoke-20261105 asks for the key, 0 console errors |
+
+Found with real data, fixed in the follow-up PR (with an additive engine change):
+
+- The count read "100 drafted fixes" but the engine lists at most 100 and the store had more. Now shows the engine's `suggested_fixes` total, or "100+" from older engines.
+- 78 of 100 fixes were labeled "Amazon Bedrock", which covers Llama, Mistral and Claude. Fixes now carry `model`, and the label names the engine ("Seen in Claude").
+- Reasons were raw ("insufficient_data: product lacks …") and repeated on every draft from the same diagnosis; kinds showed as codes (`qa`, `copy`, `schema`). Drafts from one diagnosis now share one card (engine `diagnosis_id`), reasons are split into "Missing from your product data" and other findings, and kinds have plain names (Q&A, Product description, Structured data, Attribute).
