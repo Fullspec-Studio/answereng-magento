@@ -81,7 +81,8 @@ class ResultsProvider
     }
 
     /**
-     * Drop the cached summary and both fix lists ("Refresh").
+     * Drop the cached summary and both fix lists ("Refresh", and after marking a fix applied or undoing it:
+     * the summary carries the suggested-fix total).
      *
      * @param int $storeId
      * @return void
@@ -93,7 +94,7 @@ class ResultsProvider
     }
 
     /**
-     * Drop both cached fix lists (after marking a fix applied or undoing it).
+     * Drop both cached fix lists, keeping the summary.
      *
      * @param int $storeId
      * @return void

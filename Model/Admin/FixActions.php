@@ -45,13 +45,13 @@ class FixActions
             ? $this->engine->markApplied($s->connection(), $s->storeKey, $fixId)
             : $this->engine->unmarkApplied($s->connection(), $s->storeKey, $fixId);
         if ($r->isSuccess()) {
-            $this->results->forgetFixes($storeId);
+            $this->results->forget($storeId);
             return new ActionResult(true, $applied
                 ? (string) __('Marked as applied.')
                 : (string) __('Moved back to drafted fixes.'));
         }
         if ($r->status === null || $r->status >= 500) {
-            $this->results->forgetFixes($storeId);
+            $this->results->forget($storeId);
             return new ActionResult(false, (string) __(
                 "Couldn't confirm that change. AnswerEng didn't respond in time. "
                 . 'Refresh in a moment to see whether it was applied.'

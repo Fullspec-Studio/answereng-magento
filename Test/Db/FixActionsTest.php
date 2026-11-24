@@ -45,14 +45,15 @@ final class FixActionsTest extends DbTestCase
         }
     }
 
-    private function assertCaches(bool $fixesKept): void
+    /** The summary carries the suggested-fix total, so it is dropped together with both lists. */
+    private function assertCaches(bool $kept): void
     {
-        self::assertSame($fixesKept, $this->cache->load('answereng_fixes_suggested_' . $this->fp) !== null);
-        self::assertSame($fixesKept, $this->cache->load('answereng_fixes_applied_' . $this->fp) !== null);
-        self::assertNotNull($this->cache->load('answereng_summary_' . $this->fp), 'summary cache untouched');
+        foreach (['answereng_fixes_suggested_', 'answereng_fixes_applied_', 'answereng_summary_'] as $prefix) {
+            self::assertSame($kept, $this->cache->load($prefix . $this->fp) !== null, $prefix);
+        }
     }
 
-    public function testSuccessForgetsBothListsOnly(): void
+    public function testSuccessForgetsTheListsAndTheSummaryWithItsTotal(): void
     {
         $this->transport->enqueue(FakeTransport::json(200, ['ok' => true]));
         $result = $this->actions->setApplied(1, 118, true);
