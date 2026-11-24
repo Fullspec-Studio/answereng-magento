@@ -202,3 +202,30 @@ Found with real data, fixed in the follow-up PR (with an additive engine change)
 - The count read "100 drafted fixes" but the engine lists at most 100 and the store had more. Now shows the engine's `suggested_fixes` total, or "100+" from older engines.
 - 78 of 100 fixes were labeled "Amazon Bedrock", which covers Llama, Mistral and Claude. Fixes now carry `model`, and the label names the engine ("Seen in Claude").
 - Reasons were raw ("insufficient_data: product lacks …") and repeated on every draft from the same diagnosis; kinds showed as codes (`qa`, `copy`, `schema`). Drafts from one diagnosis now share one card (engine `diagnosis_id`), reasons are split into "Missing from your product data" and other findings, and kinds have plain names (Q&A, Product description, Structured data, Attribute).
+
+### 2026-11-24 — 0.2.0 release checks (upgrade from 0.1.0, release zip, live smoke)
+
+**Upgrade from 0.1.0:** local Magento 2.4.8 with the published `answereng-magento-0.1.0.zip` installed on its own schema. It synced 181 products to the mock and stored a summary snapshot. A restricted role made the 0.1.0 way (settings + sync + delete_store, user `ae010`). Then `bin/build-zip.sh 0.2.0`, `composer require fullspec/module-answereng:0.2.0` from the artifact repository, and `setup:upgrade`.
+
+| Check | Result |
+|---|---|
+| Schema | Pass: two snapshot columns added, `snapshot_json` widened to mediumtext; `setup:db:status` up to date |
+| Data kept | Pass: sync state (181 products, last sync), the 0.1.0 snapshot, the sync log, the remote store and all settings |
+| Status page (full admin) | Pass: renders the old snapshot until the next refresh |
+| Restricted 0.1.0 role, before the fix | **Fail:** "Sorry, you need permissions" on Catalog › AnswerEng, and the settings page pointed there. Sync now and Delete were unreachable |
+| Same role, with `GrantStatusToExistingRoles` | Pass: Refresh, Sync now, Test connection, Clear, Delete. No Mark as applied (new permission, granted by hand). No Catalog menu entry (needs `Magento_Catalog::catalog`); the settings page link reaches the page |
+| Existing `status` deny rule | Pass: kept by the patch |
+
+**Live smoke:** the 0.2.0 zip installed as the README says, pointed at `api.answereng.io` with the smoke tenant, store key `magento-smoke-20261105`, auto-sync off.
+
+| Check | Result |
+|---|---|
+| Test connection | Pass: "Connected — store "magento-smoke-20261105" found." |
+| Sync now | Pass: "Sent 181 products to AnswerEng." |
+| Clear, then Sync now | Pass: "Cleared the AnswerEng catalog …", then 181 sent again |
+| Delete | Pass: scheduled for 2026-12-01 22:00 UTC; syncing for the view disabled |
+| Cancel deletion | Pass: "Deletion … cancelled."; the engine lists the store as `active`; syncing re-enabled by hand |
+| Mark as applied (fix 12084) | **Count lagged:** stayed at 171 because the summary cache was kept. Fixed: marking now drops the summary too. Retest: 171 → 168 (the applied fix plus 2 drafts of the same kind for the same prompt, held by the engine for 28 days), Applied (1) |
+| Undo | Pass: "Moved back to drafted fixes.", count back to 171 |
+
+Local store restored afterwards from a full database dump and the saved Composer files.
