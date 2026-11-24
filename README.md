@@ -36,6 +36,15 @@ snapshot columns on `answereng_sync_state` (and widens the summary snapshot to
 `mediumtext`). The status page errors until the schema is applied, and so does
 saving AnswerEng settings that change the API key, store key or engine URL.
 
+**From 0.1.0:** Sync now, Clear and Delete moved from Stores › Configuration to
+Catalog › AnswerEng. `setup:upgrade` gives every admin role that had an
+AnswerEng permission the new `Fullspec_AnswerEng::status` permission, so those
+users keep their actions. Two things stay manual, because they widen access:
+- `Fullspec_AnswerEng::fixes` (mark drafted fixes applied) is new. Grant it to
+  the roles that should use it.
+- The Catalog menu entry also needs `Magento_Catalog::catalog`. Roles without
+  it reach the page from the settings page link "Open AnswerEng status →".
+
 ## Behaviour notes
 
 - Each enabled store view is its own AnswerEng store (key defaults to the
