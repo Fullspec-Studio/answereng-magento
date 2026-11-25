@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 — unreleased
+## 0.2.0 — 2026-11-24
 
 Run `bin/magento setup:upgrade` after updating. See "Upgrading" in the README.
 
