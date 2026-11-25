@@ -18,6 +18,13 @@ fixes in admin.
 
 Design: docs/2026-10-05-magento-connector-design.md.
 
+## Requirements
+
+Magento Open Source or Adobe Commerce 2.4.6–2.4.8, on the PHP versions each
+line supports: 2.4.6 on PHP 8.1–8.2, 2.4.7 on 8.2–8.3, 2.4.8 on 8.3–8.4. CI
+tests each of those pairs, plus the committed `composer.lock` (currently
+2.4.9 packages) on PHP 8.3 and 8.4.
+
 ## Install (pilot merchants)
 
     composer config repositories.answereng artifact /path/to/folder-with-the-zip
