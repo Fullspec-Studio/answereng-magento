@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Test\Support;
 
-use Fullspec\AnswerEng\Model\Catalog\CatalogSource;
+use Fullspec\AnswerEng\Model\Catalog\CatalogSourceInterface;
 use Fullspec\AnswerEng\Model\Catalog\ProductRecord;
 
-final class FakeCatalogSource implements CatalogSource
+final class FakeCatalogSource implements CatalogSourceInterface
 {
     /** @var array<int,array<int,ProductRecord>> storeId => [entityId => record] */
     public array $products = [];

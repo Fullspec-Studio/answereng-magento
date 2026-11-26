@@ -5,7 +5,7 @@ namespace Fullspec\AnswerEng\Controller\Adminhtml\Action;
 
 use Fullspec\AnswerEng\Model\Admin\ActionResult;
 use Fullspec\AnswerEng\Model\Admin\ResultsProvider;
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\Controller\Result\Redirect;
 
@@ -17,12 +17,12 @@ class RefreshSummary extends AbstractAction
      * Constructor.
      *
      * @param Context $context
-     * @param SettingsProvider $settings
+     * @param SettingsProviderInterface $settings
      * @param ResultsProvider $results
      */
     public function __construct(
         Context $context,
-        SettingsProvider $settings,
+        SettingsProviderInterface $settings,
         private readonly ResultsProvider $results
     ) {
         parent::__construct($context, $settings);

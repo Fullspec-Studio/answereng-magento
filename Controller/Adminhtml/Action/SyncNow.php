@@ -5,10 +5,10 @@ namespace Fullspec\AnswerEng\Controller\Adminhtml\Action;
 
 use Fullspec\AnswerEng\Model\Admin\ActionResult;
 use Fullspec\AnswerEng\Model\Sync\SyncResult;
-use Fullspec\AnswerEng\Model\Sync\SyncRunner;
+use Fullspec\AnswerEng\Model\Sync\SyncRunnerInterface;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\Controller\Result\Redirect;
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 
 class SyncNow extends AbstractAction
 {
@@ -18,11 +18,14 @@ class SyncNow extends AbstractAction
      * Constructor.
      *
      * @param Context $context
-     * @param SettingsProvider $settings
-     * @param SyncRunner $runner
+     * @param SettingsProviderInterface $settings
+     * @param SyncRunnerInterface $runner
      */
-    public function __construct(Context $context, SettingsProvider $settings, private readonly SyncRunner $runner)
-    {
+    public function __construct(
+        Context $context,
+        SettingsProviderInterface $settings,
+        private readonly SyncRunnerInterface $runner
+    ) {
         parent::__construct($context, $settings);
     }
 

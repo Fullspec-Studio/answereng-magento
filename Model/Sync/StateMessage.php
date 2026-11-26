@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Sync;
 
+// phpcs:disable Magento2.Functions.StaticFunction -- pure functions, no state or dependencies to intercept.
 /**
  * The merchant-facing sentence for a view's sync state (spec §4 and the
  * "Merchant sees" column of §6). Built only from the state, the reason code and

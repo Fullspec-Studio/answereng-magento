@@ -5,7 +5,7 @@ namespace Fullspec\AnswerEng\Model\Db;
 
 use Magento\Framework\App\ResourceConnection;
 
-class MagentoSqlExecutor implements SqlExecutor
+class MagentoSqlExecutor implements SqlExecutorInterface
 {
     /**
      * Constructor.

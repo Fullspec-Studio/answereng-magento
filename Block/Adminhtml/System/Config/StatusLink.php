@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Block\Adminhtml\System\Config;
 
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 use Magento\Backend\Block\Template\Context;
 use Magento\Config\Block\System\Config\Form\Field;
 use Magento\Framework\Data\Form\Element\AbstractElement;
@@ -20,12 +20,12 @@ class StatusLink extends Field
      * Constructor.
      *
      * @param Context $context
-     * @param SettingsProvider $settings
+     * @param SettingsProviderInterface $settings
      * @param array<string,mixed> $data
      */
     public function __construct(
         Context $context,
-        private readonly SettingsProvider $settings,
+        private readonly SettingsProviderInterface $settings,
         array $data = []
     ) {
         parent::__construct($context, $data);

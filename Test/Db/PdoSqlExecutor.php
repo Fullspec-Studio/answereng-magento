@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Test\Db;
 
-use Fullspec\AnswerEng\Model\Db\SqlExecutor;
+use Fullspec\AnswerEng\Model\Db\SqlExecutorInterface;
 
-final class PdoSqlExecutor implements SqlExecutor
+final class PdoSqlExecutor implements SqlExecutorInterface
 {
     public function __construct(public readonly \PDO $pdo)
     {

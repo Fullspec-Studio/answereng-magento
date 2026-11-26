@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Admin;
 
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 use Fullspec\AnswerEng\Model\Engine\EngineClient;
 
 /**
@@ -16,12 +16,12 @@ class FixActions
     /**
      * Constructor.
      *
-     * @param SettingsProvider $settings
+     * @param SettingsProviderInterface $settings
      * @param EngineClient $engine
      * @param ResultsProvider $results
      */
     public function __construct(
-        private readonly SettingsProvider $settings,
+        private readonly SettingsProviderInterface $settings,
         private readonly EngineClient $engine,
         private readonly ResultsProvider $results
     ) {

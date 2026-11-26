@@ -6,7 +6,7 @@ namespace Fullspec\AnswerEng\Model\Engine;
 use GuzzleHttp\ClientInterface;
 
 /** Guzzle ships with Magento 2.4 and supports DELETE with a body. */
-class GuzzleTransport implements Transport
+class GuzzleTransport implements TransportInterface
 {
     /**
      * Constructor.

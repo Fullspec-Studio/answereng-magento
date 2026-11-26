@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Test\Support;
 
-use Fullspec\AnswerEng\Model\Config\ConfigDisabler;
+use Fullspec\AnswerEng\Model\Config\ConfigDisablerInterface;
 use Fullspec\AnswerEng\Model\Config\Settings;
 
-final class FakeDisabler implements ConfigDisabler
+final class FakeDisabler implements ConfigDisablerInterface
 {
     /** @var list<int> */
     public array $disabled = [];

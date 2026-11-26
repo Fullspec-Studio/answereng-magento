@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Sync;
 
-use Fullspec\AnswerEng\Model\Admin\KeyValueCache;
+use Fullspec\AnswerEng\Model\Admin\KeyValueCacheInterface;
 use Fullspec\AnswerEng\Model\Admin\SummaryProvider;
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
-use Fullspec\AnswerEng\Model\Support\Clock;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
+use Fullspec\AnswerEng\Model\Support\ClockInterface;
 
 /**
  * Spec §6 "Configuration saves": compares each view's EFFECTIVE settings
@@ -21,16 +21,16 @@ class ConfigChangeHandler
     /**
      * Constructor.
      *
-     * @param SettingsProvider $settings
+     * @param SettingsProviderInterface $settings
      * @param SyncStateRepository $state
-     * @param Clock $clock
-     * @param KeyValueCache $cache
+     * @param ClockInterface $clock
+     * @param KeyValueCacheInterface $cache
      */
     public function __construct(
-        private readonly SettingsProvider $settings,
+        private readonly SettingsProviderInterface $settings,
         private readonly SyncStateRepository $state,
-        private readonly Clock $clock,
-        private readonly KeyValueCache $cache
+        private readonly ClockInterface $clock,
+        private readonly KeyValueCacheInterface $cache
     ) {
     }
 

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Admin;
 
+// phpcs:disable Magento2.Functions.StaticFunction -- pure functions, no state or dependencies to intercept.
 /**
  * Geometry for the server-rendered visibility trend (WooCommerce `render_trend`): a line through the
  * rates, a band from low to high, and date labels. The y-axis always starts at zero and tops out at

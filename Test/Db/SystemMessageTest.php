@@ -5,7 +5,7 @@ namespace Fullspec\AnswerEng\Test\Db;
 
 use Fullspec\AnswerEng\Model\Admin\SystemMessage;
 use Fullspec\AnswerEng\Model\Config\Settings;
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 use Fullspec\AnswerEng\Test\Support\FakeSettings;
 use Fullspec\AnswerEng\Test\Support\FixedClock;
@@ -33,7 +33,7 @@ final class SystemMessageTest extends DbTestCase
     {
         $url = $this->createMock(UrlInterface::class);
         $url->method('getUrl')->willReturnCallback(static fn (string $route) => "/admin/$route");
-        $named = new class ($this->settings) implements SettingsProvider {
+        $named = new class ($this->settings) implements SettingsProviderInterface {
             public function __construct(private readonly FakeSettings $inner)
             {
             }

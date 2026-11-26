@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Cron;
 
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
-use Fullspec\AnswerEng\Model\Support\Clock;
-use Fullspec\AnswerEng\Model\Sync\SyncRunner;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
+use Fullspec\AnswerEng\Model\Support\ClockInterface;
+use Fullspec\AnswerEng\Model\Sync\SyncRunnerInterface;
 use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 use Psr\Log\LoggerInterface;
 
@@ -18,17 +18,17 @@ class SyncDirty
     /**
      * Constructor.
      *
-     * @param SettingsProvider $settings
+     * @param SettingsProviderInterface $settings
      * @param SyncStateRepository $state
-     * @param SyncRunner $runner
-     * @param Clock $clock
+     * @param SyncRunnerInterface $runner
+     * @param ClockInterface $clock
      * @param LoggerInterface $logger
      */
     public function __construct(
-        private readonly SettingsProvider $settings,
+        private readonly SettingsProviderInterface $settings,
         private readonly SyncStateRepository $state,
-        private readonly SyncRunner $runner,
-        private readonly Clock $clock,
+        private readonly SyncRunnerInterface $runner,
+        private readonly ClockInterface $clock,
         private readonly LoggerInterface $logger
     ) {
     }

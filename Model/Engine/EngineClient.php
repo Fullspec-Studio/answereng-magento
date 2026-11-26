@@ -18,11 +18,11 @@ class EngineClient
     /**
      * Constructor.
      *
-     * @param Transport $transport
+     * @param TransportInterface $transport
      * @param LoggerInterface $logger
      */
     public function __construct(
-        private readonly Transport $transport,
+        private readonly TransportInterface $transport,
         private readonly LoggerInterface $logger
     ) {
     }

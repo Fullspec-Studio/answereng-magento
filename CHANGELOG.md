@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- **Interface names:** the module's interfaces now end in `Interface`, as
+  Magento's coding standard asks (for example `Model\Db\SqlExecutor` is now
+  `Model\Db\SqlExecutorInterface`). Behavior is unchanged. Custom code that
+  sets a DI preference for one of them needs the new name.
+
 ## 0.2.0 — 2026-11-24
 
 Run `bin/magento setup:upgrade` after updating. See "Upgrading" in the README.

@@ -5,7 +5,7 @@ namespace Fullspec\AnswerEng\Model\Support;
 
 use Magento\Framework\Lock\LockManagerInterface;
 
-class MagentoSyncLock implements SyncLock
+class MagentoSyncLock implements SyncLockInterface
 {
     /**
      * Constructor.

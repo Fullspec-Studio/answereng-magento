@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Support;
 
-interface SyncLock
+interface SyncLockInterface
 {
     /**
      * Non-blocking: false when another process holds it.

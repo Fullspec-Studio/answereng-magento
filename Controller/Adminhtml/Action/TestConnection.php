@@ -7,7 +7,7 @@ use Fullspec\AnswerEng\Model\Admin\ActionResult;
 use Fullspec\AnswerEng\Model\Admin\RemoteStoreActions;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\Controller\Result\Redirect;
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 
 class TestConnection extends AbstractAction
 {
@@ -17,12 +17,12 @@ class TestConnection extends AbstractAction
      * Constructor.
      *
      * @param Context $context
-     * @param SettingsProvider $settings
+     * @param SettingsProviderInterface $settings
      * @param RemoteStoreActions $actions
      */
     public function __construct(
         Context $context,
-        SettingsProvider $settings,
+        SettingsProviderInterface $settings,
         private readonly RemoteStoreActions $actions
     ) {
         parent::__construct($context, $settings);

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Config;
 
-interface ConfigDisabler
+interface ConfigDisablerInterface
 {
     /**
      * Turn AnswerEng off for a store view (a config save: bumps its revision).

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Catalog;
 
-/** Raw, store-view-scoped product data from a CatalogSource. */
+/** Raw, store-view-scoped product data from a CatalogSourceInterface. */
 class ProductRecord
 {
     /**

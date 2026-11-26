@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Fullspec\AnswerEng\Block\Adminhtml\Status;
 
 use Fullspec\AnswerEng\Model\Admin\PanelViewModel;
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 use Magento\Backend\Block\Template;
 use Magento\Backend\Block\Template\Context;
 
@@ -28,13 +28,13 @@ class Panel extends Template
      *
      * @param Context $context
      * @param PanelViewModel $panel
-     * @param SettingsProvider $settings
+     * @param SettingsProviderInterface $settings
      * @param array<string,mixed> $data
      */
     public function __construct(
         Context $context,
         private readonly PanelViewModel $panel,
-        private readonly SettingsProvider $settings,
+        private readonly SettingsProviderInterface $settings,
         array $data = []
     ) {
         parent::__construct($context, $data);

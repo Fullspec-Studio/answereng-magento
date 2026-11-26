@@ -5,6 +5,7 @@ namespace Fullspec\AnswerEng\Model\Sync;
 
 use Fullspec\AnswerEng\Model\Support\Ts;
 
+// phpcs:disable Magento2.Functions.StaticFunction -- value-object named constructors, nothing to intercept.
 class SyncState
 {
     /**

@@ -13,7 +13,8 @@
                     <argument name="switch_store_groups" xsi:type="string">0</argument>
                     <argument name="switch_store_views" xsi:type="string">1</argument>
                     <argument name="use_confirm" xsi:type="string">0</argument>
-                    <argument name="default_selection_name" xsi:type="string" translate="true">All Store Views</argument>
+                    <argument name="default_selection_name" xsi:type="string"
+                              translate="true">All Store Views</argument>
                 </arguments>
             </block>
         </referenceContainer>

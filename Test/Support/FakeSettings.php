@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace Fullspec\AnswerEng\Test\Support;
 
 use Fullspec\AnswerEng\Model\Config\Settings;
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 
-final class FakeSettings implements SettingsProvider
+final class FakeSettings implements SettingsProviderInterface
 {
     /** @var array<int,Settings> */
     public array $stores = [];

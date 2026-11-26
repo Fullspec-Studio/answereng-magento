@@ -13,7 +13,7 @@ use Magento\Store\Model\StoreManagerInterface;
  * metadata processor already returns the DECRYPTED value: decrypting again here
  * would turn the key into binary garbage.
  */
-class ConfigSettingsProvider implements SettingsProvider
+class ConfigSettingsProvider implements SettingsProviderInterface
 {
     public const DEFAULT_ENGINE_URL = 'https://api.answereng.io';
     public const PATH_ENGINE_URL = 'answereng/connection/engine_url';

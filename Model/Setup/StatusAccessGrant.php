@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Setup;
 
-use Fullspec\AnswerEng\Model\Db\SqlExecutor;
+use Fullspec\AnswerEng\Model\Db\SqlExecutorInterface;
 
 /**
  * Upgrade from 0.1.0: the sync and delete permissions moved under the new Catalog › AnswerEng page
@@ -21,9 +21,9 @@ class StatusAccessGrant
     ];
 
     /**
-     * @param SqlExecutor $db
+     * @param SqlExecutorInterface $db
      */
-    public function __construct(private readonly SqlExecutor $db)
+    public function __construct(private readonly SqlExecutorInterface $db)
     {
     }
 

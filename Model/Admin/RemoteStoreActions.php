@@ -3,16 +3,16 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Admin;
 
-use Fullspec\AnswerEng\Model\Config\ConfigDisabler;
+use Fullspec\AnswerEng\Model\Config\ConfigDisablerInterface;
 use Fullspec\AnswerEng\Model\Config\Settings;
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 use Fullspec\AnswerEng\Model\Engine\EngineClient;
 use Fullspec\AnswerEng\Model\Engine\ReadBudget;
 use Fullspec\AnswerEng\Model\Engine\EngineResult;
 use Fullspec\AnswerEng\Model\Registry\RemoteStore;
 use Fullspec\AnswerEng\Model\Registry\RemoteStoreRegistry;
 use Fullspec\AnswerEng\Model\Registry\RoleResolver;
-use Fullspec\AnswerEng\Model\Support\Clock;
+use Fullspec\AnswerEng\Model\Support\ClockInterface;
 use Fullspec\AnswerEng\Model\Support\Ts;
 use Fullspec\AnswerEng\Model\Sync\Classifier;
 use Fullspec\AnswerEng\Model\Sync\ErrorDetail;
@@ -30,26 +30,26 @@ class RemoteStoreActions
     /**
      * Constructor.
      *
-     * @param SettingsProvider $settings
+     * @param SettingsProviderInterface $settings
      * @param SyncStateRepository $state
      * @param SyncLog $log
      * @param EngineClient $engine
      * @param Classifier $classifier
      * @param RemoteStoreRegistry $registry
      * @param RoleResolver $roles
-     * @param ConfigDisabler $disabler
-     * @param Clock $clock
+     * @param ConfigDisablerInterface $disabler
+     * @param ClockInterface $clock
      */
     public function __construct(
-        private readonly SettingsProvider $settings,
+        private readonly SettingsProviderInterface $settings,
         private readonly SyncStateRepository $state,
         private readonly SyncLog $log,
         private readonly EngineClient $engine,
         private readonly Classifier $classifier,
         private readonly RemoteStoreRegistry $registry,
         private readonly RoleResolver $roles,
-        private readonly ConfigDisabler $disabler,
-        private readonly Clock $clock
+        private readonly ConfigDisablerInterface $disabler,
+        private readonly ClockInterface $clock
     ) {
     }
 

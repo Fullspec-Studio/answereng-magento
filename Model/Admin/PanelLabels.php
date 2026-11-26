@@ -5,6 +5,7 @@ namespace Fullspec\AnswerEng\Model\Admin;
 
 use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 
+// phpcs:disable Magento2.Functions.StaticFunction -- pure functions, no state or dependencies to intercept.
 /**
  * Display labels for the status panel. The panel keeps the stored codes
  * (sync state, log outcome, log source) and shows these instead. Each label
@@ -109,8 +110,10 @@ class PanelLabels
     }
 
     /**
-     * How many drafted fixes await review, as shown: the engine's full count when it sends one,
-     * otherwise the listed count, with "+" once the list hits the engine's limit.
+     * How many drafted fixes await review, as shown.
+     *
+     * The engine's full count when it sends one, otherwise the listed count, with "+" once the list hits
+     * the engine's limit.
      *
      * @param int|null $total
      * @param int $listed

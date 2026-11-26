@@ -2,9 +2,6 @@
 <ruleset name="AnswerEng">
     <rule ref="Magento2"/>
     <arg name="extensions" value="php,phtml"/>
-    <!-- Warnings are reported but don't fail the run: the 28 left would rename
-         public interfaces or change behaviour. Errors still fail. -->
-    <config name="ignore_warnings_on_exit" value="1"/>
     <file>registration.php</file>
     <file>Block</file>
     <file>Console</file>

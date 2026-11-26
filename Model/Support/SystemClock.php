@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Support;
 
-class SystemClock implements Clock
+class SystemClock implements ClockInterface
 {
     /**
      * @inheritdoc

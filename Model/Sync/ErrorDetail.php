@@ -5,6 +5,7 @@ namespace Fullspec\AnswerEng\Model\Sync;
 
 use Fullspec\AnswerEng\Model\Engine\EngineResult;
 
+// phpcs:disable Magento2.Functions.StaticFunction -- pure functions, no state or dependencies to intercept.
 /**
  * The only engine-error text the module ever stores or shows: status, code,
  * limit, and for 422 at most five loc/type pairs. Never `error`, `msg` or

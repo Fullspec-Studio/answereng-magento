@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Admin;
 
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 use Fullspec\AnswerEng\Model\Engine\EngineClient;
 use Fullspec\AnswerEng\Model\Engine\ReadBudget;
-use Fullspec\AnswerEng\Model\Support\Clock;
+use Fullspec\AnswerEng\Model\Support\ClockInterface;
 use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 
 /**
@@ -24,18 +24,18 @@ class SummaryProvider
     /**
      * Constructor.
      *
-     * @param SettingsProvider $settings
+     * @param SettingsProviderInterface $settings
      * @param SyncStateRepository $state
      * @param EngineClient $engine
-     * @param KeyValueCache $cache
-     * @param Clock $clock
+     * @param KeyValueCacheInterface $cache
+     * @param ClockInterface $clock
      */
     public function __construct(
-        private readonly SettingsProvider $settings,
+        private readonly SettingsProviderInterface $settings,
         private readonly SyncStateRepository $state,
         private readonly EngineClient $engine,
-        private readonly KeyValueCache $cache,
-        private readonly Clock $clock
+        private readonly KeyValueCacheInterface $cache,
+        private readonly ClockInterface $clock
     ) {
     }
 

@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace Fullspec\AnswerEng\Test\Support;
 
 use Fullspec\AnswerEng\Model\Sync\SyncResult;
-use Fullspec\AnswerEng\Model\Sync\SyncRunner;
+use Fullspec\AnswerEng\Model\Sync\SyncRunnerInterface;
 
-final class FakeRunner implements SyncRunner
+final class FakeRunner implements SyncRunnerInterface
 {
     /** @var list<array{int,string,bool}> */
     public array $calls = [];
