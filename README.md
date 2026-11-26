@@ -76,3 +76,10 @@ users keep their actions. Two things stay manual, because they widen access:
 
 See docs/dev-environment.md (local Magento on 8894 + `dev/mock-engine` on 8895)
 and the executed record in docs/integration-checklist.md.
+
+## License
+
+Copyright (c) 2026 Fullspec Studio. Licensed under the Open Software License
+version 3.0 (LICENSE.txt) or the Academic Free License version 3.0
+(LICENSE_AFL.txt), at your option, the same terms as Magento Open Source
+modules.
