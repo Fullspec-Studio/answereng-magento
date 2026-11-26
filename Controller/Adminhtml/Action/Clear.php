@@ -6,7 +6,7 @@ namespace Fullspec\AnswerEng\Controller\Adminhtml\Action;
 use Fullspec\AnswerEng\Model\Admin\RemoteStoreActions;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\Controller\Result\Redirect;
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 
 class Clear extends AbstractAction
 {
@@ -16,12 +16,12 @@ class Clear extends AbstractAction
      * Constructor.
      *
      * @param Context $context
-     * @param SettingsProvider $settings
+     * @param SettingsProviderInterface $settings
      * @param RemoteStoreActions $actions
      */
     public function __construct(
         Context $context,
-        SettingsProvider $settings,
+        SettingsProviderInterface $settings,
         private readonly RemoteStoreActions $actions
     ) {
         parent::__construct($context, $settings);

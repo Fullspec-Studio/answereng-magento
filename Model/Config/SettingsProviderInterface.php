@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Config;
 
-interface SettingsProvider
+interface SettingsProviderInterface
 {
     /**
      * For store.

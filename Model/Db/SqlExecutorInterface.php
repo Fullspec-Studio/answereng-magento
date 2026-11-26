@@ -8,7 +8,7 @@ namespace Fullspec\AnswerEng\Model\Db;
  * `?` placeholders. Magento runs it through its connection; tests run it
  * through PDO against MariaDB, so the SQL itself is what gets tested.
  */
-interface SqlExecutor
+interface SqlExecutorInterface
 {
     /**
      * Physical name for a logical table (Magento may add a prefix).

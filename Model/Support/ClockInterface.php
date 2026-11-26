@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Support;
 
-interface Clock
+interface ClockInterface
 {
     /**
      * Current time in UTC.

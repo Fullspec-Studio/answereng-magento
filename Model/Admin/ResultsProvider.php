@@ -4,10 +4,10 @@ declare(strict_types=1);
 namespace Fullspec\AnswerEng\Model\Admin;
 
 use Fullspec\AnswerEng\Model\Config\Settings;
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 use Fullspec\AnswerEng\Model\Engine\EngineClient;
 use Fullspec\AnswerEng\Model\Engine\ReadBudget;
-use Fullspec\AnswerEng\Model\Support\Clock;
+use Fullspec\AnswerEng\Model\Support\ClockInterface;
 use Fullspec\AnswerEng\Model\Sync\SyncState;
 use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 
@@ -24,19 +24,19 @@ class ResultsProvider
     /**
      * Constructor.
      *
-     * @param SettingsProvider $settings
+     * @param SettingsProviderInterface $settings
      * @param SyncStateRepository $state
      * @param EngineClient $engine
-     * @param KeyValueCache $cache
-     * @param Clock $clock
+     * @param KeyValueCacheInterface $cache
+     * @param ClockInterface $clock
      * @param SummaryProvider $summaries
      */
     public function __construct(
-        private readonly SettingsProvider $settings,
+        private readonly SettingsProviderInterface $settings,
         private readonly SyncStateRepository $state,
         private readonly EngineClient $engine,
-        private readonly KeyValueCache $cache,
-        private readonly Clock $clock,
+        private readonly KeyValueCacheInterface $cache,
+        private readonly ClockInterface $clock,
         private readonly SummaryProvider $summaries
     ) {
     }
@@ -81,8 +81,10 @@ class ResultsProvider
     }
 
     /**
-     * Drop the cached summary and both fix lists ("Refresh", and after marking a fix applied or undoing it:
-     * the summary carries the suggested-fix total).
+     * Drop the cached summary and both fix lists.
+     *
+     * Used by "Refresh", and after marking a fix applied or undoing it, because the summary carries the
+     * suggested-fix total.
      *
      * @param int $storeId
      * @return void

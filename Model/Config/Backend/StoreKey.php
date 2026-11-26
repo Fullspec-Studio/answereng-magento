@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Fullspec\AnswerEng\Model\Config\Backend;
 
 use Fullspec\AnswerEng\Model\Config\DuplicateStoreKeyException;
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 use Fullspec\AnswerEng\Model\Config\StoreKeyPolicy;
 use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 use Magento\Framework\App\Cache\TypeListInterface;
@@ -33,7 +33,7 @@ class StoreKey extends Value
      * @param ScopeConfigInterface $config
      * @param TypeListInterface $cacheTypeList
      * @param StoreManagerInterface $storeManager
-     * @param SettingsProvider $settings
+     * @param SettingsProviderInterface $settings
      * @param SyncStateRepository $state
      * @param ManagerInterface $messages
      * @param AbstractResource|null $resource
@@ -46,7 +46,7 @@ class StoreKey extends Value
         ScopeConfigInterface $config,
         TypeListInterface $cacheTypeList,
         private readonly StoreManagerInterface $storeManager,
-        private readonly SettingsProvider $settings,
+        private readonly SettingsProviderInterface $settings,
         private readonly SyncStateRepository $state,
         private readonly ManagerInterface $messages,
         ?AbstractResource $resource = null,

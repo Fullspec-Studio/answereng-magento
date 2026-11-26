@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Engine;
 
-use Fullspec\AnswerEng\Model\Support\Clock;
+use Fullspec\AnswerEng\Model\Support\ClockInterface;
 
 /**
  * A shared time budget for the reads behind one page view: 20 s in total, each attempt at most 15 s
@@ -23,11 +23,13 @@ class ReadBudget
     /**
      * Constructor.
      *
-     * @param Clock $clock
+     * @param ClockInterface $clock
      * @param int $totalSeconds
      */
-    public function __construct(private readonly Clock $clock, private readonly int $totalSeconds = self::TOTAL)
-    {
+    public function __construct(
+        private readonly ClockInterface $clock,
+        private readonly int $totalSeconds = self::TOTAL
+    ) {
         $this->startedAt = $clock->now()->getTimestamp();
     }
 

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Config;
 
+// phpcs:disable Magento2.Functions.StaticFunction -- pure functions, no state or dependencies to intercept.
 /** Store keys are engine identities: trimmed, never case-folded, unique across enabled views. */
 class StoreKeyPolicy
 {
@@ -25,6 +26,9 @@ class StoreKeyPolicy
      */
     public static function fromBaseUrl(string $baseUrl): string
     {
+        // Reads only the host of the store's own base URL. This class is plain PHP with no Magento
+        // dependencies, so it doesn't take Laminas\Uri.
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction
         $host = parse_url(trim($baseUrl), PHP_URL_HOST);
         return is_string($host) ? strtolower($host) : '';
     }

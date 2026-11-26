@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Admin;
 
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 use Fullspec\AnswerEng\Model\Engine\ReadBudget;
 use Fullspec\AnswerEng\Model\Registry\RemoteStoreRegistry;
 use Fullspec\AnswerEng\Model\Registry\RoleResolver;
-use Fullspec\AnswerEng\Model\Support\Clock;
+use Fullspec\AnswerEng\Model\Support\ClockInterface;
 use Fullspec\AnswerEng\Model\Sync\StateMessage;
 use Fullspec\AnswerEng\Model\Sync\SyncLog;
 use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
@@ -21,7 +21,7 @@ class PanelViewModel
     /**
      * Constructor.
      *
-     * @param SettingsProvider $settings
+     * @param SettingsProviderInterface $settings
      * @param SyncStateRepository $state
      * @param SyncLog $log
      * @param ResultsProvider $results
@@ -31,10 +31,10 @@ class PanelViewModel
      * @param AuthorizationInterface $authorization
      * @param UrlInterface $url
      * @param LoggerInterface $logger
-     * @param Clock $clock
+     * @param ClockInterface $clock
      */
     public function __construct(
-        private readonly SettingsProvider $settings,
+        private readonly SettingsProviderInterface $settings,
         private readonly SyncStateRepository $state,
         private readonly SyncLog $log,
         private readonly ResultsProvider $results,
@@ -44,7 +44,7 @@ class PanelViewModel
         private readonly AuthorizationInterface $authorization,
         private readonly UrlInterface $url,
         private readonly LoggerInterface $logger,
-        private readonly Clock $clock
+        private readonly ClockInterface $clock
     ) {
     }
 

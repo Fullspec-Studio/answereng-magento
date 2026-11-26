@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Engine;
 
-interface Transport
+interface TransportInterface
 {
     /**
      * Send one HTTP request.

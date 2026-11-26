@@ -5,7 +5,7 @@ namespace Fullspec\AnswerEng\Model\Admin;
 
 use Magento\Framework\App\CacheInterface;
 
-class MagentoKeyValueCache implements KeyValueCache
+class MagentoKeyValueCache implements KeyValueCacheInterface
 {
     private const TAG = 'ANSWERENG';
 

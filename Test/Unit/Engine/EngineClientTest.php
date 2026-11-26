@@ -7,7 +7,7 @@ use Fullspec\AnswerEng\Model\Engine\Connection;
 use Fullspec\AnswerEng\Model\Engine\EngineClient;
 use Fullspec\AnswerEng\Model\Engine\ReadBudget;
 use Fullspec\AnswerEng\Model\Engine\TransportException;
-use Fullspec\AnswerEng\Model\Support\Clock;
+use Fullspec\AnswerEng\Model\Support\ClockInterface;
 use Fullspec\AnswerEng\Test\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -212,7 +212,7 @@ final class EngineClientTest extends TestCase
     public function testNoZeroTimeoutReachesTheTransportWhenTheSecondTicksOver(): void
     {
         // stopped() sees 1 s left, attemptTimeout() then sees 0: the attempt must not be sent.
-        $clock = new class implements Clock {
+        $clock = new class implements ClockInterface {
             private int $reads = 0;
             public function now(): \DateTimeImmutable
             {

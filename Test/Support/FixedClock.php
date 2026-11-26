@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Test\Support;
 
-use Fullspec\AnswerEng\Model\Support\Clock;
+use Fullspec\AnswerEng\Model\Support\ClockInterface;
 
-final class FixedClock implements Clock
+final class FixedClock implements ClockInterface
 {
     private \DateTimeImmutable $now;
 

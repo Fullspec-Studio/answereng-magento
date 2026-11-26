@@ -8,7 +8,7 @@ use Magento\Framework\App\Config\ReinitableConfigInterface;
 use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Store\Model\ScopeInterface;
 
-class MagentoConfigDisabler implements ConfigDisabler
+class MagentoConfigDisabler implements ConfigDisablerInterface
 {
     /**
      * Constructor.

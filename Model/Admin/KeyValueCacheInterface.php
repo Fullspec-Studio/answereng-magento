@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Admin;
 
-interface KeyValueCache
+interface KeyValueCacheInterface
 {
     /**
      * Cached value for the key, or null on a miss.

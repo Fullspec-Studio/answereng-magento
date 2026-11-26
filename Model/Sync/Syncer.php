@@ -6,12 +6,12 @@ namespace Fullspec\AnswerEng\Model\Sync;
 use Fullspec\AnswerEng\Model\Catalog\CatalogBuilder;
 use Fullspec\AnswerEng\Model\Catalog\ExportResult;
 use Fullspec\AnswerEng\Model\Config\Settings;
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 use Fullspec\AnswerEng\Model\Engine\EngineClient;
 use Fullspec\AnswerEng\Model\Engine\EngineResult;
 use Fullspec\AnswerEng\Model\Registry\RemoteStoreRegistry;
-use Fullspec\AnswerEng\Model\Support\Clock;
-use Fullspec\AnswerEng\Model\Support\SyncLock;
+use Fullspec\AnswerEng\Model\Support\ClockInterface;
+use Fullspec\AnswerEng\Model\Support\SyncLockInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -20,32 +20,32 @@ use Psr\Log\LoggerInterface;
  * state update. A successful remote side effect is recorded in the registry
  * unconditionally, even when the state update is superseded.
  */
-class Syncer implements SyncRunner
+class Syncer implements SyncRunnerInterface
 {
     /**
      * Constructor.
      *
-     * @param SettingsProvider $settings
+     * @param SettingsProviderInterface $settings
      * @param SyncStateRepository $state
      * @param SyncLog $log
      * @param CatalogBuilder $builder
      * @param EngineClient $engine
      * @param Classifier $classifier
      * @param RemoteStoreRegistry $registry
-     * @param SyncLock $lock
-     * @param Clock $clock
+     * @param SyncLockInterface $lock
+     * @param ClockInterface $clock
      * @param LoggerInterface $logger
      */
     public function __construct(
-        private readonly SettingsProvider $settings,
+        private readonly SettingsProviderInterface $settings,
         private readonly SyncStateRepository $state,
         private readonly SyncLog $log,
         private readonly CatalogBuilder $builder,
         private readonly EngineClient $engine,
         private readonly Classifier $classifier,
         private readonly RemoteStoreRegistry $registry,
-        private readonly SyncLock $lock,
-        private readonly Clock $clock,
+        private readonly SyncLockInterface $lock,
+        private readonly ClockInterface $clock,
         private readonly LoggerInterface $logger
     ) {
     }

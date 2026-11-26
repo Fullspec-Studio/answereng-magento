@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Support;
 
+// phpcs:disable Magento2.Functions.StaticFunction -- pure functions, no state or dependencies to intercept.
 /** UTC DATETIME strings for SQL. */
 class Ts
 {

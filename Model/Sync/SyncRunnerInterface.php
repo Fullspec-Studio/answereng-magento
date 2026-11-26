@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Sync;
 
-interface SyncRunner
+interface SyncRunnerInterface
 {
     /**
      * $manual = an explicit merchant action (Sync now / CLI), which bypasses cron selection.

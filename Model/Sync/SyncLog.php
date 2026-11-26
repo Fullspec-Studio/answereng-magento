@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Sync;
 
-use Fullspec\AnswerEng\Model\Db\SqlExecutor;
+use Fullspec\AnswerEng\Model\Db\SqlExecutorInterface;
 use Fullspec\AnswerEng\Model\Support\Ts;
 
 /**
@@ -17,9 +17,9 @@ class SyncLog
     /**
      * Constructor.
      *
-     * @param SqlExecutor $db
+     * @param SqlExecutorInterface $db
      */
-    public function __construct(private readonly SqlExecutor $db)
+    public function __construct(private readonly SqlExecutorInterface $db)
     {
     }
 

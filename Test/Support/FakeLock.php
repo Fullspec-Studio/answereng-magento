@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Test\Support;
 
-use Fullspec\AnswerEng\Model\Support\SyncLock;
+use Fullspec\AnswerEng\Model\Support\SyncLockInterface;
 
-final class FakeLock implements SyncLock
+final class FakeLock implements SyncLockInterface
 {
     /** @var array<string,bool> */
     public array $held = [];

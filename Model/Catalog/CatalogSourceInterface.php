@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Catalog;
 
-interface CatalogSource
+interface CatalogSourceInterface
 {
     /**
      * Eligible ids.

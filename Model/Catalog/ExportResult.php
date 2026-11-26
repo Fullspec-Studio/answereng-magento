@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Catalog;
 
+// phpcs:disable Magento2.Functions.StaticFunction -- value-object named constructors, nothing to intercept.
 class ExportResult
 {
     public const PAYLOAD = 'payload';

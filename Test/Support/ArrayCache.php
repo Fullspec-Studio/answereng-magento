@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Test\Support;
 
-use Fullspec\AnswerEng\Model\Admin\KeyValueCache;
+use Fullspec\AnswerEng\Model\Admin\KeyValueCacheInterface;
 
-final class ArrayCache implements KeyValueCache
+final class ArrayCache implements KeyValueCacheInterface
 {
     /** @var array<string,string> */
     public array $items = [];

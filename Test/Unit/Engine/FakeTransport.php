@@ -4,11 +4,11 @@ declare(strict_types=1);
 namespace Fullspec\AnswerEng\Test\Unit\Engine;
 
 use Fullspec\AnswerEng\Model\Engine\HttpResponse;
-use Fullspec\AnswerEng\Model\Engine\Transport;
+use Fullspec\AnswerEng\Model\Engine\TransportInterface;
 use Fullspec\AnswerEng\Model\Engine\TransportException;
 
 /** Records requests and replays queued responses (or TransportException). */
-final class FakeTransport implements Transport
+final class FakeTransport implements TransportInterface
 {
     /** @var list<array{method:string,url:string,headers:array<string,string>,body:?string,timeout:int}> */
     public array $requests = [];

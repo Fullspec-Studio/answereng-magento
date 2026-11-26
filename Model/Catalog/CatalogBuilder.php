@@ -20,9 +20,9 @@ class CatalogBuilder
     /**
      * Constructor.
      *
-     * @param CatalogSource $source
+     * @param CatalogSourceInterface $source
      */
-    public function __construct(private readonly CatalogSource $source)
+    public function __construct(private readonly CatalogSourceInterface $source)
     {
     }
 

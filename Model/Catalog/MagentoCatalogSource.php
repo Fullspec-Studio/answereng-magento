@@ -26,7 +26,7 @@ use Magento\Store\Model\StoreManagerInterface;
  *   (ties: lowest category id);
  * - attributes: is_visible_on_front, keyed by code, storefront text.
  */
-class MagentoCatalogSource implements CatalogSource
+class MagentoCatalogSource implements CatalogSourceInterface
 {
     /** @var list<string>|null */
     private ?array $visibleCodes = null;

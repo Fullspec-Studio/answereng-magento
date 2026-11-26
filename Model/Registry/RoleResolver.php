@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Model\Registry;
 
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 use Fullspec\AnswerEng\Model\Sync\SyncStateRepository;
 
 /**
@@ -16,12 +16,12 @@ class RoleResolver
     /**
      * Constructor.
      *
-     * @param SettingsProvider $settings
+     * @param SettingsProviderInterface $settings
      * @param SyncStateRepository $state
      * @param RemoteStoreRegistry $registry
      */
     public function __construct(
-        private readonly SettingsProvider $settings,
+        private readonly SettingsProviderInterface $settings,
         private readonly SyncStateRepository $state,
         private readonly RemoteStoreRegistry $registry
     ) {

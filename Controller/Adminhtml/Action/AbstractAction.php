@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Fullspec\AnswerEng\Controller\Adminhtml\Action;
 
 use Fullspec\AnswerEng\Model\Admin\ActionResult;
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\App\Action\HttpPostActionInterface;
@@ -17,9 +17,9 @@ abstract class AbstractAction extends Action implements HttpPostActionInterface
      * Constructor.
      *
      * @param Context $context
-     * @param SettingsProvider $settingsProvider
+     * @param SettingsProviderInterface $settingsProvider
      */
-    public function __construct(Context $context, private readonly SettingsProvider $settingsProvider)
+    public function __construct(Context $context, private readonly SettingsProviderInterface $settingsProvider)
     {
         parent::__construct($context);
     }

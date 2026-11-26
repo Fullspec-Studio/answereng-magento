@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Fullspec\AnswerEng\Console\Command;
 
-use Fullspec\AnswerEng\Model\Config\SettingsProvider;
-use Fullspec\AnswerEng\Model\Sync\SyncRunner;
+use Fullspec\AnswerEng\Model\Config\SettingsProviderInterface;
+use Fullspec\AnswerEng\Model\Sync\SyncRunnerInterface;
 use Magento\Framework\App\Area;
 use Magento\Framework\App\State;
 use Magento\Framework\Exception\LocalizedException;
@@ -19,13 +19,13 @@ class Sync extends Command
     /**
      * Constructor.
      *
-     * @param SettingsProvider $settings
-     * @param SyncRunner $runner
+     * @param SettingsProviderInterface $settings
+     * @param SyncRunnerInterface $runner
      * @param State $appState
      */
     public function __construct(
-        private readonly SettingsProvider $settings,
-        private readonly SyncRunner $runner,
+        private readonly SettingsProviderInterface $settings,
+        private readonly SyncRunnerInterface $runner,
         private readonly State $appState
     ) {
         parent::__construct();
