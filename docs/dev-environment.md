@@ -212,8 +212,9 @@ docker compose exec -T phpfpm bash -c '
   rm -rf generated/code/* generated/metadata/* && bin/magento cache:flush'
 ```
 
-Release zip, installed exactly as the README says (the zip archives HEAD, so
-commit first). Back up the root `composer.json`/`composer.lock`, which the
+Release zip, installed the way the README's zip fallback says (the zip archives
+HEAD, so commit first). The Packagist install uses GitHub's archive of the tag,
+which applies the same `.gitattributes` exclusions. Back up the root `composer.json`/`composer.lock`, which the
 artifact install rewrites:
 
 ```bash

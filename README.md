@@ -25,11 +25,19 @@ line supports: 2.4.6 on PHP 8.1–8.2, 2.4.7 on 8.2–8.3, 2.4.8 on 8.3–8.4. C
 tests each of those pairs, plus the committed `composer.lock` (currently
 2.4.9 packages) on PHP 8.3 and 8.4.
 
-## Install (pilot merchants)
+## Install
 
-    composer config repositories.answereng artifact /path/to/folder-with-the-zip
+The module is on Packagist as
+[`fullspec/module-answereng`](https://packagist.org/packages/fullspec/module-answereng):
+
     composer require fullspec/module-answereng
     bin/magento module:enable Fullspec_AnswerEng && bin/magento setup:upgrade
+
+Without Packagist access, install the zip attached to each
+[GitHub release](https://github.com/Fullspec-Studio/answereng-magento/releases)
+instead: put it in a folder, run
+`composer config repositories.answereng artifact /path/to/that-folder`, then
+the same commands.
 
 Then Stores › Configuration › Catalog › AnswerEng: paste the API key, enable
 each store view you want analysed, and set brand names. Sync status, AI
