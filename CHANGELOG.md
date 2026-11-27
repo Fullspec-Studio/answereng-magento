@@ -7,6 +7,11 @@
   Magento's coding standard asks (for example `Model\Db\SqlExecutor` is now
   `Model\Db\SqlExecutorInterface`). Behavior is unchanged. Custom code that
   sets a DI preference for one of them needs the new name.
+- **Install:** the module is on Packagist, so `composer require
+  fullspec/module-answereng` works without an artifact repository. The release
+  zip still works.
+- **License:** the repository now includes the OSL-3.0 and AFL-3.0 texts that
+  `composer.json` already declared.
 
 ## 0.2.0 — 2026-11-24
 
