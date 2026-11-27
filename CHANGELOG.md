@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-11-27
+
+No schema changes. Run `bin/magento setup:upgrade` after updating so Magento
+regenerates its code for the renamed interfaces.
 
 ### Changed
 - **Interface names:** the module's interfaces now end in `Interface`, as
